@@ -1,0 +1,62 @@
+# ----------------------------------------------------------------------------------------------------
+# Variables common to all environments
+# ----------------------------------------------------------------------------------------------------
+variables:
+  # - name: appName
+  #   value: 'this is unique to you - define in a variable group or on the pipeline variables!'
+  # - name: serviceConnectionName
+  #   value: 'this is unique to you - define in a variable group or on the pipeline variables!'
+
+  - name: resourceGroupPrefix
+    value: 'rg_MathStorm_web'
+  - name: applicationTitle
+    value: 'Math.Storm Demo'
+  - name: location
+    value: 'eastus'
+
+  - name: webSiteSku 
+    value: 'B1'
+  - name: storageSku 
+    value: 'Standard_LRS'
+
+  - name: appFolderName
+    value: 'src\web\MathStorm\'
+  - name: appSolutionName
+    value: 'MathStorm.Web'
+
+  - name: appProjectFolderName
+    value: 'MathStorm.Web'
+  - name: appProjectName
+    value: 'MathStorm.Web'
+  - name: appProjectExtension
+    value: 'csproj'
+
+  - name: testFolderName 
+    value: 'MathStorm.Web.Tests'
+  - name: testProjectName
+    value: 'MathStorm.Web.Tests'
+
+  - name: buildPlatform
+    value: 'Any CPU'
+  - name: buildConfiguration
+    value: 'Release'
+  - name: runtime 
+    value: 'win-x64'
+
+  - name: workingDirectoryInfra
+    value: '\infra\bicep'
+  - name: workingDirectoryIgnore
+    value: '\Docs'
+
+  - name: playwrightUITestType
+    value: 'ui'
+  - name: playwrightUITestPath
+    value: 'Tests/playwright/ui-tests'
+
+  - name: playwrightAPITestType
+    value: 'api'
+  - name: playwrightAPITestPath
+    value: 'Tests/playwright/api-tests'
+
+  - name: playwrightWebsitePrefix
+    value: 'mathstorm'

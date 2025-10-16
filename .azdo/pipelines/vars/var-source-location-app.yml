@@ -1,0 +1,27 @@
+# ----------------------------------------------------------------------------------------------------
+# Variables for location of source for app
+# ----------------------------------------------------------------------------------------------------
+variables:
+  - name: appFolderName
+    value: 'src\web\MathStorm\'
+  - name: appSolutionName
+    value: 'MathStorm.Web'
+
+  - name: appProjectFolderName
+    value: 'MathStorm.Web'
+  - name: appProjectName
+    value: 'MathStorm.Web'
+  - name: appProjectExtension
+    value: 'csproj'
+
+  - name: testFolderName 
+    value: 'MathStorm.Web.Tests'
+  - name: testProjectName
+    value: 'MathStorm.Web.Tests'
+
+  - name: buildPlatform
+    value: 'Any CPU'
+  - name: buildConfiguration
+    value: 'Release'
+  - name: runtime 
+    value: 'win-x64'
