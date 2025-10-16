@@ -2,6 +2,7 @@
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
+@implements IAsyncDisposable
 @attribute [Authorize]
 @inject ILocationService LocationService
 @inject IAuthenticationService AuthenticationService
@@ -169,6 +170,7 @@
     private List<Location> filteredLocations = new();
     private HashSet<string> visitedStates = new();
     private bool isLoading = false;
+    private bool isMapInitialized = false;
     private string errorMessage = string.Empty;
     private string currentUserId = string.Empty;
     private string? azureMapsKey;
@@ -183,6 +185,81 @@
         currentUserId = AuthenticationService.GetCurrentUserId();
         azureMapsKey = Configuration["AzureMaps:SubscriptionKey"];
         await LoadLocations();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !string.IsNullOrEmpty(azureMapsKey))
+        {
+            await InitializeMap();
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        try
+        {
+            // Initialize map centered on US
+            var result = await JSRuntime.InvokeAsync<bool>("initializeAzureMap", azureMapsKey, 39.8283, -98.5795, 4);
+            if (result)
+            {
+                isMapInitialized = true;
+                await UpdateMapMarkers();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to initialize map: {ex.Message}";
+            Console.WriteLine($"Map initialization error: {ex}");
+        }
+    }
+
+    private async Task UpdateMapMarkers()
+    {
+        if (!isMapInitialized || string.IsNullOrEmpty(azureMapsKey))
+        {
+            return;
+        }
+
+        try
+        {
+            var markers = filteredLocations
+                .Where(l => l.Latitude != 0 && l.Longitude != 0)
+                .Select(l => new
+                {
+                    lat = l.Latitude,
+                    lon = l.Longitude,
+                    name = l.Name,
+                    city = l.City,
+                    state = l.State,
+                    date = l.StartDate.ToString("yyyy-MM-dd"),
+                    locationType = l.LocationType,
+                    rating = l.Rating
+                })
+                .ToArray();
+
+            await JSRuntime.InvokeVoidAsync("updateAzureMapMarkers", (object)markers);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update map markers: {ex.Message}";
+            Console.WriteLine($"Map marker update error: {ex}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (isMapInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("disposeAzureMap");
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
     }
 
     private async Task LoadLocations()
@@ -257,7 +334,7 @@
         // If Azure Maps is configured, update the map
         if (!string.IsNullOrEmpty(azureMapsKey))
         {
-            await UpdateMap();
+            await UpdateMapMarkers();
         }
 
         StateHasChanged();
@@ -269,35 +346,5 @@
         filterEndDate = null;
         filterState = string.Empty;
         return ApplyFilters();
-    }
-
-    private Task UpdateMap()
-    {
-        // This would interact with Azure Maps JavaScript SDK
-        // For now, we'll prepare the data that would be sent to the map
-        try
-        {
-            var markers = filteredLocations
-                .Where(l => l.Latitude != 0 && l.Longitude != 0)
-                .Select(l => new
-                {
-                    lat = l.Latitude,
-                    lon = l.Longitude,
-                    name = l.Name,
-                    city = l.City,
-                    state = l.State,
-                    date = l.StartDate.ToString("yyyy-MM-dd")
-                })
-                .ToList();
-
-            // In a full implementation, we would call JavaScript to update Azure Maps
-            // await JSRuntime.InvokeVoidAsync("updateAzureMap", markers);
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Failed to update map: {ex.Message}";
-        }
-        
-        return Task.CompletedTask;
     }
 }
