@@ -1,97 +1,295 @@
 @page "/statistics"
+@using TravelTracker.Data.Models
+@using TravelTracker.Services.Interfaces
+@inject ILocationService LocationService
+@inject INationalParkService NationalParkService
 
 <PageTitle>Statistics - Travel Tracker</PageTitle>
 
 <h1>Travel Statistics</h1>
 
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">📊 Travel Analytics</h4>
-                <p>View comprehensive statistics about your travel history and progress.</p>
-            </div>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
         </div>
-    </div>
+    }
 
-    <div class="row mt-4">
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2 class="display-4">0</h2>
-                    <p class="text-muted">Total Locations</p>
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading statistics...</p>
+        </div>
+    }
+    else
+    {
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="display-4">@totalLocations</h2>
+                        <p class="text-muted">Total Locations</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2 class="display-4">0/50</h2>
-                    <p class="text-muted">States Visited</p>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="display-4">@statesVisited/50</h2>
+                        <p class="text-muted">States Visited</p>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar" role="progressbar" style="width: @stateProgressPercent%" 
+                                 aria-valuenow="@statesVisited" aria-valuemin="0" aria-valuemax="50"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2 class="display-4">0/63</h2>
-                    <p class="text-muted">National Parks</p>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="display-4">@nationalParksVisited/63</h2>
+                        <p class="text-muted">National Parks</p>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @parkProgressPercent%" 
+                                 aria-valuenow="@nationalParksVisited" aria-valuemin="0" aria-valuemax="63"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2 class="display-4">0</h2>
-                    <p class="text-muted">Total Days</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">States Visited</h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-center py-5">
-                        <p class="text-muted">State progress map will appear here</p>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="display-4">@totalDays</h2>
+                        <p class="text-muted">Total Days</p>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Location Types</h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-center py-5">
-                        <p class="text-muted">Location type distribution chart will appear here</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Travel Timeline</h5>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">States Visited</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (stateStats.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>State</th>
+                                            <th class="text-end">Locations</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var state in stateStats.OrderByDescending(s => s.Value).Take(10))
+                                        {
+                                            <tr>
+                                                <td>@state.Key</td>
+                                                <td class="text-end">
+                                                    <span class="badge bg-primary">@state.Value</span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if (stateStats.Count > 10)
+                            {
+                                <p class="text-muted small text-center mb-0">Showing top 10 states</p>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <p class="text-muted">No state data available yet</p>
+                            </div>
+                        }
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="text-center py-5">
-                        <p class="text-muted">Travel timeline visualization will appear here</p>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Location Types</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (locationTypeStats.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th class="text-end">Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var type in locationTypeStats.OrderByDescending(t => t.Value))
+                                        {
+                                            <tr>
+                                                <td>@type.Key</td>
+                                                <td class="text-end">
+                                                    <span class="badge bg-info">@type.Value</span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <p class="text-muted">No location type data available yet</p>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recent Locations</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (recentLocations.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Location</th>
+                                            <th>Date</th>
+                                            <th>Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var location in recentLocations)
+                                        {
+                                            <tr>
+                                                <td>@location.Name</td>
+                                                <td>@location.LocationType</td>
+                                                <td>@location.City, @location.State</td>
+                                                <td>@location.StartDate.ToString("MM/dd/yyyy")</td>
+                                                <td>
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <span class="@(i <= location.Rating ? "text-warning" : "text-muted")">★</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <p class="text-muted">No locations found. Start adding your travel history!</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
+
+@code {
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+    private const string TEST_USER_ID = "test-user-123"; // Temporary until authentication is implemented
+
+    private int totalLocations = 0;
+    private int statesVisited = 0;
+    private int nationalParksVisited = 0;
+    private int totalDays = 0;
+    private double stateProgressPercent = 0;
+    private double parkProgressPercent = 0;
+
+    private Dictionary<string, int> stateStats = new();
+    private Dictionary<string, int> locationTypeStats = new();
+    private List<Location> recentLocations = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatistics();
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            // Get all locations for the user
+            var locations = (await LocationService.GetAllLocationsAsync(TEST_USER_ID)).ToList();
+            totalLocations = locations.Count;
+
+            // Calculate states visited
+            stateStats = await LocationService.GetLocationsByStateCountAsync(TEST_USER_ID);
+            statesVisited = stateStats.Count;
+            stateProgressPercent = statesVisited > 0 ? (statesVisited / 50.0 * 100) : 0;
+
+            // Calculate location types
+            locationTypeStats = locations
+                .Where(l => !string.IsNullOrEmpty(l.LocationType))
+                .GroupBy(l => l.LocationType)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Calculate total days (sum of all location durations)
+            totalDays = locations.Sum(l => 
+            {
+                var endDate = l.EndDate ?? l.StartDate;
+                return (endDate - l.StartDate).Days + 1;
+            });
+
+            // Get national parks visited count
+            try
+            {
+                var visitedParks = await NationalParkService.GetVisitedParksAsync(TEST_USER_ID);
+                nationalParksVisited = visitedParks.Count();
+                parkProgressPercent = nationalParksVisited > 0 ? (nationalParksVisited / 63.0 * 100) : 0;
+            }
+            catch
+            {
+                // If national parks service fails, just set to 0
+                nationalParksVisited = 0;
+                parkProgressPercent = 0;
+            }
+
+            // Get 10 most recent locations
+            recentLocations = locations
+                .OrderByDescending(l => l.StartDate)
+                .Take(10)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load statistics: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

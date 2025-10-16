@@ -1,18 +1,30 @@
 @page "/upload"
+@using TravelTracker.Data.Models
+@using TravelTracker.Services.Interfaces
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components.Forms
+@inject ILocationService LocationService
 
 <PageTitle>Upload Data - Travel Tracker</PageTitle>
 
 <h1>Upload Travel Data</h1>
 
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">📤 Data Upload</h4>
-                <p>Import your travel data in bulk using JSON format.</p>
-            </div>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
         </div>
-    </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+        </div>
+    }
 
     <div class="row mt-4">
         <div class="col-md-8">
@@ -21,22 +33,70 @@
                     <h5 class="mb-0">Upload JSON File</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label for="fileUpload" class="form-label">Select JSON file</label>
-                        <input class="form-control" type="file" id="fileUpload" accept=".json" disabled>
-                    </div>
+                    <InputFile OnChange="HandleFileSelected" class="form-control mb-3" accept=".json" disabled="@isUploading" />
                     
-                    <div class="text-center py-4 border rounded bg-light">
-                        <p class="text-muted">Drag and drop your JSON file here</p>
-                        <p class="text-muted small">(Upload functionality coming soon)</p>
-                    </div>
+                    @if (selectedFileName != null)
+                    {
+                        <div class="alert alert-info">
+                            <strong>Selected file:</strong> @selectedFileName
+                            @if (validationResults.Any())
+                            {
+                                <div class="mt-2">
+                                    <strong>Validation:</strong>
+                                    <ul class="mb-0">
+                                        @foreach (var result in validationResults)
+                                        {
+                                            <li class="@(result.IsValid ? "text-success" : "text-danger")">
+                                                @result.Message
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    }
+                    
+                    @if (isUploading)
+                    {
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 style="width: @uploadProgress%"
+                                 aria-valuenow="@uploadProgress" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                @uploadProgress%
+                            </div>
+                        </div>
+                    }
                     
                     <div class="mt-3">
-                        <button class="btn btn-primary" disabled>
+                        <button class="btn btn-primary" @onclick="ProcessUpload" disabled="@(!canUpload || isUploading)">
+                            @if (isUploading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
                             <span class="bi bi-upload"></span> Upload
                         </button>
-                        <button class="btn btn-secondary ms-2" disabled>Validate</button>
+                        <button class="btn btn-secondary ms-2" @onclick="ValidateFile" disabled="@(!canValidate || isUploading)">
+                            Validate
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" @onclick="ClearSelection" disabled="@isUploading">
+                            Clear
+                        </button>
                     </div>
+
+                    @if (uploadSummary != null)
+                    {
+                        <div class="alert alert-success mt-3">
+                            <h6>Upload Summary:</h6>
+                            <ul class="mb-0">
+                                <li>Total locations processed: @uploadSummary.TotalProcessed</li>
+                                <li>Successfully imported: @uploadSummary.SuccessCount</li>
+                                <li>Failed: @uploadSummary.FailureCount</li>
+                            </ul>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -54,6 +114,9 @@
       "name": "Yellowstone NP",
       "locationType": "National Park",
       "address": "WY 82190",
+      "city": "Yellowstone",
+      "state": "WY",
+      "zipCode": "82190",
       "latitude": 44.427963,
       "longitude": -110.588455,
       "startDate": "2024-06-15",
@@ -64,11 +127,265 @@
     }
   ]
 }</code></pre>
-                    <a href="#" class="btn btn-sm btn-outline-primary">
+                    <button class="btn btn-sm btn-outline-primary" @onclick="DownloadSample">
                         <span class="bi bi-download"></span> Download Sample
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@code {
+    private IBrowserFile? selectedFile;
+    private string? selectedFileName;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isUploading = false;
+    private bool canValidate = false;
+    private bool canUpload = false;
+    private int uploadProgress = 0;
+    private List<ValidationResult> validationResults = new();
+    private UploadSummary? uploadSummary;
+    private LocationUploadData? uploadData;
+    private const string TEST_USER_ID = "test-user-123";
+    private const long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    private Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        selectedFileName = e.File.Name;
+        validationResults.Clear();
+        uploadSummary = null;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        canValidate = true;
+        canUpload = false;
+        uploadData = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task ValidateFile()
+    {
+        if (selectedFile == null) return;
+
+        try
+        {
+            validationResults.Clear();
+            errorMessage = string.Empty;
+
+            // Check file size
+            if (selectedFile.Size > MAX_FILE_SIZE)
+            {
+                validationResults.Add(new ValidationResult 
+                { 
+                    IsValid = false, 
+                    Message = $"File size exceeds maximum allowed size of {MAX_FILE_SIZE / 1024 / 1024}MB" 
+                });
+                canUpload = false;
+                return;
+            }
+
+            validationResults.Add(new ValidationResult { IsValid = true, Message = "File size is acceptable" });
+
+            // Read and parse JSON
+            using var stream = selectedFile.OpenReadStream(MAX_FILE_SIZE);
+            using var reader = new StreamReader(stream);
+            var jsonContent = await reader.ReadToEndAsync();
+
+            try
+            {
+                var options = new JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true 
+                };
+                uploadData = JsonSerializer.Deserialize<LocationUploadData>(jsonContent, options);
+
+                if (uploadData == null || uploadData.Locations == null)
+                {
+                    validationResults.Add(new ValidationResult 
+                    { 
+                        IsValid = false, 
+                        Message = "Invalid JSON structure. Missing 'locations' array." 
+                    });
+                    canUpload = false;
+                    return;
+                }
+
+                validationResults.Add(new ValidationResult 
+                { 
+                    IsValid = true, 
+                    Message = $"JSON structure is valid. Found {uploadData.Locations.Count} locations." 
+                });
+
+                // Validate each location has required fields
+                int validLocations = 0;
+                foreach (var loc in uploadData.Locations)
+                {
+                    if (!string.IsNullOrEmpty(loc.Name) && !string.IsNullOrEmpty(loc.State))
+                    {
+                        validLocations++;
+                    }
+                }
+
+                if (validLocations == 0)
+                {
+                    validationResults.Add(new ValidationResult 
+                    { 
+                        IsValid = false, 
+                        Message = "No valid locations found. Each location must have at least a name and state." 
+                    });
+                    canUpload = false;
+                }
+                else
+                {
+                    validationResults.Add(new ValidationResult 
+                    { 
+                        IsValid = true, 
+                        Message = $"{validLocations} locations are ready for import." 
+                    });
+                    canUpload = true;
+                }
+            }
+            catch (JsonException ex)
+            {
+                validationResults.Add(new ValidationResult 
+                { 
+                    IsValid = false, 
+                    Message = $"JSON parsing error: {ex.Message}" 
+                });
+                canUpload = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Validation failed: {ex.Message}";
+            canUpload = false;
+        }
+    }
+
+    private async Task ProcessUpload()
+    {
+        if (uploadData == null || uploadData.Locations == null)
+        {
+            errorMessage = "Please validate the file first.";
+            return;
+        }
+
+        try
+        {
+            isUploading = true;
+            errorMessage = string.Empty;
+            uploadProgress = 0;
+
+            var summary = new UploadSummary
+            {
+                TotalProcessed = uploadData.Locations.Count
+            };
+
+            int processed = 0;
+            foreach (var locData in uploadData.Locations)
+            {
+                try
+                {
+                    var location = new Location
+                    {
+                        UserId = TEST_USER_ID,
+                        Name = locData.Name ?? "Unknown",
+                        LocationType = locData.LocationType ?? "Other",
+                        Address = locData.Address ?? string.Empty,
+                        City = locData.City ?? string.Empty,
+                        State = locData.State ?? string.Empty,
+                        ZipCode = locData.ZipCode ?? string.Empty,
+                        Latitude = locData.Latitude,
+                        Longitude = locData.Longitude,
+                        StartDate = locData.StartDate,
+                        EndDate = locData.EndDate,
+                        Rating = locData.Rating,
+                        Comments = locData.Comments ?? string.Empty,
+                        Tags = locData.Tags ?? new List<string>()
+                    };
+
+                    await LocationService.CreateLocationAsync(location);
+                    summary.SuccessCount++;
+                }
+                catch (Exception)
+                {
+                    summary.FailureCount++;
+                }
+
+                processed++;
+                uploadProgress = (int)((processed / (double)uploadData.Locations.Count) * 100);
+                StateHasChanged();
+                await Task.Delay(10); // Small delay to show progress
+            }
+
+            uploadSummary = summary;
+            successMessage = $"Upload complete! Imported {summary.SuccessCount} out of {summary.TotalProcessed} locations.";
+            
+            // Clear the form
+            ClearSelection();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Upload failed: {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+            uploadProgress = 0;
+        }
+    }
+
+    private void ClearSelection()
+    {
+        selectedFile = null;
+        selectedFileName = null;
+        validationResults.Clear();
+        canValidate = false;
+        canUpload = false;
+        uploadData = null;
+    }
+
+    private void DownloadSample()
+    {
+        // This would be implemented with JS interop to download a sample file
+        // For now, just show a message
+        successMessage = "Sample download functionality will be implemented with JavaScript interop.";
+    }
+
+    private class LocationUploadData
+    {
+        public List<LocationData>? Locations { get; set; }
+    }
+
+    private class LocationData
+    {
+        public string? Name { get; set; }
+        public string? LocationType { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
+        public string? ZipCode { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public int Rating { get; set; }
+        public string? Comments { get; set; }
+        public List<string>? Tags { get; set; }
+    }
+
+    private class ValidationResult
+    {
+        public bool IsValid { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    private class UploadSummary
+    {
+        public int TotalProcessed { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailureCount { get; set; }
+    }
+}

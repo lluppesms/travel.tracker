@@ -1,42 +1,384 @@
 @page "/locations"
+@using TravelTracker.Data.Models
+@using TravelTracker.Services.Interfaces
+@inject ILocationService LocationService
 
 <PageTitle>Locations - Travel Tracker</PageTitle>
 
 <h1>My Locations</h1>
 
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">📍 Location Management</h4>
-                <p>Manage all your visited locations. Add new places, edit existing ones, and keep track of your travel history.</p>
-            </div>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
         </div>
-    </div>
+    }
 
-    <div class="row mt-4">
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+        </div>
+    }
+
+    <div class="row">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">My Travel Locations</h5>
-                    <button class="btn btn-primary btn-sm" disabled>
+                    <button class="btn btn-primary btn-sm" @onclick="ShowAddLocationForm">
                         <span class="bi bi-plus-circle"></span> Add Location
                     </button>
                 </div>
                 <div class="card-body">
-                    <div class="text-center py-5">
-                        <p class="text-muted">Location management features are under development.</p>
-                        <p class="text-muted">You'll soon be able to:</p>
-                        <ul class="list-unstyled">
-                            <li>✓ View all your visited locations</li>
-                            <li>✓ Add new locations manually</li>
-                            <li>✓ Edit location details</li>
-                            <li>✓ Add ratings and comments</li>
-                            <li>✓ Filter and search locations</li>
-                        </ul>
-                    </div>
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-5">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading locations...</p>
+                        </div>
+                    }
+                    else if (locations == null || !locations.Any())
+                    {
+                        <div class="text-center py-5">
+                            <p class="text-muted">No locations found. Start by adding your first location!</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Location</th>
+                                        <th>Date</th>
+                                        <th>Rating</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var location in locations)
+                                    {
+                                        <tr>
+                                            <td>@location.Name</td>
+                                            <td>@location.LocationType</td>
+                                            <td>@location.City, @location.State</td>
+                                            <td>@location.StartDate.ToString("MM/dd/yyyy")</td>
+                                            <td>
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <span class="@(i <= location.Rating ? "text-warning" : "text-muted")">★</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEditLocationForm(location)">
+                                                    Edit
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ShowDeleteConfirmation(location)">
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@* Add/Edit Location Modal *@
+@if (showLocationForm)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(isEditMode ? "Edit Location" : "Add New Location")</h5>
+                    <button type="button" class="btn-close" @onclick="HideLocationForm"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="currentLocation" OnValidSubmit="SaveLocation">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Name *</label>
+                                <InputText class="form-control" @bind-Value="currentLocation.Name" />
+                                <ValidationMessage For="@(() => currentLocation.Name)" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location Type *</label>
+                                <InputText class="form-control" @bind-Value="currentLocation.LocationType" placeholder="e.g., National Park, Hotel, Restaurant" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Address</label>
+                                <InputText class="form-control" @bind-Value="currentLocation.Address" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">City</label>
+                                <InputText class="form-control" @bind-Value="currentLocation.City" />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">State *</label>
+                                <InputText class="form-control" @bind-Value="currentLocation.State" placeholder="e.g., CA, NY" />
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Zip Code</label>
+                                <InputText class="form-control" @bind-Value="currentLocation.ZipCode" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Latitude</label>
+                                <InputNumber class="form-control" @bind-Value="currentLocation.Latitude" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Longitude</label>
+                                <InputNumber class="form-control" @bind-Value="currentLocation.Longitude" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Date *</label>
+                                <InputDate class="form-control" @bind-Value="currentLocation.StartDate" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End Date</label>
+                                <InputDate class="form-control" @bind-Value="currentLocation.EndDate" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Rating (1-5)</label>
+                                <InputNumber class="form-control" @bind-Value="currentLocation.Rating" min="0" max="5" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Comments</label>
+                            <InputTextArea class="form-control" @bind-Value="currentLocation.Comments" rows="3" />
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="HideLocationForm">Cancel</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Save
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Delete Confirmation Modal *@
+@if (showDeleteConfirmation)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" @onclick="HideDeleteConfirmation"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong>@locationToDelete?.Name</strong>?</p>
+                    <p class="text-muted">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideDeleteConfirmation">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="DeleteLocation" disabled="@isDeleting">
+                        @if (isDeleting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Location> locations = new();
+    private Location currentLocation = new();
+    private Location? locationToDelete;
+    private bool showLocationForm = false;
+    private bool showDeleteConfirmation = false;
+    private bool isEditMode = false;
+    private bool isLoading = false;
+    private bool isSaving = false;
+    private bool isDeleting = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private const string TEST_USER_ID = "test-user-123"; // Temporary until authentication is implemented
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLocations();
+    }
+
+    private async Task LoadLocations()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            var result = await LocationService.GetAllLocationsAsync(TEST_USER_ID);
+            locations = result.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load locations: {ex.Message}";
+            locations = new List<Location>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowAddLocationForm()
+    {
+        currentLocation = new Location 
+        { 
+            UserId = TEST_USER_ID,
+            StartDate = DateTime.Today
+        };
+        isEditMode = false;
+        showLocationForm = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private void ShowEditLocationForm(Location location)
+    {
+        currentLocation = new Location
+        {
+            Id = location.Id,
+            UserId = location.UserId,
+            Name = location.Name,
+            LocationType = location.LocationType,
+            Address = location.Address,
+            City = location.City,
+            State = location.State,
+            ZipCode = location.ZipCode,
+            Latitude = location.Latitude,
+            Longitude = location.Longitude,
+            StartDate = location.StartDate,
+            EndDate = location.EndDate,
+            Rating = location.Rating,
+            Comments = location.Comments,
+            Tags = new List<string>(location.Tags),
+            CreatedDate = location.CreatedDate
+        };
+        isEditMode = true;
+        showLocationForm = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private void HideLocationForm()
+    {
+        showLocationForm = false;
+        currentLocation = new Location();
+    }
+
+    private async Task SaveLocation()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = string.Empty;
+            
+            currentLocation.ModifiedDate = DateTime.UtcNow;
+            
+            if (isEditMode)
+            {
+                await LocationService.UpdateLocationAsync(currentLocation);
+                successMessage = "Location updated successfully!";
+            }
+            else
+            {
+                await LocationService.CreateLocationAsync(currentLocation);
+                successMessage = "Location added successfully!";
+            }
+            
+            HideLocationForm();
+            await LoadLocations();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save location: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ShowDeleteConfirmation(Location location)
+    {
+        locationToDelete = location;
+        showDeleteConfirmation = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private void HideDeleteConfirmation()
+    {
+        showDeleteConfirmation = false;
+        locationToDelete = null;
+    }
+
+    private async Task DeleteLocation()
+    {
+        if (locationToDelete == null) return;
+
+        try
+        {
+            isDeleting = true;
+            errorMessage = string.Empty;
+            
+            await LocationService.DeleteLocationAsync(locationToDelete.Id, locationToDelete.UserId);
+            successMessage = $"Location '{locationToDelete.Name}' deleted successfully!";
+            
+            HideDeleteConfirmation();
+            await LoadLocations();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete location: {ex.Message}";
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+}
