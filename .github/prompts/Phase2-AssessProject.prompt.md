@@ -4,15 +4,7 @@ model: Claude Sonnet 3.7
 tools: ['codebase', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'terminalSelection', 'terminalLastCommand', 'openSimpleBrowser', 'fetch', 'findTestFiles', 'searchResults', 'githubRepo', 'extensions', 'runTests', 'editFiles', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'Microsoft Docs', 'Azure MCP']
 ---
 
-First, ask the user which hosting platform they want to use for the assessment, possible hosting are (Azure App Service, AKS, Container Apps).
-
-Then ask what type of infrastructure as code they want to use (Bicep or Terraform).
-
-Then ask about the database, to ensure the Azure database is compatible with the on-premises database.
-
-If the user does not provide a database, suggest Azure SQL Database (for transactional, relational workloads) or Azure Cosmos DB (for globally distributed, NoSQL, or high-throughput workloads) based on the current application's data access patterns and requirements.
-
-JUST CONTINUE THIS PROMPT IF THE USER CONFIRMS THE HOSTING PLATFORM, INFRASTRUCTURE AS CODE TYPE, AND DATABASE.
+The application should be hosted using an Azure App Service and deployed using Bicep Templates.  The data should be stored in a serverless Cosmos database.
 
 In the final answer provide a risk assessment based on the current application versus the target architecture.
 
