@@ -1,98 +1,210 @@
 @page "/statistics"
 @attribute [Authorize]
+@using TravelTracker.Services.Interfaces
+@inject ILocationService LocationService
+@inject INationalParkService NationalParkService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Statistics - Travel Tracker</PageTitle>
 
 <h1>Travel Statistics</h1>
 
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">📊 Travel Analytics</h4>
-                <p>View comprehensive statistics about your travel history and progress.</p>
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading your statistics...</p>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error</h4>
+            <p>@errorMessage</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-info" role="alert">
+                    <h4 class="alert-heading">📊 Travel Analytics</h4>
+                    <p>View comprehensive statistics about your travel history and progress.</p>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="row mt-4">
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2 class="display-4">0</h2>
-                    <p class="text-muted">Total Locations</p>
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="display-4">@totalLocations</h2>
+                        <p class="text-muted">Total Locations</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2 class="display-4">0/50</h2>
-                    <p class="text-muted">States Visited</p>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="display-4">@statesVisited/50</h2>
+                        <p class="text-muted">States Visited</p>
+                        <div class="progress" style="height: 5px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: @(statesVisited * 2)%;" 
+                                 aria-valuenow="@statesVisited" aria-valuemin="0" aria-valuemax="50"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2 class="display-4">0/63</h2>
-                    <p class="text-muted">National Parks</p>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="display-4">@nationalParksVisited/63</h2>
+                        <p class="text-muted">National Parks</p>
+                        <div class="progress" style="height: 5px;">
+                            <div class="progress-bar bg-info" role="progressbar" 
+                                 style="width: @(nationalParksVisited * 100 / 63)%;" 
+                                 aria-valuenow="@nationalParksVisited" aria-valuemin="0" aria-valuemax="63"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h2 class="display-4">0</h2>
-                    <p class="text-muted">Total Days</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">States Visited</h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-center py-5">
-                        <p class="text-muted">State progress map will appear here</p>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="display-4">@totalDays</h2>
+                        <p class="text-muted">Total Days</p>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Location Types</h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-center py-5">
-                        <p class="text-muted">Location type distribution chart will appear here</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Travel Timeline</h5>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">States Visited (@statesVisited)</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (stateStats.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var state in stateStats.OrderByDescending(s => s.Value).Take(10))
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        @state.Key
+                                        <span class="badge bg-primary rounded-pill">@state.Value</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <p class="text-muted">No state data available yet</p>
+                            </div>
+                        }
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="text-center py-5">
-                        <p class="text-muted">Travel timeline visualization will appear here</p>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Location Types</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center py-5">
+                            <p class="text-muted">Location type distribution chart will appear here</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Travel Timeline</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center py-5">
+                            <p class="text-muted">Travel timeline visualization will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? userId;
+    private int totalLocations;
+    private int statesVisited;
+    private int nationalParksVisited;
+    private int totalDays;
+    private Dictionary<string, int> stateStats = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                userId = user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value
+                    ?? user.FindFirst("oid")?.Value
+                    ?? user.FindFirst("sub")?.Value;
+
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    // Get total locations
+                    var locationList = await LocationService.GetAllLocationsAsync(userId);
+                    var locations = locationList.ToList();
+                    totalLocations = locations.Count;
+                    
+                    // Calculate total days
+                    totalDays = locations.Sum(l => 
+                        l.EndDate.HasValue ? (l.EndDate.Value - l.StartDate).Days + 1 : 1
+                    );
+                    
+                    // Get state statistics
+                    stateStats = await LocationService.GetLocationsByStateCountAsync(userId);
+                    statesVisited = stateStats.Count;
+                    
+                    // Get national parks count
+                    var nationalParks = await NationalParkService.GetVisitedParksAsync(userId);
+                    nationalParksVisited = nationalParks.Count();
+                }
+                else
+                {
+                    errorMessage = "Unable to determine user identity.";
+                }
+            }
+            else
+            {
+                errorMessage = "You must be logged in to view statistics.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading statistics: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

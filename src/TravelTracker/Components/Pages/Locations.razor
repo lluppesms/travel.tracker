@@ -1,43 +1,204 @@
 @page "/locations"
 @attribute [Authorize]
+@using TravelTracker.Data.Models
+@using TravelTracker.Services.Interfaces
+@inject ILocationService LocationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Locations - Travel Tracker</PageTitle>
 
 <h1>My Locations</h1>
 
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">📍 Location Management</h4>
-                <p>Manage all your visited locations. Add new places, edit existing ones, and keep track of your travel history.</p>
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading your locations...</p>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error</h4>
+            <p>@errorMessage</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-info" role="alert">
+                    <h4 class="alert-heading">📍 Location Management</h4>
+                    <p>Manage all your visited locations. Add new places, edit existing ones, and keep track of your travel history.</p>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">My Travel Locations</h5>
-                    <button class="btn btn-primary btn-sm" disabled>
-                        <span class="bi bi-plus-circle"></span> Add Location
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="text-center py-5">
-                        <p class="text-muted">Location management features are under development.</p>
-                        <p class="text-muted">You'll soon be able to:</p>
-                        <ul class="list-unstyled">
-                            <li>✓ View all your visited locations</li>
-                            <li>✓ Add new locations manually</li>
-                            <li>✓ Edit location details</li>
-                            <li>✓ Add ratings and comments</li>
-                            <li>✓ Filter and search locations</li>
-                        </ul>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">My Travel Locations (@locations.Count)</h5>
+                        <button class="btn btn-primary btn-sm" @onclick="ShowAddModal">
+                            <span class="bi bi-plus-circle"></span> Add Location
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        @if (locations.Count == 0)
+                        {
+                            <div class="text-center py-5">
+                                <p class="text-muted">No locations found. Start by adding your first location!</p>
+                                <button class="btn btn-primary" @onclick="ShowAddModal">
+                                    <span class="bi bi-plus-circle"></span> Add Your First Location
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Location</th>
+                                            <th>Dates</th>
+                                            <th>Rating</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var location in locations)
+                                        {
+                                            <tr>
+                                                <td>@location.Name</td>
+                                                <td>@location.LocationType</td>
+                                                <td>@location.Address</td>
+                                                <td>
+                                                    @location.StartDate.ToString("yyyy-MM-dd")
+                                                    @if (location.EndDate.HasValue)
+                                                    {
+                                                        <span> - @location.EndDate.Value.ToString("yyyy-MM-dd")</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (location.Rating > 0)
+                                                    {
+                                                        <span>@(new string('⭐', location.Rating))</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowEditModal(location)">
+                                                        Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ShowDeleteConfirm(location)">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 </div>
+
+@* Add/Edit Modal Placeholder - Will be implemented next *@
+@if (showModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingLocation == null ? "Add Location" : "Edit Location")</h5>
+                    <button type="button" class="btn-close" @onclick="HideModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Location form coming soon...</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" disabled>Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Location> locations = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? userId;
+    private bool showModal = false;
+    private Location? editingLocation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                userId = user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value
+                    ?? user.FindFirst("oid")?.Value
+                    ?? user.FindFirst("sub")?.Value;
+
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var locationList = await LocationService.GetAllLocationsAsync(userId);
+                    locations = locationList.ToList();
+                }
+                else
+                {
+                    errorMessage = "Unable to determine user identity.";
+                }
+            }
+            else
+            {
+                errorMessage = "You must be logged in to view locations.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading locations: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowAddModal()
+    {
+        editingLocation = null;
+        showModal = true;
+    }
+
+    private void ShowEditModal(Location location)
+    {
+        editingLocation = location;
+        showModal = true;
+    }
+
+    private void HideModal()
+    {
+        showModal = false;
+        editingLocation = null;
+    }
+
+    private void ShowDeleteConfirm(Location location)
+    {
+        // Will implement delete confirmation dialog
+    }
+}
