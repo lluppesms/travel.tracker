@@ -111,7 +111,7 @@
     }
 </div>
 
-@* Add/Edit Modal Placeholder - Will be implemented next *@
+@* Add/Edit Modal *@
 @if (showModal)
 {
     <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
@@ -122,11 +122,46 @@
                     <button type="button" class="btn-close" @onclick="HideModal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted">Location form coming soon...</p>
+                    @if (isSaving)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Saving...</span>
+                            </div>
+                            <p class="mt-2">Saving location...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <LocationForm 
+                            Location="currentLocation" 
+                            IsEdit="editingLocation != null"
+                            OnValidSubmit="SaveLocation"
+                            OnCancel="HideModal" />
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Delete Confirmation Modal *@
+@if (showDeleteConfirm && deletingLocation != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" @onclick="HideDeleteConfirm"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong>@deletingLocation.Name</strong>?</p>
+                    <p class="text-muted">This action cannot be undone.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HideModal">Cancel</button>
-                    <button type="button" class="btn btn-primary" disabled>Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="HideDeleteConfirm">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">Delete</button>
                 </div>
             </div>
         </div>
@@ -136,15 +171,27 @@
 @code {
     private List<Location> locations = new();
     private bool isLoading = true;
+    private bool isSaving = false;
     private string? errorMessage;
     private string? userId;
     private bool showModal = false;
+    private bool showDeleteConfirm = false;
     private Location? editingLocation;
+    private Location? deletingLocation;
+    private Location currentLocation = new();
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadLocations();
+    }
+
+    private async Task LoadLocations()
+    {
         try
         {
+            isLoading = true;
+            errorMessage = null;
+            
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
             
@@ -182,12 +229,36 @@
     private void ShowAddModal()
     {
         editingLocation = null;
+        currentLocation = new Location 
+        { 
+            UserId = userId ?? string.Empty,
+            StartDate = DateTime.Today
+        };
         showModal = true;
     }
 
     private void ShowEditModal(Location location)
     {
         editingLocation = location;
+        currentLocation = new Location
+        {
+            Id = location.Id,
+            UserId = location.UserId,
+            Type = location.Type,
+            Name = location.Name,
+            LocationType = location.LocationType,
+            Address = location.Address,
+            City = location.City,
+            State = location.State,
+            ZipCode = location.ZipCode,
+            Latitude = location.Latitude,
+            Longitude = location.Longitude,
+            StartDate = location.StartDate,
+            EndDate = location.EndDate,
+            Rating = location.Rating,
+            Comments = location.Comments,
+            Tags = new List<string>(location.Tags)
+        };
         showModal = true;
     }
 
@@ -195,10 +266,66 @@
     {
         showModal = false;
         editingLocation = null;
+        isSaving = false;
+    }
+
+    private async Task SaveLocation()
+    {
+        try
+        {
+            isSaving = true;
+            
+            if (editingLocation == null)
+            {
+                // Create new location
+                currentLocation.CreatedDate = DateTime.UtcNow;
+                currentLocation.ModifiedDate = DateTime.UtcNow;
+                await LocationService.CreateLocationAsync(currentLocation);
+            }
+            else
+            {
+                // Update existing location
+                currentLocation.ModifiedDate = DateTime.UtcNow;
+                await LocationService.UpdateLocationAsync(currentLocation);
+            }
+            
+            HideModal();
+            await LoadLocations();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving location: {ex.Message}";
+            isSaving = false;
+        }
     }
 
     private void ShowDeleteConfirm(Location location)
     {
-        // Will implement delete confirmation dialog
+        deletingLocation = location;
+        showDeleteConfirm = true;
+    }
+
+    private void HideDeleteConfirm()
+    {
+        showDeleteConfirm = false;
+        deletingLocation = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (deletingLocation != null && userId != null)
+        {
+            try
+            {
+                await LocationService.DeleteLocationAsync(deletingLocation.Id, userId);
+                HideDeleteConfirm();
+                await LoadLocations();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error deleting location: {ex.Message}";
+                HideDeleteConfirm();
+            }
+        }
     }
 }

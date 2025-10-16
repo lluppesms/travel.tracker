@@ -1,0 +1,124 @@
+@using TravelTracker.Data.Models
+
+<EditForm Model="Location" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Location Name *</label>
+            <InputText @bind-Value="Location.Name" class="form-control" placeholder="e.g., Yellowstone National Park" />
+            <ValidationMessage For="@(() => Location.Name)" />
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Location Type *</label>
+            <InputSelect @bind-Value="Location.LocationType" class="form-select">
+                <option value="">Select type...</option>
+                <option value="National Park">National Park</option>
+                <option value="RV Park">RV Park</option>
+                <option value="Hotel/Motel">Hotel/Motel</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="Attraction">Attraction</option>
+                <option value="Other">Other</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => Location.LocationType)" />
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <label class="form-label">Address *</label>
+            <InputText @bind-Value="Location.Address" class="form-control" placeholder="Street address" />
+            <ValidationMessage For="@(() => Location.Address)" />
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-5 mb-3">
+            <label class="form-label">City</label>
+            <InputText @bind-Value="Location.City" class="form-control" />
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <label class="form-label">State *</label>
+            <InputText @bind-Value="Location.State" class="form-control" placeholder="e.g., WY" maxlength="2" />
+            <ValidationMessage For="@(() => Location.State)" />
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Zip Code</label>
+            <InputText @bind-Value="Location.ZipCode" class="form-control" />
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Latitude</label>
+            <InputNumber @bind-Value="Location.Latitude" class="form-control" step="0.000001" />
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Longitude</label>
+            <InputNumber @bind-Value="Location.Longitude" class="form-control" step="0.000001" />
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Start Date *</label>
+            <InputDate @bind-Value="Location.StartDate" class="form-control" />
+            <ValidationMessage For="@(() => Location.StartDate)" />
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <label class="form-label">End Date</label>
+            <InputDate @bind-Value="EndDate" class="form-control" />
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Rating</label>
+            <InputSelect @bind-Value="Location.Rating" class="form-select">
+                <option value="0">No rating</option>
+                <option value="1">⭐ 1 Star</option>
+                <option value="2">⭐⭐ 2 Stars</option>
+                <option value="3">⭐⭐⭐ 3 Stars</option>
+                <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+            </InputSelect>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <label class="form-label">Comments</label>
+            <InputTextArea @bind-Value="Location.Comments" class="form-control" rows="3" placeholder="Your thoughts about this location..." />
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">@(IsEdit ? "Update" : "Create") Location</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public Location Location { get; set; } = new();
+    
+    [Parameter]
+    public bool IsEdit { get; set; }
+    
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+    
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+    
+    private DateTime? EndDate
+    {
+        get => Location.EndDate;
+        set => Location.EndDate = value;
+    }
+}
