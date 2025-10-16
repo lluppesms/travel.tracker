@@ -26,18 +26,19 @@ public class UserService : IUserService
     public async Task<User> GetOrCreateUserAsync(string entraIdUserId, string username, string email)
     {
         var user = await _userRepository.GetByEntraIdAsync(entraIdUserId);
-        
+
         if (user == null)
         {
             user = new User
             {
+                Id = entraIdUserId,
                 EntraIdUserId = entraIdUserId,
                 Username = username,
                 Email = email,
                 CreatedDate = DateTime.UtcNow,
                 LastLoginDate = DateTime.UtcNow
             };
-            
+
             user = await _userRepository.CreateAsync(user);
         }
         else

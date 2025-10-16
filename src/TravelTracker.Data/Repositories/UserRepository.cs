@@ -31,25 +31,39 @@ public class UserRepository : IUserRepository
 
     public async Task<Models.User?> GetByEntraIdAsync(string entraIdUserId)
     {
-        var query = new QueryDefinition("SELECT * FROM c WHERE c.entraIdUserId = @entraIdUserId")
-            .WithParameter("@entraIdUserId", entraIdUserId);
-
-        var iterator = _container.GetItemQueryIterator<Models.User>(query);
-
-        while (iterator.HasMoreResults)
+        try
         {
-            var response = await iterator.ReadNextAsync();
-            return response.FirstOrDefault();
-        }
+            var query = new QueryDefinition("SELECT * FROM c WHERE c.entraIdUserId = @entraIdUserId")
+                .WithParameter("@entraIdUserId", entraIdUserId);
 
+            var iterator = _container.GetItemQueryIterator<Models.User>(query);
+
+            while (iterator.HasMoreResults)
+            {
+                var response = await iterator.ReadNextAsync();
+                return response.FirstOrDefault();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetByEntraIdAsync: {ex.Message}");
+        }
         return null;
     }
 
     public async Task<Models.User> CreateAsync(Models.User user)
     {
-        user.CreatedDate = DateTime.UtcNow;
-        var response = await _container.CreateItemAsync(user, new PartitionKey(user.Id));
-        return response.Resource;
+        try
+        {
+            user.CreatedDate = DateTime.UtcNow;
+            var response = await _container.CreateItemAsync(user, new PartitionKey(user.Id));
+            return response.Resource;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetByEntraIdAsync: {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<Models.User> UpdateAsync(Models.User user)
