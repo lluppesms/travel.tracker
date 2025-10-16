@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.UI;
 using TravelTracker.Components;
 using TravelTracker.Data.Configuration;
 using TravelTracker.Data.Repositories;
@@ -9,6 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add configuration
 builder.Services.Configure<CosmosDbSettings>(builder.Configuration.GetSection("CosmosDb"));
+
+// Add authentication with Azure AD
+builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
+
+// Add authorization
+builder.Services.AddAuthorization();
 
 // Add Cosmos DB client
 var cosmosConnectionString = builder.Configuration["CosmosDb:ConnectionString"];
@@ -34,6 +44,10 @@ builder.Services.AddScoped<INationalParkService, NationalParkService>();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add controller support for authentication UI
+builder.Services.AddControllersWithViews()
+    .AddMicrosoftIdentityUI();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -46,6 +60,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 
