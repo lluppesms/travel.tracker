@@ -57,7 +57,7 @@ The Travel Tracker application is a new Blazor web application that enables user
 
 #### Technology Stack
 - **Framework:** Blazor Server/WebAssembly hybrid (.NET 8/9)
-- **Database:** Azure SQL Database
+- **Database:** Azure Cosmos DB (NoSQL)
 - **Authentication:** Azure Active Directory (Entra ID)
 - **Maps:** Azure Maps
 - **Hosting:** Azure App Service
@@ -203,12 +203,12 @@ This phase is designed for migrating existing applications. Since Travel Tracker
 ### Backend
 - **Language:** C# (.NET 8 or .NET 9)
 - **Framework:** ASP.NET Core
-- **ORM:** Entity Framework Core
+- **Data Access:** Azure Cosmos DB SDK for .NET
 - **Authentication:** Microsoft.Identity.Web
 
 ### Infrastructure
 - **Hosting:** Azure App Service
-- **Database:** Azure SQL Database
+- **Database:** Azure Cosmos DB (NoSQL)
 - **Maps:** Azure Maps
 - **Monitoring:** Application Insights
 - **Secrets:** Azure Key Vault
@@ -235,9 +235,9 @@ Business Logic Services
     ↓
 Repository Layer
     ↓
-Entity Framework Core
+Cosmos DB SDK
     ↓
-Azure SQL Database
+Azure Cosmos DB
 
 Integration Points:
 - Azure AD (Entra ID) → Authentication
@@ -285,13 +285,13 @@ Integration Points:
 
 **Development Environment:** ~$24/month
 - App Service (B1): $13
-- Azure SQL (Basic): $5
+- Azure Cosmos DB (Serverless): $5
 - Application Insights: $5
 - Other services: $1
 
-**Production Environment:** ~$292/month
+**Production Environment:** ~$166/month
 - App Service (S1): $70
-- Azure SQL (S2): $150
+- Azure Cosmos DB (400 RU/s): $24
 - Application Insights: $50
 - Other services: $22
 
@@ -407,9 +407,9 @@ None yet - this is the initial planning phase.
 ### Phase 3 Preparation
 Once approved, the next phase will:
 1. Create the Blazor application structure
-2. Set up Entity Framework Core with initial migrations
+2. Set up Cosmos DB SDK and create containers
 3. Implement authentication with Azure AD
-4. Build the core data layer
+4. Build the core data layer with repository pattern
 5. Begin UI development
 
 ### Recommended Command Flow

@@ -43,7 +43,7 @@ Start by reading the project status report at `reports/Report-Status.md` to unde
 
    - Authentication method (cookie-based vs Azure AD)
 
-   - Current hosting configuration (local vs Azure)- **Database Configuration**: Confirm Entity Framework setup and database provider- **Technology Stack**: ASP.NET Core MVC (.NET 8), Entity Framework Core, SQL Server LocalDBAsk the user for a screenshot of the page they want to build PlayWright testing for
+   - Current hosting configuration (local vs Azure)- **Database Configuration**: Confirm Cosmos DB setup and SDK configuration- **Technology Stack**: ASP.NET Core (.NET 8/9), Blazor, Azure Cosmos DB (NoSQL)Ask the user for a screenshot of the page they want to build PlayWright testing for
 
 
 

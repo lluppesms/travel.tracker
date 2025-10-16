@@ -33,7 +33,7 @@ This project is currently in the planning phase. Comprehensive planning document
 
 - **Frontend:** Blazor (Server + WebAssembly)
 - **Backend:** C# / ASP.NET Core (.NET 8/9)
-- **Database:** Azure SQL Database
+- **Database:** Azure Cosmos DB (NoSQL)
 - **Authentication:** Azure AD (Entra ID)
 - **Maps:** Azure Maps
 - **Hosting:** Azure App Service

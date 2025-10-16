@@ -91,7 +91,7 @@ The Travel Tracker application follows a 6-phase development approach:
 ### Technology Stack
 - **Frontend:** Blazor (Server + WebAssembly)
 - **Backend:** C# / ASP.NET Core (.NET 8/9)
-- **Database:** Azure SQL Database
+- **Database:** Azure Cosmos DB (NoSQL)
 - **Authentication:** Azure AD (Entra ID)
 - **Maps:** Azure Maps
 - **Hosting:** Azure App Service
@@ -105,7 +105,7 @@ The Travel Tracker application follows a 6-phase development approach:
 
 ### Estimated Costs
 - **Development:** ~$24/month
-- **Production:** ~$292/month
+- **Production:** ~$166/month
 
 ---
 
@@ -141,7 +141,7 @@ After reviewing and approving these planning documents:
 
 2. **Initialize project**
    - Create Blazor application structure
-   - Set up Entity Framework Core
+   - Set up Cosmos DB SDK and data access layer
    - Implement authentication
 
 3. **Begin development**
