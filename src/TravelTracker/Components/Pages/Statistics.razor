@@ -1,8 +1,11 @@
 @page "/statistics"
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject ILocationService LocationService
 @inject INationalParkService NationalParkService
+@inject IAuthenticationService AuthenticationService
 
 <PageTitle>Statistics - Travel Tracker</PageTitle>
 
@@ -216,7 +219,7 @@
 @code {
     private bool isLoading = false;
     private string errorMessage = string.Empty;
-    private const string TEST_USER_ID = "test-user-123"; // Temporary until authentication is implemented
+    private string currentUserId = string.Empty;
 
     private int totalLocations = 0;
     private int statesVisited = 0;
@@ -231,6 +234,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        currentUserId = AuthenticationService.GetCurrentUserId();
         await LoadStatistics();
     }
 
@@ -242,11 +246,11 @@
             errorMessage = string.Empty;
 
             // Get all locations for the user
-            var locations = (await LocationService.GetAllLocationsAsync(TEST_USER_ID)).ToList();
+            var locations = (await LocationService.GetAllLocationsAsync(currentUserId)).ToList();
             totalLocations = locations.Count;
 
             // Calculate states visited
-            stateStats = await LocationService.GetLocationsByStateCountAsync(TEST_USER_ID);
+            stateStats = await LocationService.GetLocationsByStateCountAsync(currentUserId);
             statesVisited = stateStats.Count;
             stateProgressPercent = statesVisited > 0 ? (statesVisited / 50.0 * 100) : 0;
 
@@ -266,7 +270,7 @@
             // Get national parks visited count
             try
             {
-                var visitedParks = await NationalParkService.GetVisitedParksAsync(TEST_USER_ID);
+                var visitedParks = await NationalParkService.GetVisitedParksAsync(currentUserId);
                 nationalParksVisited = visitedParks.Count();
                 parkProgressPercent = nationalParksVisited > 0 ? (nationalParksVisited / 63.0 * 100) : 0;
             }
