@@ -1,0 +1,58 @@
+@page "/map"
+
+<PageTitle>Map - Travel Tracker</PageTitle>
+
+<h1>Interactive Map</h1>
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading">🗺️ Map Visualization</h4>
+                <p>Visualize your travels on an interactive Azure Map with multiple viewing modes.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">View Mode</h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group-vertical w-100" role="group">
+                        <button type="button" class="btn btn-outline-primary" disabled>
+                            📅 Date Range
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" disabled>
+                            🗺️ State Overview
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" disabled>
+                            🏞️ National Parks
+                        </button>
+                    </div>
+                    
+                    <hr />
+                    
+                    <h6>Filters</h6>
+                    <p class="text-muted small">Date range, location type, and rating filters will be available here.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body" style="min-height: 600px;">
+                    <div class="d-flex align-items-center justify-content-center" style="height: 500px;">
+                        <div class="text-center">
+                            <h3 class="text-muted">🗺️</h3>
+                            <p class="text-muted">Azure Maps integration coming soon</p>
+                            <p class="text-muted small">This will display an interactive map with your travel locations</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
