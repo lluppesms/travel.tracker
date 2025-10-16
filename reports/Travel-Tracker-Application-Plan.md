@@ -128,12 +128,13 @@ A personalized, secure, and visually rich way to document and reflect on travel 
 #### NFR2: Scalability
 - Support 1,000 concurrent users
 - Handle data growth over time
-- Efficient database queries with proper indexing
+- Efficient database queries with partition key design and indexing
+- Automatic scaling with Cosmos DB serverless or provisioned throughput
 
 #### NFR3: Security
 - HTTPS for all communications
 - Encrypted data at rest
-- SQL injection prevention
+- NoSQL injection prevention
 - XSS protection
 - CSRF protection
 
@@ -179,8 +180,8 @@ A personalized, secure, and visually rich way to document and reflect on travel 
 ┌─────────────────────────────────────────────────────────────┐
 │                    Data & Services Layer                     │
 │  ┌──────────────┐  ┌───────────────┐  ┌─────────────────┐  │
-│  │  Azure SQL   │  │  Entra ID     │  │   Azure Maps    │  │
-│  │  Database    │  │  (Auth)       │  │   Service       │  │
+│  │ Azure Cosmos │  │  Entra ID     │  │   Azure Maps    │  │
+│  │      DB      │  │  (Auth)       │  │   Service       │  │
 │  └──────────────┘  └───────────────┘  └─────────────────┘  │
 │  ┌──────────────┐  ┌───────────────┐  ┌─────────────────┐  │
 │  │ Application  │  │  Azure Blob   │  │  Azure Key      │  │
@@ -202,14 +203,14 @@ A personalized, secure, and visually rich way to document and reflect on travel 
 - **Language:** C# (.NET 8 or .NET 9)
 - **Framework:** ASP.NET Core
 - **API Pattern:** RESTful Web APIs
-- **ORM:** Entity Framework Core
+- **Data Access:** Azure Cosmos DB SDK for .NET
 - **Authentication:** Microsoft.Identity.Web (Entra ID)
 - **Logging:** Serilog with Application Insights sink
 
 #### Database
-- **Primary Database:** Azure SQL Database
-- **Schema Management:** EF Core Migrations
-- **Backup:** Automated Azure SQL backups
+- **Primary Database:** Azure Cosmos DB (NoSQL)
+- **Schema Management:** Schema-less NoSQL design with versioning
+- **Backup:** Automated Azure Cosmos DB backups
 
 #### Azure Services
 - **Hosting:** Azure App Service (Linux or Windows)
@@ -231,130 +232,103 @@ A personalized, secure, and visually rich way to document and reflect on travel 
 
 ## Data Model
 
-### Entity Relationship Diagram
+### Cosmos DB Container Design
+
+Azure Cosmos DB uses a NoSQL document model. The application will use the following containers with appropriate partition keys for optimal performance and data isolation.
+
+#### Container Structure
 
 ```
-┌─────────────────────┐
-│       Users         │
-├─────────────────────┤
-│ Id (PK)             │
-│ Username            │
-│ Email               │
-│ EntraIdUserId       │
-│ CreatedDate         │
-│ LastLoginDate       │
-└─────────────────────┘
-          │ 1
-          │
-          │ *
-┌─────────────────────┐
-│     Locations       │
-├─────────────────────┤
-│ Id (PK)             │
-│ UserId (FK)         │
-│ Name                │
-│ LocationType        │
-│ Address             │
-│ Latitude            │
-│ Longitude           │
-│ StartDate           │
-│ EndDate             │
-│ Rating              │
-│ Comments            │
-│ State               │
-│ City                │
-│ CreatedDate         │
-│ ModifiedDate        │
-└─────────────────────┘
-          │ 1
-          │
-          │ *
-┌─────────────────────┐
-│    LocationTags     │
-├─────────────────────┤
-│ Id (PK)             │
-│ LocationId (FK)     │
-│ Tag                 │
-└─────────────────────┘
+Database: TravelTrackerDB
 
-┌─────────────────────┐
-│  NationalParks      │ (Reference Data)
-├─────────────────────┤
-│ Id (PK)             │
-│ Name                │
-│ State               │
-│ Latitude            │
-│ Longitude           │
-│ Description         │
-└─────────────────────┘
+Container: users
+├─ Partition Key: /id
+└─ Documents: User profiles
+
+Container: locations
+├─ Partition Key: /userId
+└─ Documents: Location records with embedded tags
+
+Container: nationalparks
+├─ Partition Key: /state
+└─ Documents: Reference data for national parks
 ```
 
-### Database Tables
+### Document Schemas
 
-#### Users Table
-```sql
-CREATE TABLE Users (
-    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    Username NVARCHAR(100) NOT NULL UNIQUE,
-    Email NVARCHAR(255) NOT NULL UNIQUE,
-    EntraIdUserId NVARCHAR(255) NOT NULL UNIQUE,
-    CreatedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    LastLoginDate DATETIME2,
-    INDEX IX_Users_EntraIdUserId (EntraIdUserId),
-    INDEX IX_Users_Email (Email)
-);
+#### Users Container
+```json
+{
+  "id": "guid-string",
+  "type": "user",
+  "username": "string",
+  "email": "string",
+  "entraIdUserId": "string",
+  "createdDate": "ISO-8601-datetime",
+  "lastLoginDate": "ISO-8601-datetime",
+  "_partitionKey": "id"
+}
 ```
 
-#### Locations Table
-```sql
-CREATE TABLE Locations (
-    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    UserId UNIQUEIDENTIFIER NOT NULL,
-    Name NVARCHAR(255) NOT NULL,
-    LocationType NVARCHAR(50) NOT NULL,
-    Address NVARCHAR(500),
-    City NVARCHAR(100),
-    State NVARCHAR(2),
-    ZipCode NVARCHAR(10),
-    Latitude DECIMAL(10, 8) NOT NULL,
-    Longitude DECIMAL(11, 8) NOT NULL,
-    StartDate DATE NOT NULL,
-    EndDate DATE,
-    Rating INT CHECK (Rating >= 1 AND Rating <= 5),
-    Comments NVARCHAR(MAX),
-    CreatedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    ModifiedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE,
-    INDEX IX_Locations_UserId (UserId),
-    INDEX IX_Locations_StartDate (StartDate),
-    INDEX IX_Locations_State (State),
-    INDEX IX_Locations_LocationType (LocationType)
-);
+**Indexing Strategy:**
+- Automatic indexing on all properties
+- Composite index on `entraIdUserId` for authentication queries
+
+#### Locations Container
+```json
+{
+  "id": "guid-string",
+  "type": "location",
+  "userId": "guid-string",
+  "name": "string",
+  "locationType": "string",
+  "address": "string",
+  "city": "string",
+  "state": "string (2-letter code)",
+  "zipCode": "string",
+  "latitude": number,
+  "longitude": number,
+  "startDate": "ISO-8601-date",
+  "endDate": "ISO-8601-date",
+  "rating": number (1-5),
+  "comments": "string",
+  "tags": ["array", "of", "strings"],
+  "createdDate": "ISO-8601-datetime",
+  "modifiedDate": "ISO-8601-datetime",
+  "_partitionKey": "userId"
+}
 ```
 
-#### LocationTags Table
-```sql
-CREATE TABLE LocationTags (
-    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    LocationId UNIQUEIDENTIFIER NOT NULL,
-    Tag NVARCHAR(50) NOT NULL,
-    FOREIGN KEY (LocationId) REFERENCES Locations(Id) ON DELETE CASCADE,
-    INDEX IX_LocationTags_LocationId (LocationId)
-);
+**Indexing Strategy:**
+- Partition key: `userId` (ensures all user locations are co-located)
+- Composite indexes:
+  - `userId` + `startDate` (for date-range queries)
+  - `userId` + `state` (for state filtering)
+  - `userId` + `locationType` (for type filtering)
+- Range index on `startDate`, `endDate`, `rating`
+
+**Benefits of embedding tags:**
+- Tags are embedded as an array within location documents
+- Eliminates need for separate container and joins
+- Better performance for queries
+
+#### NationalParks Container (Reference Data)
+```json
+{
+  "id": "string",
+  "type": "nationalpark",
+  "name": "string",
+  "state": "string (2-letter code)",
+  "latitude": number,
+  "longitude": number,
+  "description": "string",
+  "_partitionKey": "state"
+}
 ```
 
-#### NationalParks Table (Reference Data)
-```sql
-CREATE TABLE NationalParks (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(255) NOT NULL,
-    State NVARCHAR(2) NOT NULL,
-    Latitude DECIMAL(10, 8) NOT NULL,
-    Longitude DECIMAL(11, 8) NOT NULL,
-    Description NVARCHAR(MAX),
-    INDEX IX_NationalParks_State (State)
-);
-```
+**Indexing Strategy:**
+- Partition key: `state` (distributes parks across states)
+- Automatic indexing on all properties
 
 ### JSON Import Format
 
@@ -448,9 +422,9 @@ CREATE TABLE NationalParks (
 │   ├── IUserRepository.cs
 │   └── INationalParkRepository.cs
 └── /Implementation
-    ├── LocationRepository.cs
-    ├── UserRepository.cs
-    └── NationalParkRepository.cs
+    ├── LocationRepository.cs (Cosmos DB SDK)
+    ├── UserRepository.cs (Cosmos DB SDK)
+    └── NationalParkRepository.cs (Cosmos DB SDK)
 
 /API/Controllers
 ├── LocationsController.cs
@@ -475,14 +449,15 @@ CREATE TABLE NationalParks (
   - Always On enabled
   - Application Insights integration
 
-#### 2. Azure SQL Database
-- **Tier:** Basic (dev), Standard S2+ (production)
+#### 2. Azure Cosmos DB
+- **API:** NoSQL (Core SQL API)
+- **Tier:** Serverless (dev), Provisioned throughput (production)
 - **Features:**
-  - Automated backups (7-day retention dev, 30-day production)
-  - Point-in-time restore
-  - Geo-replication (production)
-  - Firewall rules for App Service
-  - Transparent data encryption
+  - Automated backups (continuous backup with point-in-time restore)
+  - Global distribution (production)
+  - Automatic and instant scalability
+  - Private endpoint support
+  - Encryption at rest and in transit
 
 #### 3. Azure Active Directory (Entra ID)
 - **Purpose:** User authentication and authorization
@@ -568,9 +543,9 @@ CREATE TABLE NationalParks (
 
 2. **Data Protection:**
    - All data encrypted in transit (HTTPS/TLS 1.2+)
-   - Data encrypted at rest (Azure SQL TDE)
-   - User data isolation (row-level security)
-   - SQL injection prevention (parameterized queries)
+   - Data encrypted at rest (Azure Cosmos DB encryption)
+   - User data isolation (partition key-based isolation)
+   - NoSQL injection prevention (parameterized queries)
 
 3. **Application Security:**
    - CSRF protection
@@ -816,12 +791,12 @@ GET    /api/nationalparks/{id}
 - [ ] Set up CI/CD pipeline
 - [ ] Configure Azure Key Vault
 - [ ] Set up Application Insights
-- [ ] Create database schema and migrations
+- [ ] Create Cosmos DB database and containers
 - [ ] Implement authentication with Entra ID
 
 #### Week 2-3: Core Data Layer
-- [ ] Implement Entity Framework Core models
-- [ ] Create repository pattern implementation
+- [ ] Implement Cosmos DB document models
+- [ ] Create repository pattern implementation with Cosmos DB SDK
 - [ ] Build data access services
 - [ ] Implement basic CRUD operations
 - [ ] Add unit tests for data layer
@@ -1065,7 +1040,7 @@ jobs:
    - Run tests
    - Package application
    - Deploy to Azure App Service
-   - Run database migrations
+   - Initialize Cosmos DB containers and seed data
    - Verify deployment
 
 3. **Post-Deployment:**
@@ -1079,7 +1054,7 @@ jobs:
 - Deployment slots for zero-downtime deployment
 - Automated rollback on health check failure
 - Manual rollback capability
-- Database migration rollback scripts
+- Cosmos DB automatic backup and point-in-time restore capability
 - Documented rollback procedures
 
 ---
@@ -1092,7 +1067,7 @@ jobs:
 | Service | SKU | Estimated Cost |
 |---------|-----|----------------|
 | App Service | B1 Basic | $13 |
-| Azure SQL Database | Basic | $5 |
+| Azure Cosmos DB | Serverless | $5 |
 | Application Insights | Pay-as-you-go | $5 |
 | Azure Maps | S0 (25K transactions) | $0 (included) |
 | Key Vault | Standard | $1 |
@@ -1102,13 +1077,13 @@ jobs:
 | Service | SKU | Estimated Cost |
 |---------|-----|----------------|
 | App Service | S1 Standard | $70 |
-| Azure SQL Database | S2 Standard | $150 |
+| Azure Cosmos DB | Provisioned (400 RU/s) | $24 |
 | Application Insights | Pay-as-you-go | $50 |
 | Azure Maps | S0 (100K transactions) | $0 |
 | Key Vault | Standard | $1 |
 | Blob Storage | LRS (1GB) | $1 |
 | Azure CDN (Optional) | Standard | $20 |
-| **Total** | | **~$292/month** |
+| **Total** | | **~$166/month** |
 
 ### Cost Optimization Strategies
 
