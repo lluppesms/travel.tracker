@@ -1,4 +1,13 @@
 @page "/map"
+@using TravelTracker.Data.Models
+@using TravelTracker.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+@implements IAsyncDisposable
+@attribute [Authorize]
+@inject ILocationService LocationService
+@inject IAuthenticationService AuthenticationService
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
 
 <PageTitle>Map - Travel Tracker</PageTitle>
 
@@ -14,6 +23,14 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+        </div>
+    }
+
     <div class="row mt-4">
         <div class="col-md-3">
             <div class="card">
@@ -22,13 +39,19 @@
                 </div>
                 <div class="card-body">
                     <div class="btn-group-vertical w-100" role="group">
-                        <button type="button" class="btn btn-outline-primary" disabled>
+                        <button type="button" 
+                                class="btn @(viewMode == ViewMode.DateRange ? "btn-primary" : "btn-outline-primary")" 
+                                @onclick="() => ChangeViewMode(ViewMode.DateRange)">
                             📅 Date Range
                         </button>
-                        <button type="button" class="btn btn-outline-primary" disabled>
+                        <button type="button" 
+                                class="btn @(viewMode == ViewMode.StateOverview ? "btn-primary" : "btn-outline-primary")" 
+                                @onclick="() => ChangeViewMode(ViewMode.StateOverview)">
                             🗺️ State Overview
                         </button>
-                        <button type="button" class="btn btn-outline-primary" disabled>
+                        <button type="button" 
+                                class="btn @(viewMode == ViewMode.NationalParks ? "btn-primary" : "btn-outline-primary")" 
+                                @onclick="() => ChangeViewMode(ViewMode.NationalParks)">
                             🏞️ National Parks
                         </button>
                     </div>
@@ -36,7 +59,44 @@
                     <hr />
                     
                     <h6>Filters</h6>
-                    <p class="text-muted small">Date range, location type, and rating filters will be available here.</p>
+                    @if (viewMode == ViewMode.DateRange)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" @bind="filterStartDate" @bind:event="oninput" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" @bind="filterEndDate" @bind:event="oninput" />
+                        </div>
+                    }
+                    
+                    @if (viewMode == ViewMode.StateOverview)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">State Filter</label>
+                            <select class="form-select" @bind="filterState">
+                                <option value="">All States</option>
+                                @foreach (var state in visitedStates.OrderBy(s => s))
+                                {
+                                    <option value="@state">@state</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    
+                    <button class="btn btn-sm btn-primary w-100" @onclick="ApplyFilters">
+                        Apply Filters
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary w-100 mt-2" @onclick="ClearFilters">
+                        Clear Filters
+                    </button>
+
+                    <hr />
+                    
+                    <h6>Statistics</h6>
+                    <p class="text-muted small mb-1">Locations shown: @filteredLocations.Count</p>
+                    <p class="text-muted small mb-1">States visited: @visitedStates.Count / 50</p>
                 </div>
             </div>
         </div>
@@ -44,15 +104,247 @@
         <div class="col-md-9">
             <div class="card">
                 <div class="card-body" style="min-height: 600px;">
-                    <div class="d-flex align-items-center justify-content-center" style="height: 500px;">
-                        <div class="text-center">
-                            <h3 class="text-muted">🗺️</h3>
-                            <p class="text-muted">Azure Maps integration coming soon</p>
-                            <p class="text-muted small">This will display an interactive map with your travel locations</p>
+                    @if (isLoading)
+                    {
+                        <div class="d-flex align-items-center justify-content-center" style="height: 500px;">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading map data...</p>
+                            </div>
                         </div>
-                    </div>
+                    }
+                    else if (string.IsNullOrEmpty(azureMapsKey))
+                    {
+                        <div class="d-flex align-items-center justify-content-center" style="height: 500px;">
+                            <div class="text-center">
+                                <h3 class="text-muted">🗺️</h3>
+                                <p class="text-muted">Azure Maps is not configured</p>
+                                <p class="text-muted small">Please configure Azure Maps subscription key in appsettings.json to enable map visualization.</p>
+                                <p class="text-muted small mt-3">Meanwhile, showing location data:</p>
+                                <div class="table-responsive mt-3" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Location</th>
+                                                <th>Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var loc in filteredLocations.Take(20))
+                                            {
+                                                <tr>
+                                                    <td>@loc.Name</td>
+                                                    <td>@loc.City, @loc.State</td>
+                                                    <td>@loc.StartDate.ToString("MM/dd/yyyy")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div id="azureMap" style="height: 600px; width: 100%;"></div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@code {
+    private enum ViewMode
+    {
+        DateRange,
+        StateOverview,
+        NationalParks
+    }
+
+    private ViewMode viewMode = ViewMode.DateRange;
+    private List<Location> allLocations = new();
+    private List<Location> filteredLocations = new();
+    private HashSet<string> visitedStates = new();
+    private bool isLoading = false;
+    private bool isMapInitialized = false;
+    private string errorMessage = string.Empty;
+    private string currentUserId = string.Empty;
+    private string? azureMapsKey;
+    
+    // Filters
+    private DateTime? filterStartDate;
+    private DateTime? filterEndDate;
+    private string filterState = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUserId = AuthenticationService.GetCurrentUserId();
+        azureMapsKey = Configuration["AzureMaps:SubscriptionKey"];
+        await LoadLocations();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !string.IsNullOrEmpty(azureMapsKey))
+        {
+            await InitializeMap();
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        try
+        {
+            // Initialize map centered on US
+            var result = await JSRuntime.InvokeAsync<bool>("initializeAzureMap", azureMapsKey, 39.8283, -98.5795, 4);
+            if (result)
+            {
+                isMapInitialized = true;
+                await UpdateMapMarkers();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to initialize map: {ex.Message}";
+            Console.WriteLine($"Map initialization error: {ex}");
+        }
+    }
+
+    private async Task UpdateMapMarkers()
+    {
+        if (!isMapInitialized || string.IsNullOrEmpty(azureMapsKey))
+        {
+            return;
+        }
+
+        try
+        {
+            var markers = filteredLocations
+                .Where(l => l.Latitude != 0 && l.Longitude != 0)
+                .Select(l => new
+                {
+                    lat = l.Latitude,
+                    lon = l.Longitude,
+                    name = l.Name,
+                    city = l.City,
+                    state = l.State,
+                    date = l.StartDate.ToString("yyyy-MM-dd"),
+                    locationType = l.LocationType,
+                    rating = l.Rating
+                })
+                .ToArray();
+
+            await JSRuntime.InvokeVoidAsync("updateAzureMapMarkers", (object)markers);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update map markers: {ex.Message}";
+            Console.WriteLine($"Map marker update error: {ex}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (isMapInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("disposeAzureMap");
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+    }
+
+    private async Task LoadLocations()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            
+            allLocations = (await LocationService.GetAllLocationsAsync(currentUserId)).ToList();
+            filteredLocations = allLocations;
+            
+            visitedStates = allLocations
+                .Where(l => !string.IsNullOrEmpty(l.State))
+                .Select(l => l.State)
+                .ToHashSet();
+            
+            await ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load locations: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ChangeViewMode(ViewMode newMode)
+    {
+        viewMode = newMode;
+        await ApplyFilters();
+    }
+
+    private async Task ApplyFilters()
+    {
+        filteredLocations = allLocations;
+
+        if (viewMode == ViewMode.DateRange)
+        {
+            if (filterStartDate.HasValue)
+            {
+                filteredLocations = filteredLocations
+                    .Where(l => l.StartDate >= filterStartDate.Value)
+                    .ToList();
+            }
+            if (filterEndDate.HasValue)
+            {
+                filteredLocations = filteredLocations
+                    .Where(l => l.StartDate <= filterEndDate.Value)
+                    .ToList();
+            }
+        }
+        else if (viewMode == ViewMode.StateOverview)
+        {
+            if (!string.IsNullOrEmpty(filterState))
+            {
+                filteredLocations = filteredLocations
+                    .Where(l => l.State == filterState)
+                    .ToList();
+            }
+        }
+        else if (viewMode == ViewMode.NationalParks)
+        {
+            // Filter for locations that are national parks
+            filteredLocations = filteredLocations
+                .Where(l => l.LocationType?.Contains("Park", StringComparison.OrdinalIgnoreCase) == true)
+                .ToList();
+        }
+
+        // If Azure Maps is configured, update the map
+        if (!string.IsNullOrEmpty(azureMapsKey))
+        {
+            await UpdateMapMarkers();
+        }
+
+        StateHasChanged();
+    }
+
+    private Task ClearFilters()
+    {
+        filterStartDate = null;
+        filterEndDate = null;
+        filterState = string.Empty;
+        return ApplyFilters();
+    }
+}

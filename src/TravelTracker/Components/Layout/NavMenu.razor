@@ -1,6 +1,17 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">TravelTracker</a>
+        <AuthorizeView>
+            <Authorized>
+                <span class="text-white">Hello, @context.User.Identity?.Name!</span>
+                <a class="btn btn-sm btn-outline-light ms-2" href="MicrosoftIdentity/Account/SignOut">Logout</a>
+            </Authorized>
+            <NotAuthorized>
+                <a class="btn btn-sm btn-outline-light" href="MicrosoftIdentity/Account/SignIn">Login</a>
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 </div>
 

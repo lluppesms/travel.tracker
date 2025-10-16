@@ -1,4 +1,7 @@
 using Microsoft.Azure.Cosmos;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.UI;
 using TravelTracker.Components;
 using TravelTracker.Data.Configuration;
 using TravelTracker.Data.Repositories;
@@ -9,6 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add configuration
 builder.Services.Configure<CosmosDbSettings>(builder.Configuration.GetSection("CosmosDb"));
+
+// Add authentication
+builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
+
+builder.Services.AddAuthorization();
 
 // Add Cosmos DB client
 var cosmosConnectionString = builder.Configuration["CosmosDb:ConnectionString"];
@@ -29,10 +38,19 @@ builder.Services.AddScoped<INationalParkRepository, NationalParkRepository>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INationalParkService, NationalParkService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+// Add Razor Pages for authentication
+builder.Services.AddRazorPages()
+    .AddMicrosoftIdentityUI();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Add HTTP context accessor for getting authenticated user
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
@@ -46,10 +64,13 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapRazorPages();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

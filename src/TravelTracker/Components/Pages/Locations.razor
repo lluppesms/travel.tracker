@@ -1,7 +1,10 @@
 @page "/locations"
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject ILocationService LocationService
+@inject IAuthenticationService AuthenticationService
 
 <PageTitle>Locations - Travel Tracker</PageTitle>
 
@@ -237,10 +240,11 @@
     private bool isDeleting = false;
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
-    private const string TEST_USER_ID = "test-user-123"; // Temporary until authentication is implemented
+    private string currentUserId = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+        currentUserId = AuthenticationService.GetCurrentUserId();
         await LoadLocations();
     }
 
@@ -250,7 +254,7 @@
         {
             isLoading = true;
             errorMessage = string.Empty;
-            var result = await LocationService.GetAllLocationsAsync(TEST_USER_ID);
+            var result = await LocationService.GetAllLocationsAsync(currentUserId);
             locations = result.ToList();
         }
         catch (Exception ex)
@@ -268,7 +272,7 @@
     {
         currentLocation = new Location 
         { 
-            UserId = TEST_USER_ID,
+            UserId = currentUserId,
             StartDate = DateTime.Today
         };
         isEditMode = false;

@@ -125,24 +125,41 @@ This phase is designed for migrating existing applications. Since Travel Tracker
 - [x] Display travel metrics (locations, states, parks, days)
 - [x] Add state and location type breakdowns
 - [x] Update Home page with active feature links
-- [x] All builds successful, 3 tests passing
+- [x] All builds successful, 17 tests passing
+
+### Completed Tasks - Week 3 (Authentication & Maps)
+- [x] Implement Azure AD (Entra ID) authentication
+- [x] Add authentication middleware to Program.cs
+- [x] Create AuthenticationService for user context management
+- [x] Protect pages with [Authorize] attribute
+- [x] Update all pages to use authenticated user ID
+- [x] Add login/logout UI to NavMenu
+- [x] Integrate Azure Maps infrastructure
+- [x] Create MapView page with three viewing modes
+- [x] Add date range, state, and location type filters
+- [x] Implement Azure Maps JavaScript SDK integration
+- [x] Create map initialization and marker management
+- [x] Add fallback table view when Azure Maps not configured
+- [x] All builds successful, 17 tests passing
 
 ### In Progress
-- [ ] Implement authentication with Entra ID
-- [ ] Integrate Azure Maps SDK
+- [ ] Configure Azure AD app registration in Azure Portal
+- [ ] Configure Azure Maps service in Azure Portal
 
 ### Remaining Activities
-- [ ] Complete authentication integration (requires Azure resources)
-- [ ] Integrate Azure Maps for visualization
-- [ ] Create map visualization modes (date range, state overview, national parks)
+- [ ] Configure Azure resources (requires Azure subscription)
+  - [ ] Azure AD app registration for authentication
+  - [ ] Azure Maps service for map visualization
+  - [ ] Update appsettings.json with Azure credentials
+- [ ] Add state overlay visualization for state overview mode
 - [ ] Add data validation attributes to models
-- [ ] Implement comprehensive error logging
+- [ ] Implement comprehensive error logging with Serilog
 - [ ] Add comprehensive testing (integration and E2E tests)
 - [ ] Performance optimization
 - [ ] Add data export functionality
 
 **Estimated Duration:** 10-12 weeks  
-**Progress:** ~40% complete (Foundation + Core UI Features)
+**Progress:** ~60% complete (Foundation + Core Features + Authentication + Maps)
 
 ---
 

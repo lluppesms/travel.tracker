@@ -3,7 +3,10 @@
 @using TravelTracker.Services.Interfaces
 @using System.Text.Json
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject ILocationService LocationService
+@inject IAuthenticationService AuthenticationService
 
 <PageTitle>Upload Data - Travel Tracker</PageTitle>
 
@@ -148,8 +151,13 @@
     private List<ValidationResult> validationResults = new();
     private UploadSummary? uploadSummary;
     private LocationUploadData? uploadData;
-    private const string TEST_USER_ID = "test-user-123";
+    private string currentUserId = string.Empty;
     private const long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    protected override void OnInitialized()
+    {
+        currentUserId = AuthenticationService.GetCurrentUserId();
+    }
 
     private Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -290,7 +298,7 @@
                 {
                     var location = new Location
                     {
-                        UserId = TEST_USER_ID,
+                        UserId = currentUserId,
                         Name = locData.Name ?? "Unknown",
                         LocationType = locData.LocationType ?? "Other",
                         Address = locData.Address ?? string.Empty,
