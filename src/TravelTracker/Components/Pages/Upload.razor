@@ -165,9 +165,11 @@
                             <strong>Note:</strong> State information will be extracted from the Address field.
                         </p>
                     }
-                    <button class="btn btn-sm btn-outline-primary" @onclick="DownloadSample">
+                    <a href="@GetSampleFileUrl()" 
+                       download="@GetSampleFileName()" 
+                       class="btn btn-sm btn-outline-primary">
                         <span class="bi bi-download"></span> Download Sample
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -354,11 +356,18 @@
         canUpload = false;
     }
 
-    private void DownloadSample()
+    private string GetSampleFileUrl()
     {
-        // This would be implemented with JS interop to download a sample file
-        // For now, just show a message
-        successMessage = "Sample download functionality will be implemented with JavaScript interop.";
+        return selectedFormat == "json" 
+            ? "/samples/sample-locations.json" 
+            : "/samples/sample-locations.csv";
+    }
+
+    private string GetSampleFileName()
+    {
+        return selectedFormat == "json" 
+            ? "sample-locations.json" 
+            : "sample-locations.csv";
     }
 
     private class DisplayValidationResult
