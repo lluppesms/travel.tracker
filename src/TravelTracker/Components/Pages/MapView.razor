@@ -1,13 +1,13 @@
 @page "/map"
+@rendermode InteractiveServer
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
-@using Microsoft.AspNetCore.Authorization
 @implements IAsyncDisposable
-@attribute [Authorize]
 @inject ILocationService LocationService
 @inject IAuthenticationService AuthenticationService
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
+@inject ILogger<MapView> Logger
 
 <PageTitle>Map - Travel Tracker</PageTitle>
 
@@ -39,25 +39,25 @@
                 </div>
                 <div class="card-body">
                     <div class="btn-group-vertical w-100" role="group">
-                        <button type="button" 
-                                class="btn @(viewMode == ViewMode.DateRange ? "btn-primary" : "btn-outline-primary")" 
+                        <button type="button"
+                                class="btn @(viewMode == ViewMode.DateRange ? "btn-primary" : "btn-outline-primary")"
                                 @onclick="() => ChangeViewMode(ViewMode.DateRange)">
                             📅 Date Range
                         </button>
-                        <button type="button" 
-                                class="btn @(viewMode == ViewMode.StateOverview ? "btn-primary" : "btn-outline-primary")" 
+                        <button type="button"
+                                class="btn @(viewMode == ViewMode.StateOverview ? "btn-primary" : "btn-outline-primary")"
                                 @onclick="() => ChangeViewMode(ViewMode.StateOverview)">
                             🗺️ State Overview
                         </button>
-                        <button type="button" 
-                                class="btn @(viewMode == ViewMode.NationalParks ? "btn-primary" : "btn-outline-primary")" 
+                        <button type="button"
+                                class="btn @(viewMode == ViewMode.NationalParks ? "btn-primary" : "btn-outline-primary")"
                                 @onclick="() => ChangeViewMode(ViewMode.NationalParks)">
                             🏞️ National Parks
                         </button>
                     </div>
-                    
+
                     <hr />
-                    
+
                     <h6>Filters</h6>
                     @if (viewMode == ViewMode.DateRange)
                     {
@@ -70,7 +70,7 @@
                             <input type="date" class="form-control" @bind="filterEndDate" @bind:event="oninput" />
                         </div>
                     }
-                    
+
                     @if (viewMode == ViewMode.StateOverview)
                     {
                         <div class="mb-3">
@@ -84,7 +84,7 @@
                             </select>
                         </div>
                     }
-                    
+
                     <button class="btn btn-sm btn-primary w-100" @onclick="ApplyFilters">
                         Apply Filters
                     </button>
@@ -93,14 +93,14 @@
                     </button>
 
                     <hr />
-                    
+
                     <h6>Statistics</h6>
                     <p class="text-muted small mb-1">Locations shown: @filteredLocations.Count</p>
                     <p class="text-muted small mb-1">States visited: @visitedStates.Count / 50</p>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-9">
             <div class="card">
                 <div class="card-body" style="min-height: 600px;">
@@ -171,10 +171,11 @@
     private HashSet<string> visitedStates = new();
     private bool isLoading = false;
     private bool isMapInitialized = false;
+    private bool afterRenderCalled = false; // Diagnostic flag
     private string errorMessage = string.Empty;
     private string currentUserId = string.Empty;
     private string? azureMapsKey;
-    
+
     // Filters
     private DateTime? filterStartDate;
     private DateTime? filterEndDate;
@@ -182,15 +183,39 @@
 
     protected override async Task OnInitializedAsync()
     {
-        currentUserId = AuthenticationService.GetCurrentUserId();
-        azureMapsKey = Configuration["AzureMaps:SubscriptionKey"];
-        await LoadLocations();
+        try
+        {
+            Logger.LogInformation("MapView.OnInitializedAsync starting");
+            currentUserId = AuthenticationService.GetCurrentUserId() ?? string.Empty;
+            azureMapsKey = Configuration["AzureMaps:SubscriptionKey"];
+            Logger.LogInformation("AzureMaps key present: {HasKey}", !string.IsNullOrEmpty(azureMapsKey));
+            await LoadLocations();
+            Logger.LogInformation("MapView.OnInitializedAsync completed");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unhandled exception in OnInitializedAsync");
+            errorMessage = $"Initialization failed: {ex.Message}";
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !string.IsNullOrEmpty(azureMapsKey))
+        if (!afterRenderCalled)
         {
+            afterRenderCalled = true;
+            Logger.LogInformation("OnAfterRenderAsync invoked. firstRender={FirstRender}", firstRender);
+        }
+
+        // Even if key is missing we still log firstRender to prove lifecycle execution
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(azureMapsKey))
+            {
+                Logger.LogWarning("OnAfterRenderAsync first render: Azure Maps key missing. Map will not initialize.");
+                return;
+            }
+
             await InitializeMap();
         }
     }
@@ -199,18 +224,23 @@
     {
         try
         {
-            // Initialize map centered on US
+            Logger.LogInformation("Initializing Azure Map...");
             var result = await JSRuntime.InvokeAsync<bool>("initializeAzureMap", azureMapsKey, 39.8283, -98.5795, 4);
             if (result)
             {
                 isMapInitialized = true;
+                Logger.LogInformation("Azure Map initialized successfully");
                 await UpdateMapMarkers();
+            }
+            else
+            {
+                Logger.LogWarning("initializeAzureMap returned false");
             }
         }
         catch (Exception ex)
         {
             errorMessage = $"Failed to initialize map: {ex.Message}";
-            Console.WriteLine($"Map initialization error: {ex}");
+            Logger.LogError(ex, "Map initialization error");
         }
     }
 
@@ -218,6 +248,7 @@
     {
         if (!isMapInitialized || string.IsNullOrEmpty(azureMapsKey))
         {
+            Logger.LogDebug("Skipping UpdateMapMarkers. Initialized={Initialized} HasKey={HasKey}", isMapInitialized, !string.IsNullOrEmpty(azureMapsKey));
             return;
         }
 
@@ -238,12 +269,13 @@
                 })
                 .ToArray();
 
+            Logger.LogInformation("Updating map markers. Count={Count}", markers.Length);
             await JSRuntime.InvokeVoidAsync("updateAzureMapMarkers", (object)markers);
         }
         catch (Exception ex)
         {
             errorMessage = $"Failed to update map markers: {ex.Message}";
-            Console.WriteLine($"Map marker update error: {ex}");
+            Logger.LogError(ex, "Map marker update error");
         }
     }
 
@@ -253,12 +285,13 @@
         {
             if (isMapInitialized)
             {
+                Logger.LogInformation("Disposing Azure Map");
                 await JSRuntime.InvokeVoidAsync("disposeAzureMap");
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore disposal errors
+            Logger.LogWarning(ex, "Error during map disposal (ignored)");
         }
     }
 
@@ -268,19 +301,21 @@
         {
             isLoading = true;
             errorMessage = string.Empty;
-            
+
             allLocations = (await LocationService.GetAllLocationsAsync(currentUserId)).ToList();
             filteredLocations = allLocations;
-            
+
             visitedStates = allLocations
                 .Where(l => !string.IsNullOrEmpty(l.State))
                 .Select(l => l.State)
                 .ToHashSet();
-            
+
+            Logger.LogInformation("Loaded locations. Count={Count}", allLocations.Count);
             await ApplyFilters();
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to load locations");
             errorMessage = $"Failed to load locations: {ex.Message}";
         }
         finally
@@ -292,6 +327,7 @@
     private async Task ChangeViewMode(ViewMode newMode)
     {
         viewMode = newMode;
+        Logger.LogInformation("Changed view mode to {Mode}", viewMode);
         await ApplyFilters();
     }
 
@@ -325,13 +361,13 @@
         }
         else if (viewMode == ViewMode.NationalParks)
         {
-            // Filter for locations that are national parks
             filteredLocations = filteredLocations
                 .Where(l => l.LocationType?.Contains("Park", StringComparison.OrdinalIgnoreCase) == true)
                 .ToList();
         }
 
-        // If Azure Maps is configured, update the map
+        Logger.LogDebug("Filters applied. Filtered count={Count}", filteredLocations.Count);
+
         if (!string.IsNullOrEmpty(azureMapsKey))
         {
             await UpdateMapMarkers();
@@ -345,6 +381,7 @@
         filterStartDate = null;
         filterEndDate = null;
         filterState = string.Empty;
+        Logger.LogInformation("Cleared filters");
         return ApplyFilters();
     }
 }
