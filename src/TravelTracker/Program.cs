@@ -46,8 +46,10 @@ var cosmosEndpoint = builder.Configuration["CosmosDb:Endpoint"];
 var visualStudioTenantId = builder.Configuration["VisualStudioTenantId"];
 var cosmosClientOptions = new CosmosClientOptions
 {
-    MaxRetryAttemptsOnRateLimitedRequests = 3,
-    MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30)
+    MaxRetryAttemptsOnRateLimitedRequests = 9,
+    MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30),
+    RequestTimeout = TimeSpan.FromSeconds(10),
+    ConnectionMode = ConnectionMode.Gateway
 };
 //if (!string.IsNullOrEmpty(cosmosConnectionString))
 //{
