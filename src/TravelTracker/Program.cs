@@ -15,30 +15,43 @@ var builder = WebApplication.CreateBuilder(args);
 // Add configuration
 builder.Services.Configure<SqlServerSettings>(builder.Configuration.GetSection("SqlServer"));
 
-// Add authentication
-builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApp(options =>
-    {
-        builder.Configuration.Bind("AzureAd", options);
-        options.ResponseType = OpenIdConnectResponseType.Code;
-        options.UsePkce = true;
-        options.SaveTokens = true;
+// Add authentication only if Azure AD is configured
+var azureAdConfigured = !string.IsNullOrEmpty(builder.Configuration["AzureAd:TenantId"]) &&
+                        !string.IsNullOrEmpty(builder.Configuration["AzureAd:ClientId"]);
 
-        if (!options.Scope.Contains("offline_access", StringComparer.OrdinalIgnoreCase))
-        {
-            options.Scope.Add("offline_access");
-        }
-
-        if (!options.Scope.Contains("User.Read", StringComparer.OrdinalIgnoreCase))
-        {
-            options.Scope.Add("User.Read");
-        }
-    });
-
-builder.Services.AddAuthorization(options =>
+if (azureAdConfigured)
 {
-    options.FallbackPolicy = options.DefaultPolicy;
-});
+    Console.WriteLine("Azure AD configured - enabling authentication");
+    builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+        .AddMicrosoftIdentityWebApp(options =>
+        {
+            builder.Configuration.Bind("AzureAd", options);
+            options.ResponseType = OpenIdConnectResponseType.Code;
+            options.UsePkce = true;
+            options.SaveTokens = true;
+
+            if (!options.Scope.Contains("offline_access", StringComparer.OrdinalIgnoreCase))
+            {
+                options.Scope.Add("offline_access");
+            }
+
+            if (!options.Scope.Contains("User.Read", StringComparer.OrdinalIgnoreCase))
+            {
+                options.Scope.Add("User.Read");
+            }
+        });
+
+    builder.Services.AddAuthorization(options =>
+    {
+        options.FallbackPolicy = options.DefaultPolicy;
+    });
+}
+else
+{
+    Console.WriteLine("Azure AD not configured - running without authentication");
+    builder.Services.AddAuthentication();
+    builder.Services.AddAuthorization();
+}
 
 // Add SQL Server Database Context
 var sqlConnectionString = builder.Configuration["SqlServer:ConnectionString"];
@@ -65,8 +78,15 @@ else
     Console.WriteLine("*******  Please configure SqlServer:ConnectionString *******");
 }
 // Add Razor Pages for authentication
-builder.Services.AddRazorPages()
-    .AddMicrosoftIdentityUI();
+if (azureAdConfigured)
+{
+    builder.Services.AddRazorPages()
+        .AddMicrosoftIdentityUI();
+}
+else
+{
+    builder.Services.AddRazorPages();
+}
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
