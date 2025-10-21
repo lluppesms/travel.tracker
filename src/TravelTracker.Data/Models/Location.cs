@@ -1,43 +1,60 @@
-using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TravelTracker.Data.Models;
 
+[Table("Locations")]
 public class Location
 {
-    [JsonProperty("id")]
+    [Key]
+    [MaxLength(50)]
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    [JsonProperty("type")]
+    
+    [MaxLength(50)]
     public string Type { get; set; } = "location";
-    [JsonProperty("userId")]
+    
+    [Required]
+    [MaxLength(50)]
     public string UserId { get; set; } = string.Empty;
-    [JsonProperty("name")]
+    
+    [Required]
+    [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
-    [JsonProperty("locationType")]
+    
+    [MaxLength(100)]
     public string LocationType { get; set; } = string.Empty;
-    [JsonProperty("address")]
+    
+    [MaxLength(300)]
     public string Address { get; set; } = string.Empty;
-    [JsonProperty("city")]
+    
+    [MaxLength(100)]
     public string City { get; set; } = string.Empty;
-    [JsonProperty("state")]
+    
+    [MaxLength(50)]
     public string State { get; set; } = string.Empty;
-    [JsonProperty("zipCode")]
+    
+    [MaxLength(20)]
     public string ZipCode { get; set; } = string.Empty;
-    [JsonProperty("latitude")]
+    
     public double Latitude { get; set; }
-    [JsonProperty("longitude")]
+    
     public double Longitude { get; set; }
-    [JsonProperty("startDate")]
+    
     public DateTime StartDate { get; set; }
-    [JsonProperty("endDate")]
+    
     public DateTime? EndDate { get; set; }
-    [JsonProperty("rating")]
+    
     public int Rating { get; set; }
-    [JsonProperty("cComments")]
+    
     public string Comments { get; set; } = string.Empty;
-    [JsonProperty("tags")]
+    
+    [NotMapped]
     public List<string> Tags { get; set; } = new();
-    [JsonProperty("createdDate")]
+    
+    [MaxLength(2000)]
+    public string TagsJson { get; set; } = "[]";
+    
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-    [JsonProperty("modifiedDate")]
+    
     public DateTime ModifiedDate { get; set; } = DateTime.UtcNow;
 }

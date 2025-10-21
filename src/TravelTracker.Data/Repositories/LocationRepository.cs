@@ -1,114 +1,114 @@
-using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Options;
-using TravelTracker.Data.Configuration;
+using Microsoft.EntityFrameworkCore;
 using TravelTracker.Data.Models;
+using System.Text.Json;
 
 namespace TravelTracker.Data.Repositories;
 
 public class LocationRepository : ILocationRepository
 {
-    private readonly Container _container;
+    private readonly TravelTrackerDbContext _context;
 
-    public LocationRepository(CosmosClient cosmosClient, IOptions<CosmosDbSettings> settings)
+    public LocationRepository(TravelTrackerDbContext context)
     {
-        var database = cosmosClient.GetDatabase(settings.Value.DatabaseName);
-        _container = database.GetContainer(settings.Value.LocationsContainerName);
+        _context = context;
     }
 
     public async Task<Location?> GetByIdAsync(string id, string userId)
     {
-        try
+        var location = await _context.Locations
+            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
+        
+        if (location != null)
         {
-            var response = await _container.ReadItemAsync<Location>(id, new PartitionKey(userId));
-            return response.Resource;
+            DeserializeTags(location);
         }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return null;
-        }
+        
+        return location;
     }
 
     public async Task<IEnumerable<Location>> GetAllByUserIdAsync(string userId)
     {
-        var query = new QueryDefinition("SELECT * FROM c WHERE c.userId = @userId")
-            .WithParameter("@userId", userId);
-
-        var iterator = _container.GetItemQueryIterator<Location>(query, requestOptions: new QueryRequestOptions
+        var locations = await _context.Locations
+            .Where(l => l.UserId == userId)
+            .ToListAsync();
+        
+        foreach (var location in locations)
         {
-            PartitionKey = new PartitionKey(userId)
-        });
-
-        var results = new List<Location>();
-        while (iterator.HasMoreResults)
-        {
-            var response = await iterator.ReadNextAsync();
-            results.AddRange(response);
+            DeserializeTags(location);
         }
-
-        return results;
+        
+        return locations;
     }
 
     public async Task<IEnumerable<Location>> GetByDateRangeAsync(string userId, DateTime startDate, DateTime endDate)
     {
-        var query = new QueryDefinition(
-            "SELECT * FROM c WHERE c.userId = @userId AND c.startDate >= @startDate AND c.startDate <= @endDate")
-            .WithParameter("@userId", userId)
-            .WithParameter("@startDate", startDate)
-            .WithParameter("@endDate", endDate);
-
-        var iterator = _container.GetItemQueryIterator<Location>(query, requestOptions: new QueryRequestOptions
+        var locations = await _context.Locations
+            .Where(l => l.UserId == userId && l.StartDate >= startDate && l.StartDate <= endDate)
+            .ToListAsync();
+        
+        foreach (var location in locations)
         {
-            PartitionKey = new PartitionKey(userId)
-        });
-
-        var results = new List<Location>();
-        while (iterator.HasMoreResults)
-        {
-            var response = await iterator.ReadNextAsync();
-            results.AddRange(response);
+            DeserializeTags(location);
         }
-
-        return results;
+        
+        return locations;
     }
 
     public async Task<IEnumerable<Location>> GetByStateAsync(string userId, string state)
     {
-        var query = new QueryDefinition("SELECT * FROM c WHERE c.userId = @userId AND c.state = @state")
-            .WithParameter("@userId", userId)
-            .WithParameter("@state", state);
-
-        var iterator = _container.GetItemQueryIterator<Location>(query, requestOptions: new QueryRequestOptions
+        var locations = await _context.Locations
+            .Where(l => l.UserId == userId && l.State == state)
+            .ToListAsync();
+        
+        foreach (var location in locations)
         {
-            PartitionKey = new PartitionKey(userId)
-        });
-
-        var results = new List<Location>();
-        while (iterator.HasMoreResults)
-        {
-            var response = await iterator.ReadNextAsync();
-            results.AddRange(response);
+            DeserializeTags(location);
         }
-
-        return results;
+        
+        return locations;
     }
 
     public async Task<Location> CreateAsync(Location location)
     {
         location.CreatedDate = DateTime.UtcNow;
         location.ModifiedDate = DateTime.UtcNow;
-        var response = await _container.CreateItemAsync(location, new PartitionKey(location.UserId));
-        return response.Resource;
+        _context.Locations.Add(location);
+        await _context.SaveChangesAsync();
+        return location;
     }
 
     public async Task<Location> UpdateAsync(Location location)
     {
         location.ModifiedDate = DateTime.UtcNow;
-        var response = await _container.ReplaceItemAsync(location, location.Id, new PartitionKey(location.UserId));
-        return response.Resource;
+        _context.Locations.Update(location);
+        await _context.SaveChangesAsync();
+        return location;
     }
 
     public async Task DeleteAsync(string id, string userId)
     {
-        await _container.DeleteItemAsync<Location>(id, new PartitionKey(userId));
+        var location = await _context.Locations
+            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
+        
+        if (location != null)
+        {
+            _context.Locations.Remove(location);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    private void DeserializeTags(Location location)
+    {
+        if (!string.IsNullOrEmpty(location.TagsJson))
+        {
+            try
+            {
+                location.Tags = JsonSerializer.Deserialize<List<string>>(location.TagsJson) ?? new List<string>();
+            }
+            catch
+            {
+                location.Tags = new List<string>();
+            }
+        }
     }
 }
