@@ -71,6 +71,7 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<INationalParkService, NationalParkService>();
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+    builder.Services.AddScoped<IDataImportService, DataImportService>();
 }
 else
 {
