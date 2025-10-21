@@ -62,54 +62,54 @@ This guide provides instructions for setting up the required Azure resources for
      - **Directory (tenant) ID:** `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
      - **Client secret:** (copied in step 4)
 
-### 2. Azure Cosmos DB
+### 2. Azure SQL Database
 
-**Purpose:** NoSQL database for storing user data and locations.
+**Purpose:** SQL Server database for storing user data and locations.
 
 #### Setup Steps:
 
-1. **Create Cosmos DB Account**
+1. **Create SQL Server**
    - In Azure Portal, click "Create a resource"
-   - Search for "Azure Cosmos DB"
+   - Search for "SQL Server"
    - Click "Create"
-   - Select "Azure Cosmos DB for NoSQL"
    - Configure:
      - **Resource group:** Create new or use existing
-     - **Account name:** traveltracker-cosmosdb (must be globally unique)
+     - **Server name:** traveltracker-sqlserver (must be globally unique)
      - **Location:** Choose closest to your users
-     - **Capacity mode:** Serverless (for development) or Provisioned throughput
+     - **Authentication method:** Use SQL authentication
+     - **Server admin login:** Choose a username (e.g., sqladmin)
+     - **Password:** Create a strong password
    - Click "Review + Create" then "Create"
 
-2. **Create Database and Containers**
-   - Once deployed, go to the Cosmos DB account
-   - Go to "Data Explorer"
-   - Click "New Database"
-     - **Database id:** TravelTrackerDB
-     - Click "OK"
-   - Create Containers:
-     
-     **Container 1: users**
-     - Database: TravelTrackerDB
-     - Container id: users
-     - Partition key: /id
-     - Click "OK"
-     
-     **Container 2: locations**
-     - Database: TravelTrackerDB
-     - Container id: locations
-     - Partition key: /userId
-     - Click "OK"
-     
-     **Container 3: nationalparks**
-     - Database: TravelTrackerDB
-     - Container id: nationalparks
-     - Partition key: /state
-     - Click "OK"
+2. **Configure Firewall**
+   - Once deployed, go to the SQL server
+   - Go to "Networking" (or "Firewalls and virtual networks")
+   - Configure firewall rules:
+     - **Allow Azure services:** Yes
+     - **Add your client IP:** Click "Add client IP" to allow your development machine
+     - For production, use private endpoints or specific IP ranges
+   - Click "Save"
 
-3. **Get Connection String**
-   - Go to "Keys" in the left menu
-   - Copy the "PRIMARY CONNECTION STRING"
+3. **Create Database**
+   - In the SQL server, go to "SQL databases"
+   - Click "Create database" (or "Add database")
+   - Configure:
+     - **Database name:** TravelTrackerDB
+     - **Compute + storage:** Choose appropriate tier
+       - For development: Basic or S0
+       - For production: S1 or higher based on needs
+   - Click "Review + Create" then "Create"
+
+4. **Get Connection String**
+   - Go to the database (TravelTrackerDB)
+   - Go to "Connection strings" in the left menu
+   - Copy the "ADO.NET (SQL authentication)" connection string
+   - Replace `{your_password}` with the password you created in step 1
    - This will be used in appsettings.json
+
+**Alternative: SQL Server LocalDB or Express for Development**
+- For local development, you can use SQL Server Express or LocalDB instead
+- See [DatabaseSetup.md](DatabaseSetup.md) for detailed instructions
 
 ### 3. Azure Maps
 
@@ -122,7 +122,7 @@ This guide provides instructions for setting up the required Azure resources for
    - Search for "Azure Maps"
    - Click "Create"
    - Configure:
-     - **Resource group:** Use same as Cosmos DB
+     - **Resource group:** Use same as SQL Server
      - **Name:** traveltracker-maps
      - **Pricing tier:** S0 (Standard, pay-as-you-go) or S1
      - **Location:** Choose closest to your users
@@ -166,12 +166,8 @@ After creating all Azure resources, update your `appsettings.json` file:
 
 ```json
 {
-  "CosmosDb": {
-    "ConnectionString": "<YOUR_COSMOS_DB_CONNECTION_STRING>",
-    "DatabaseName": "TravelTrackerDB",
-    "UsersContainerName": "users",
-    "LocationsContainerName": "locations",
-    "NationalParksContainerName": "nationalparks"
+  "SqlServer": {
+    "ConnectionString": "Server=tcp:traveltracker-sqlserver.database.windows.net,1433;Database=TravelTrackerDB;User ID=sqladmin;Password={your_password};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
   },
   "AzureAd": {
     "Instance": "https://login.microsoftonline.com/",
@@ -196,7 +192,7 @@ After creating all Azure resources, update your `appsettings.json` file:
 For better security, especially in production, use environment variables or Azure Key Vault:
 
 ```bash
-export CosmosDb__ConnectionString="<value>"
+export SqlServer__ConnectionString="<value>"
 export AzureAd__ClientSecret="<value>"
 export AzureMaps__SubscriptionKey="<value>"
 ```
@@ -207,8 +203,8 @@ For local development, create an `appsettings.Development.json` file (already in
 
 ```json
 {
-  "CosmosDb": {
-    "ConnectionString": "<LOCAL_OR_DEV_CONNECTION_STRING>"
+  "SqlServer": {
+    "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
   },
   "AzureAd": {
     "ClientSecret": "<DEV_CLIENT_SECRET>"
@@ -242,18 +238,16 @@ For production deployments, configure Managed Identity:
    - Copy the Object ID
 
 2. **Grant Access to Resources**
-   - Cosmos DB: Assign "Cosmos DB Account Reader" role
+   - SQL Server: Add managed identity as a database user with appropriate permissions
    - Key Vault: Add access policy with Get/List secrets permissions
    - Azure Maps: Assign appropriate role
 
-3. **Update Code to Use Managed Identity**
-   ```csharp
-   services.AddSingleton<CosmosClient>(sp =>
-   {
-       var credential = new DefaultAzureCredential();
-       return new CosmosClient("<account-endpoint>", credential);
-   });
-   ```
+3. **Update Connection String for Managed Identity**
+   - For Azure SQL Database with Managed Identity:
+     ```
+     Server=tcp:traveltracker-sqlserver.database.windows.net,1433;Database=TravelTrackerDB;Authentication=Active Directory Default;Encrypt=True;
+     ```
+   - The application will use DefaultAzureCredential to authenticate
 
 ## Testing the Setup
 
@@ -264,12 +258,17 @@ For production deployments, configure Managed Identity:
 3. You should be redirected to Microsoft login
 4. After login, you should see your name in the navigation bar
 
-### Test Cosmos DB
+### Test SQL Server Database
 
-1. Navigate to `/locations` page
-2. Try creating a new location
-3. Verify it appears in the list
-4. Check Data Explorer in Azure Portal to see the data
+1. Ensure the database migration has been applied:
+   ```bash
+   cd src/TravelTracker.Data
+   dotnet ef database update --startup-project ../TravelTracker
+   ```
+2. Navigate to `/locations` page
+3. Try creating a new location
+4. Verify it appears in the list
+5. Check the database using SQL Server Management Studio or Azure Portal to see the data
 
 ### Test Azure Maps
 
@@ -288,13 +287,16 @@ For production deployments, configure Managed Identity:
 - **Error: Unauthorized** - User not authenticated
   - Solution: Check that authentication middleware is properly configured in Program.cs
 
-### Cosmos DB Issues
+### SQL Server Issues
 
-- **Error: Resource Not Found** - Container doesn't exist
-  - Solution: Create the containers as specified in setup steps
+- **Error: Cannot open database** - Database doesn't exist
+  - Solution: Run database migrations using `dotnet ef database update`
 
-- **Error: Insufficient permissions** - Connection string doesn't have right permissions
-  - Solution: Use the PRIMARY CONNECTION STRING from Keys section
+- **Error: Login failed** - Invalid credentials
+  - Solution: Verify username and password in connection string
+
+- **Error: Cannot connect to server** - Firewall blocking connection
+  - Solution: Add your IP address to Azure SQL Server firewall rules
 
 ### Azure Maps Issues
 
@@ -308,15 +310,15 @@ For production deployments, configure Managed Identity:
 
 Based on the architecture:
 
-### Development Environment (~$24/month)
-- Cosmos DB Serverless: ~$5
+### Development Environment (~$23/month)
+- Azure SQL Database (Basic): ~$5
 - Azure Maps S0: ~$5
 - Application Insights: ~$5
 - Azure AD: Free
 - App Service B1: ~$13
 
-### Production Environment (~$166/month)
-- Cosmos DB (400 RU/s): ~$24
+### Production Environment (~$154/month)
+- Azure SQL Database (S1): ~$30
 - Azure Maps S0: ~$20
 - Application Insights: ~$50
 - Azure AD: Free

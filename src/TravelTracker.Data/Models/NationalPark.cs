@@ -1,21 +1,29 @@
-using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TravelTracker.Data.Models;
 
+[Table("NationalParks")]
 public class NationalPark
 {
-    [JsonProperty("id")]
+    [Key]
+    [MaxLength(50)]
     public string Id { get; set; } = string.Empty;
-    [JsonProperty("type")]
+    
+    [MaxLength(50)]
     public string Type { get; set; } = "nationalpark";
-    [JsonProperty("name")]
+    
+    [Required]
+    [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
-    [JsonProperty("state")]
+    
+    [Required]
+    [MaxLength(50)]
     public string State { get; set; } = string.Empty;
-    [JsonProperty("latitude")]
+    
     public double Latitude { get; set; }
-    [JsonProperty("longitude")]
+    
     public double Longitude { get; set; }
-    [JsonProperty("description")]
+    
     public string Description { get; set; } = string.Empty;
 }

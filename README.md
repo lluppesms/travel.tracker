@@ -33,7 +33,7 @@ Foundation development is complete. The application structure, data layer, servi
 
 - **Frontend:** Blazor (Server + WebAssembly)
 - **Backend:** C# / ASP.NET Core (.NET 8/9)
-- **Database:** Azure Cosmos DB (NoSQL)
+- **Database:** SQL Server (with Entity Framework Core)
 - **Authentication:** Azure AD (Entra ID)
 - **Maps:** Azure Maps
 - **Hosting:** Azure App Service
@@ -59,15 +59,32 @@ Foundation development is complete. The application structure, data layer, servi
 
 ### Prerequisites
 - .NET 9 SDK
-- Azure subscription (for Cosmos DB and Azure AD)
+- SQL Server (LocalDB, Express, or full SQL Server)
+- Azure subscription (for Azure AD and Azure Maps)
 - Visual Studio 2022 or VS Code
+
+### Database Setup
+
+1. Install SQL Server or SQL Server Express
+2. Update the connection string in `appsettings.json`:
+   ```json
+   "SqlServer": {
+     "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+   }
+   ```
+3. Run database migrations:
+   ```bash
+   cd src/TravelTracker.Data
+   dotnet ef database update --startup-project ../TravelTracker
+   ```
 
 ### Running Locally
 
 1. Clone the repository
-2. Configure Azure services (Cosmos DB, Azure AD)
-3. Update `appsettings.json` with your connection strings
-4. Run the application:
+2. Set up the database (see Database Setup above)
+3. Configure Azure services (Azure AD, Azure Maps)
+4. Update `appsettings.json` with your Azure AD and Azure Maps credentials
+5. Run the application:
    ```bash
    cd src/TravelTracker
    dotnet run
@@ -84,11 +101,12 @@ dotnet test
 ### Completed
 - ✅ Solution structure with 4 projects
 - ✅ Data models (User, Location, NationalPark)
-- ✅ Repository pattern with Cosmos DB
+- ✅ Repository pattern with Entity Framework Core and SQL Server
 - ✅ Service layer for business logic
 - ✅ Dependency injection configuration
 - ✅ Basic UI pages and navigation
-- ✅ Unit tests (3 passing)
+- ✅ Unit tests (17 passing)
+- ✅ Database migrations
 
 ### In Progress
 - 🔄 Azure AD authentication

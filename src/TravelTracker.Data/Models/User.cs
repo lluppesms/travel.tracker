@@ -1,21 +1,31 @@
-using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TravelTracker.Data.Models;
 
+[Table("Users")]
 public class User
 {
-    [JsonProperty("id")]
+    [Key]
+    [MaxLength(50)]
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    [JsonProperty("type")]
+    
+    [MaxLength(50)]
     public string Type { get; set; } = "user";
-    [JsonProperty("username")]
+    
+    [Required]
+    [MaxLength(200)]
     public string Username { get; set; } = string.Empty;
-    [JsonProperty("email")]
+    
+    [Required]
+    [MaxLength(200)]
     public string Email { get; set; } = string.Empty;
-    [JsonProperty("entraUserId")]
+    
+    [Required]
+    [MaxLength(50)]
     public string EntraIdUserId { get; set; } = string.Empty;
-    [JsonProperty("createdDate")]
+    
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-    [JsonProperty("lastLoginDate")]
+    
     public DateTime? LastLoginDate { get; set; }
 }
