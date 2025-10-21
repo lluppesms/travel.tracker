@@ -15,65 +15,69 @@ public class LocationRepository : ILocationRepository
 
     public async Task<Location?> GetByIdAsync(string id, string userId)
     {
-        var location = await _context.Locations
-            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
-        
+        _ = await Task.FromResult(true);
+        var location = _context.Locations
+            .FirstOrDefault(l => l.Id == id && l.UserId == userId);
+
         if (location != null)
         {
             DeserializeTags(location);
         }
-        
+
         return location;
     }
 
     public async Task<IEnumerable<Location>> GetAllByUserIdAsync(string userId)
     {
-        var locations = await _context.Locations
+        _ = await Task.FromResult(true);
+        var locations = _context.Locations
             .Where(l => l.UserId == userId)
-            .ToListAsync();
-        
+            .ToList();
+
         foreach (var location in locations)
         {
             DeserializeTags(location);
         }
-        
+
         return locations;
     }
 
     public async Task<IEnumerable<Location>> GetByDateRangeAsync(string userId, DateTime startDate, DateTime endDate)
     {
-        var locations = await _context.Locations
+        var locations = _context.Locations
             .Where(l => l.UserId == userId && l.StartDate >= startDate && l.StartDate <= endDate)
-            .ToListAsync();
-        
+            .ToList();
+
         foreach (var location in locations)
         {
             DeserializeTags(location);
         }
-        
+
         return locations;
     }
 
     public async Task<IEnumerable<Location>> GetByStateAsync(string userId, string state)
     {
-        var locations = await _context.Locations
+        _ = await Task.FromResult(true);
+        var locations = _context.Locations
             .Where(l => l.UserId == userId && l.State == state)
-            .ToListAsync();
-        
+            .ToList();
+
         foreach (var location in locations)
         {
             DeserializeTags(location);
         }
-        
+
         return locations;
     }
 
     public async Task<Location> CreateAsync(Location location)
     {
+        _ = await Task.FromResult(true);
         location.CreatedDate = DateTime.UtcNow;
         location.ModifiedDate = DateTime.UtcNow;
         _context.Locations.Add(location);
-        await _context.SaveChangesAsync();
+        _context.SaveChanges();
         return location;
     }
 
@@ -81,19 +85,20 @@ public class LocationRepository : ILocationRepository
     {
         location.ModifiedDate = DateTime.UtcNow;
         _context.Locations.Update(location);
-        await _context.SaveChangesAsync();
+        _context.SaveChanges();
         return location;
     }
 
     public async Task DeleteAsync(string id, string userId)
     {
-        var location = await _context.Locations
-            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
-        
+        _ = await Task.FromResult(true);
+        var location = _context.Locations
+            .FirstOrDefault(l => l.Id == id && l.UserId == userId);
+
         if (location != null)
         {
             _context.Locations.Remove(location);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
         }
     }
 

@@ -14,19 +14,25 @@ public class NationalParkRepository : INationalParkRepository
 
     public async Task<IEnumerable<NationalPark>> GetAllAsync()
     {
-        return await _context.NationalParks.ToListAsync();
+        _ = await Task.FromResult(true);
+        var parks = _context.NationalParks.ToList();
+        return parks;
     }
 
     public async Task<NationalPark?> GetByIdAsync(string id, string state)
     {
-        return await _context.NationalParks
-            .FirstOrDefaultAsync(np => np.Id == id && np.State == state);
+        _ = await Task.FromResult(true);
+        var park = _context.NationalParks
+            .FirstOrDefault(np => np.Id == id && np.State == state);
+        return park;
     }
 
     public async Task<IEnumerable<NationalPark>> GetByStateAsync(string state)
     {
-        return await _context.NationalParks
+        _ = await Task.FromResult(true);
+        var parks = _context.NationalParks
             .Where(np => np.State == state)
-            .ToListAsync();
+            .ToList();
+        return parks;
     }
 }

@@ -13,27 +13,32 @@ public class UserRepository : IUserRepository
 
     public async Task<Models.User?> GetByIdAsync(string id)
     {
-        return await _context.Users.FindAsync(id);
+        _ = await Task.FromResult(true);
+        var user = _context.Users.Find(id);
+        return user;
     }
 
     public async Task<Models.User?> GetByEntraIdAsync(string entraIdUserId)
     {
-        return await _context.Users
-            .FirstOrDefaultAsync(u => u.EntraIdUserId == entraIdUserId);
+        _ = await Task.FromResult(true);
+        var user = _context.Users.FirstOrDefault(u => u.EntraIdUserId == entraIdUserId);
+        return user;
     }
 
     public async Task<Models.User> CreateAsync(Models.User user)
     {
+        _ = await Task.FromResult(true);
         user.CreatedDate = DateTime.UtcNow;
         _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        _context.SaveChanges();
         return user;
     }
 
     public async Task<Models.User> UpdateAsync(Models.User user)
     {
+        _ = await Task.FromResult(true);
         _context.Users.Update(user);
-        await _context.SaveChangesAsync();
+        _context.SaveChanges();
         return user;
     }
 }
