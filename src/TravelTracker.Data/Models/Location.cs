@@ -7,15 +7,14 @@ namespace TravelTracker.Data.Models;
 public class Location
 {
     [Key]
-    [MaxLength(50)]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
     
     [MaxLength(50)]
     public string Type { get; set; } = "location";
     
     [Required]
-    [MaxLength(50)]
-    public string UserId { get; set; } = string.Empty;
+    public int UserId { get; set; }
     
     [Required]
     [MaxLength(200)]

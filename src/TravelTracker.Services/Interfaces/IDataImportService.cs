@@ -4,8 +4,8 @@ namespace TravelTracker.Services.Interfaces;
 
 public interface IDataImportService
 {
-    Task<ImportResult> ImportFromJsonAsync(Stream jsonStream, string userId);
-    Task<ImportResult> ImportFromCsvAsync(Stream csvStream, string userId);
+    Task<ImportResult> ImportFromJsonAsync(Stream jsonStream, int userId);
+    Task<ImportResult> ImportFromCsvAsync(Stream csvStream, int userId);
     Task<ValidationResult> ValidateJsonAsync(Stream jsonStream);
     Task<ValidationResult> ValidateCsvAsync(Stream csvStream);
 }

@@ -13,29 +13,37 @@ public class LocationService : ILocationService
         _locationRepository = locationRepository;
     }
 
-    public async Task<Location?> GetLocationByIdAsync(string id, string userId)
+    public async Task<Location?> GetLocationByIdAsync(int id, int userId)
     {
         return await _locationRepository.GetByIdAsync(id, userId);
     }
 
-    public async Task<IEnumerable<Location>> GetAllLocationsAsync(string userId)
+    public async Task<IEnumerable<Location>> GetAllLocationsAsync(int userId)
     {
         return await _locationRepository.GetAllByUserIdAsync(userId);
     }
 
-    public async Task<IEnumerable<Location>> GetLocationsByDateRangeAsync(string userId, DateTime startDate, DateTime endDate)
+    public async Task<IEnumerable<Location>> GetLocationsByDateRangeAsync(int userId, DateTime startDate, DateTime endDate)
     {
         return await _locationRepository.GetByDateRangeAsync(userId, startDate, endDate);
     }
 
-    public async Task<IEnumerable<Location>> GetLocationsByStateAsync(string userId, string state)
+    public async Task<IEnumerable<Location>> GetLocationsByStateAsync(int userId, string state)
     {
         return await _locationRepository.GetByStateAsync(userId, state);
     }
 
     public async Task<Location> CreateLocationAsync(Location location)
     {
-        return await _locationRepository.CreateAsync(location);
+        try
+        {
+            return await _locationRepository.CreateAsync(location);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error importing {location.Name}: {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<Location> UpdateLocationAsync(Location location)
@@ -43,12 +51,12 @@ public class LocationService : ILocationService
         return await _locationRepository.UpdateAsync(location);
     }
 
-    public async Task DeleteLocationAsync(string id, string userId)
+    public async Task DeleteLocationAsync(int id, int userId)
     {
         await _locationRepository.DeleteAsync(id, userId);
     }
 
-    public async Task<Dictionary<string, int>> GetLocationsByStateCountAsync(string userId)
+    public async Task<Dictionary<string, int>> GetLocationsByStateCountAsync(int userId)
     {
         var locations = await _locationRepository.GetAllByUserIdAsync(userId);
         return locations

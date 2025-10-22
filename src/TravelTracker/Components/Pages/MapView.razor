@@ -1,5 +1,4 @@
 @page "/map"
-@rendermode InteractiveServer
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
 @implements IAsyncDisposable
@@ -173,7 +172,7 @@
     private bool isMapInitialized = false;
     private bool afterRenderCalled = false; // Diagnostic flag
     private string errorMessage = string.Empty;
-    private string currentUserId = string.Empty;
+    private int currentUserId;
     private string? azureMapsKey;
 
     // Filters
@@ -186,7 +185,7 @@
         try
         {
             Logger.LogInformation("MapView.OnInitializedAsync starting");
-            currentUserId = AuthenticationService.GetCurrentUserId() ?? string.Empty;
+            currentUserId = AuthenticationService.GetCurrentUserInternalId();
             azureMapsKey = Configuration["AzureMaps:SubscriptionKey"];
             Logger.LogInformation("AzureMaps key present: {HasKey}", !string.IsNullOrEmpty(azureMapsKey));
             await LoadLocations();
@@ -362,7 +361,7 @@
         else if (viewMode == ViewMode.NationalParks)
         {
             filteredLocations = filteredLocations
-                .Where(l => l.LocationType?.Contains("Park", StringComparison.OrdinalIgnoreCase) == true)
+                .Where(l => l.LocationType?.Contains("National", StringComparison.OrdinalIgnoreCase) == true && l.LocationType?.Contains("Park", StringComparison.OrdinalIgnoreCase) == true)
                 .ToList();
         }
 

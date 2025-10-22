@@ -13,7 +13,7 @@ public class LocationRepository : ILocationRepository
         _context = context;
     }
 
-    public async Task<Location?> GetByIdAsync(string id, string userId)
+    public async Task<Location?> GetByIdAsync(int id, int userId)
     {
         _ = await Task.FromResult(true);
         var location = _context.Locations
@@ -27,7 +27,7 @@ public class LocationRepository : ILocationRepository
         return location;
     }
 
-    public async Task<IEnumerable<Location>> GetAllByUserIdAsync(string userId)
+    public async Task<IEnumerable<Location>> GetAllByUserIdAsync(int userId)
     {
         _ = await Task.FromResult(true);
         var locations = _context.Locations
@@ -42,7 +42,7 @@ public class LocationRepository : ILocationRepository
         return locations;
     }
 
-    public async Task<IEnumerable<Location>> GetByDateRangeAsync(string userId, DateTime startDate, DateTime endDate)
+    public async Task<IEnumerable<Location>> GetByDateRangeAsync(int userId, DateTime startDate, DateTime endDate)
     {
         var locations = _context.Locations
             .Where(l => l.UserId == userId && l.StartDate >= startDate && l.StartDate <= endDate)
@@ -56,7 +56,7 @@ public class LocationRepository : ILocationRepository
         return locations;
     }
 
-    public async Task<IEnumerable<Location>> GetByStateAsync(string userId, string state)
+    public async Task<IEnumerable<Location>> GetByStateAsync(int userId, string state)
     {
         _ = await Task.FromResult(true);
         var locations = _context.Locations
@@ -89,7 +89,7 @@ public class LocationRepository : ILocationRepository
         return location;
     }
 
-    public async Task DeleteAsync(string id, string userId)
+    public async Task DeleteAsync(int id, int userId)
     {
         _ = await Task.FromResult(true);
         var location = _context.Locations

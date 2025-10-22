@@ -33,16 +33,16 @@
                 <div class="card-header">
                     <ul class="nav nav-tabs card-header-tabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link @(selectedFormat == "json" ? "active" : "")" 
-                                    type="button" 
+                            <button class="nav-link @(selectedFormat == "json" ? "active" : "")"
+                                    type="button"
                                     @onclick="SelectJsonFormat"
                                     disabled="@isUploading">
                                 JSON Upload
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link @(selectedFormat == "csv" ? "active" : "")" 
-                                    type="button" 
+                            <button class="nav-link @(selectedFormat == "csv" ? "active" : "")"
+                                    type="button"
                                     @onclick="SelectCsvFormat"
                                     disabled="@isUploading">
                                 CSV Upload
@@ -59,7 +59,7 @@
                     {
                         <InputFile OnChange="HandleFileSelected" class="form-control mb-3" accept=".csv" disabled="@isUploading" />
                     }
-                    
+
                     @if (selectedFileName != null)
                     {
                         <div class="alert alert-info">
@@ -80,21 +80,21 @@
                             }
                         </div>
                     }
-                    
+
                     @if (isUploading)
                     {
                         <div class="progress mb-3">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                 role="progressbar" 
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar"
                                  style="width: @uploadProgress%"
-                                 aria-valuenow="@uploadProgress" 
-                                 aria-valuemin="0" 
+                                 aria-valuenow="@uploadProgress"
+                                 aria-valuemin="0"
                                  aria-valuemax="100">
                                 @uploadProgress%
                             </div>
                         </div>
                     }
-                    
+
                     <div class="mt-3">
                         <button class="btn btn-primary" @onclick="ProcessUpload" disabled="@(!canUpload || isUploading)">
                             @if (isUploading)
@@ -125,7 +125,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header">
@@ -158,15 +158,15 @@
                     else
                     {
                         <p class="small">Your CSV file should have this header format:</p>
-                        <pre class="small bg-light p-2"><code>RowId,Location,Arrival,Departure,Comments,Address,Latitude,Longitude
-1,Yellowstone NP,2024-06-15,2024-06-18,Amazing geysers,"Yellowstone National Park, WY 82190",44.427963,-110.588455
-2,Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36.1069,-112.1129</code></pre>
+                        <pre class="small bg-light p-2"><code>Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
+    Yellowstone NP,2024-06-15,2024-06-18,Amazing geysers,"Yellowstone National Park, WY 82190",44.427963,-110.588455,"National Park"
+Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36.1069,-112.1129,"National Park"</code></pre>
                         <p class="small mt-2 text-muted">
                             <strong>Note:</strong> State information will be extracted from the Address field.
                         </p>
                     }
-                    <a href="@GetSampleFileUrl()" 
-                       download="@GetSampleFileName()" 
+                    <a href="@GetSampleFileUrl()"
+                       download="@GetSampleFileName()"
                        class="btn btn-sm btn-outline-primary">
                         <span class="bi bi-download"></span> Download Sample
                     </a>
@@ -187,13 +187,13 @@
     private int uploadProgress = 0;
     private List<DisplayValidationResult> validationResults = new();
     private UploadSummary? uploadSummary;
-    private string currentUserId = string.Empty;
-    private string selectedFormat = "json";
+    private int currentUserId;
+    private string selectedFormat = "csv";
     private const long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     protected override void OnInitialized()
     {
-        currentUserId = AuthenticationService.GetCurrentUserId();
+        currentUserId = AuthenticationService.GetCurrentUserInternalId();
     }
 
     private void SelectJsonFormat()
@@ -232,13 +232,12 @@
             validationResults.Clear();
             errorMessage = string.Empty;
 
-            // Check file size
             if (selectedFile.Size > MAX_FILE_SIZE)
             {
-                validationResults.Add(new DisplayValidationResult 
-                { 
-                    IsSuccess = false, 
-                    Message = $"File size exceeds maximum allowed size of {MAX_FILE_SIZE / 1024 / 1024}MB" 
+                validationResults.Add(new DisplayValidationResult
+                {
+                    IsSuccess = false,
+                    Message = $"File size exceeds maximum allowed size of {MAX_FILE_SIZE / 1024 / 1024}MB"
                 });
                 canUpload = false;
                 return;
@@ -246,9 +245,8 @@
 
             validationResults.Add(new DisplayValidationResult { IsSuccess = true, Message = "File size is acceptable" });
 
-            // Validate using the service
             using var stream = selectedFile.OpenReadStream(MAX_FILE_SIZE);
-            
+
             Services.Interfaces.ValidationResult validationResult;
             if (selectedFormat == "json")
             {
@@ -259,7 +257,6 @@
                 validationResult = await DataImportService.ValidateCsvAsync(stream);
             }
 
-            // Convert validation messages
             foreach (var msg in validationResult.ValidationMessages)
             {
                 validationResults.Add(new DisplayValidationResult { IsSuccess = true, Message = msg });
@@ -294,7 +291,7 @@
             uploadProgress = 0;
 
             using var stream = selectedFile.OpenReadStream(MAX_FILE_SIZE);
-            
+
             ImportResult result;
             if (selectedFormat == "json")
             {
@@ -332,8 +329,7 @@
                     errorMessage += $" and {result.Errors.Count - 5} more...";
                 }
             }
-            
-            // Clear the form
+
             ClearSelection();
         }
         catch (Exception ex)
@@ -356,19 +352,8 @@
         canUpload = false;
     }
 
-    private string GetSampleFileUrl()
-    {
-        return selectedFormat == "json" 
-            ? "/samples/sample-locations.json" 
-            : "/samples/sample-locations.csv";
-    }
-
-    private string GetSampleFileName()
-    {
-        return selectedFormat == "json" 
-            ? "sample-locations.json" 
-            : "sample-locations.csv";
-    }
+    private string GetSampleFileUrl() => selectedFormat == "json" ? "/samples/sample-locations.json" : "/samples/sample-locations.csv";
+    private string GetSampleFileName() => selectedFormat == "json" ? "sample-locations.json" : "sample-locations.csv";
 
     private class DisplayValidationResult
     {

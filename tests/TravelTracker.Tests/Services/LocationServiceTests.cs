@@ -10,12 +10,11 @@ public class LocationServiceTests
     [Fact]
     public async Task GetAllLocationsAsync_ReturnsLocationsForUser()
     {
-        // Arrange
-        var userId = "user123";
+        int userId = 123;
         var expectedLocations = new List<Location>
         {
-            new Location { Id = "1", UserId = userId, Name = "Test Location 1" },
-            new Location { Id = "2", UserId = userId, Name = "Test Location 2" }
+            new Location { Id = 1, UserId = userId, Name = "Test Location 1" },
+            new Location { Id = 2, UserId = userId, Name = "Test Location 2" }
         };
 
         var mockRepository = new Mock<ILocationRepository>();
@@ -36,10 +35,9 @@ public class LocationServiceTests
     [Fact]
     public async Task CreateLocationAsync_CallsRepositoryCreate()
     {
-        // Arrange
         var location = new Location 
         { 
-            UserId = "user123", 
+            UserId = 123, 
             Name = "New Location",
             State = "CA",
             Rating = 5
@@ -63,13 +61,12 @@ public class LocationServiceTests
     [Fact]
     public async Task GetLocationsByStateCountAsync_ReturnsCorrectCounts()
     {
-        // Arrange
-        var userId = "user123";
+        int userId = 123;
         var locations = new List<Location>
         {
-            new Location { Id = "1", UserId = userId, State = "CA" },
-            new Location { Id = "2", UserId = userId, State = "CA" },
-            new Location { Id = "3", UserId = userId, State = "NY" }
+            new Location { Id = 1, UserId = userId, State = "CA" },
+            new Location { Id = 2, UserId = userId, State = "CA" },
+            new Location { Id = 3, UserId = userId, State = "NY" }
         };
 
         var mockRepository = new Mock<ILocationRepository>();
@@ -91,11 +88,10 @@ public class LocationServiceTests
     [Fact]
     public async Task UpdateLocationAsync_CallsRepositoryUpdate()
     {
-        // Arrange
         var location = new Location 
         { 
-            Id = "1",
-            UserId = "user123", 
+            Id = 1,
+            UserId = 123, 
             Name = "Updated Location",
             State = "NY",
             Rating = 4
@@ -120,9 +116,8 @@ public class LocationServiceTests
     [Fact]
     public async Task DeleteLocationAsync_CallsRepositoryDelete()
     {
-        // Arrange
-        var locationId = "loc123";
-        var userId = "user123";
+        int locationId = 10;
+        int userId = 123;
 
         var mockRepository = new Mock<ILocationRepository>();
         mockRepository.Setup(repo => repo.DeleteAsync(locationId, userId))
@@ -140,14 +135,13 @@ public class LocationServiceTests
     [Fact]
     public async Task GetLocationsByDateRangeAsync_ReturnsFilteredLocations()
     {
-        // Arrange
-        var userId = "user123";
+        int userId = 123;
         var startDate = new DateTime(2024, 1, 1);
         var endDate = new DateTime(2024, 12, 31);
         var expectedLocations = new List<Location>
         {
-            new Location { Id = "1", UserId = userId, Name = "Location 1", StartDate = new DateTime(2024, 6, 15) },
-            new Location { Id = "2", UserId = userId, Name = "Location 2", StartDate = new DateTime(2024, 7, 20) }
+            new Location { Id = 1, UserId = userId, Name = "Location 1", StartDate = new DateTime(2024, 6, 15) },
+            new Location { Id = 2, UserId = userId, Name = "Location 2", StartDate = new DateTime(2024, 7, 20) }
         };
 
         var mockRepository = new Mock<ILocationRepository>();
@@ -168,13 +162,12 @@ public class LocationServiceTests
     [Fact]
     public async Task GetLocationsByStateAsync_ReturnsLocationsInState()
     {
-        // Arrange
-        var userId = "user123";
+        int userId = 123;
         var state = "CA";
         var expectedLocations = new List<Location>
         {
-            new Location { Id = "1", UserId = userId, Name = "Location 1", State = "CA" },
-            new Location { Id = "2", UserId = userId, Name = "Location 2", State = "CA" }
+            new Location { Id = 1, UserId = userId, Name = "Location 1", State = "CA" },
+            new Location { Id = 2, UserId = userId, Name = "Location 2", State = "CA" }
         };
 
         var mockRepository = new Mock<ILocationRepository>();

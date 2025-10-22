@@ -98,7 +98,6 @@
     </div>
 </div>
 
-@* Add/Edit Location Modal *@
 @if (showLocationForm)
 {
     <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
@@ -111,7 +110,7 @@
                 <div class="modal-body">
                     <EditForm Model="currentLocation" OnValidSubmit="SaveLocation">
                         <DataAnnotationsValidator />
-                        
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Name *</label>
@@ -197,7 +196,6 @@
     </div>
 }
 
-@* Delete Confirmation Modal *@
 @if (showDeleteConfirmation)
 {
     <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
@@ -238,11 +236,11 @@
     private bool isDeleting = false;
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
-    private string currentUserId = string.Empty;
+    private int currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
-        currentUserId = AuthenticationService.GetCurrentUserId();
+        currentUserId = AuthenticationService.GetCurrentUserInternalId();
         await LoadLocations();
     }
 
@@ -268,8 +266,8 @@
 
     private void ShowAddLocationForm()
     {
-        currentLocation = new Location 
-        { 
+        currentLocation = new Location
+        {
             UserId = currentUserId,
             StartDate = DateTime.Today
         };
@@ -318,9 +316,9 @@
         {
             isSaving = true;
             errorMessage = string.Empty;
-            
+
             currentLocation.ModifiedDate = DateTime.UtcNow;
-            
+
             if (isEditMode)
             {
                 await LocationService.UpdateLocationAsync(currentLocation);
@@ -331,7 +329,7 @@
                 await LocationService.CreateLocationAsync(currentLocation);
                 successMessage = "Location added successfully!";
             }
-            
+
             HideLocationForm();
             await LoadLocations();
         }
@@ -367,10 +365,10 @@
         {
             isDeleting = true;
             errorMessage = string.Empty;
-            
+
             await LocationService.DeleteLocationAsync(locationToDelete.Id, locationToDelete.UserId);
             successMessage = $"Location '{locationToDelete.Name}' deleted successfully!";
-            
+
             HideDeleteConfirmation();
             await LoadLocations();
         }

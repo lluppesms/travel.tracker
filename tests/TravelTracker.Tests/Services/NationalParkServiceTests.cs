@@ -13,9 +13,9 @@ public class NationalParkServiceTests
         // Arrange
         var expectedParks = new List<NationalPark>
         {
-            new NationalPark { Id = "1", Name = "Yellowstone", State = "WY" },
-            new NationalPark { Id = "2", Name = "Yosemite", State = "CA" },
-            new NationalPark { Id = "3", Name = "Grand Canyon", State = "AZ" }
+            new NationalPark { Id = 1, Name = "Yellowstone", State = "WY" },
+            new NationalPark { Id = 2, Name = "Yosemite", State = "CA" },
+            new NationalPark { Id = 3, Name = "Grand Canyon", State = "AZ" }
         };
 
         var mockParkRepository = new Mock<INationalParkRepository>();
@@ -42,8 +42,8 @@ public class NationalParkServiceTests
         var state = "CA";
         var expectedParks = new List<NationalPark>
         {
-            new NationalPark { Id = "1", Name = "Yosemite", State = "CA" },
-            new NationalPark { Id = "2", Name = "Joshua Tree", State = "CA" }
+            new NationalPark { Id = 1, Name = "Yosemite", State = "CA" },
+            new NationalPark { Id = 2, Name = "Joshua Tree", State = "CA" }
         };
 
         var mockParkRepository = new Mock<INationalParkRepository>();
@@ -68,19 +68,19 @@ public class NationalParkServiceTests
     public async Task GetVisitedParksAsync_ReturnsParksWithMatchingLocations()
     {
         // Arrange
-        var userId = "user123";
+        int userId = 123;
         
         var allParks = new List<NationalPark>
         {
-            new NationalPark { Id = "1", Name = "Yellowstone", State = "WY" },
-            new NationalPark { Id = "2", Name = "Yosemite", State = "CA" },
-            new NationalPark { Id = "3", Name = "Grand Canyon", State = "AZ" }
+            new NationalPark { Id = 1, Name = "Yellowstone", State = "WY" },
+            new NationalPark { Id = 2, Name = "Yosemite", State = "CA" },
+            new NationalPark { Id = 3, Name = "Grand Canyon", State = "AZ" }
         };
 
         var userLocations = new List<Location>
         {
-            new Location { Id = "1", UserId = userId, Name = "Yellowstone National Park", State = "WY", LocationType = "National Park", Tags = new List<string> { "national-park" } },
-            new Location { Id = "2", UserId = userId, Name = "Grand Canyon NP", State = "AZ", LocationType = "National Park", Tags = new List<string> { "national-park" } }
+            new Location { Id = 1, UserId = userId, Name = "Yellowstone National Park", State = "WY", LocationType = "National Park", Tags = new List<string> { "national-park" } },
+            new Location { Id = 2, UserId = userId, Name = "Grand Canyon NP", State = "AZ", LocationType = "National Park", Tags = new List<string> { "national-park" } }
         };
 
         var mockParkRepository = new Mock<INationalParkRepository>();
@@ -110,16 +110,16 @@ public class NationalParkServiceTests
     public async Task GetVisitedParksAsync_ReturnsEmpty_WhenNoParksVisited()
     {
         // Arrange
-        var userId = "user123";
+        int userId = 123;
         
         var allParks = new List<NationalPark>
         {
-            new NationalPark { Id = "1", Name = "Yellowstone", State = "WY" }
+            new NationalPark { Id = 1, Name = "Yellowstone", State = "WY" }
         };
 
         var userLocations = new List<Location>
         {
-            new Location { Id = "1", UserId = userId, Name = "Some Hotel", State = "CA", Tags = new List<string>() }
+            new Location { Id = 1, UserId = userId, Name = "Some Hotel", State = "CA", Tags = new List<string>() }
         };
 
         var mockParkRepository = new Mock<INationalParkRepository>();

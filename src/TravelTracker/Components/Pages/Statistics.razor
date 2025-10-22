@@ -217,7 +217,7 @@
 @code {
     private bool isLoading = false;
     private string errorMessage = string.Empty;
-    private string currentUserId = string.Empty;
+    private int currentUserId;
 
     private int totalLocations = 0;
     private int statesVisited = 0;
@@ -232,7 +232,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        currentUserId = AuthenticationService.GetCurrentUserId();
+        currentUserId = AuthenticationService.GetCurrentUserInternalId();
         await LoadStatistics();
     }
 
@@ -243,29 +243,24 @@
             isLoading = true;
             errorMessage = string.Empty;
 
-            // Get all locations for the user
             var locations = (await LocationService.GetAllLocationsAsync(currentUserId)).ToList();
             totalLocations = locations.Count;
 
-            // Calculate states visited
             stateStats = await LocationService.GetLocationsByStateCountAsync(currentUserId);
             statesVisited = stateStats.Count;
             stateProgressPercent = statesVisited > 0 ? (statesVisited / 50.0 * 100) : 0;
 
-            // Calculate location types
             locationTypeStats = locations
                 .Where(l => !string.IsNullOrEmpty(l.LocationType))
                 .GroupBy(l => l.LocationType)
                 .ToDictionary(g => g.Key, g => g.Count());
 
-            // Calculate total days (sum of all location durations)
-            totalDays = locations.Sum(l => 
+            totalDays = locations.Sum(l =>
             {
                 var endDate = l.EndDate ?? l.StartDate;
                 return (endDate - l.StartDate).Days + 1;
             });
 
-            // Get national parks visited count
             try
             {
                 var visitedParks = await NationalParkService.GetVisitedParksAsync(currentUserId);
@@ -274,12 +269,10 @@
             }
             catch
             {
-                // If national parks service fails, just set to 0
                 nationalParksVisited = 0;
                 parkProgressPercent = 0;
             }
 
-            // Get 10 most recent locations
             recentLocations = locations
                 .OrderByDescending(l => l.StartDate)
                 .Take(10)

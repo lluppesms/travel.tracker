@@ -7,8 +7,8 @@ namespace TravelTracker.Data.Models;
 public class NationalPark
 {
     [Key]
-    [MaxLength(50)]
-    public string Id { get; set; } = string.Empty;
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
     
     [MaxLength(50)]
     public string Type { get; set; } = "nationalpark";

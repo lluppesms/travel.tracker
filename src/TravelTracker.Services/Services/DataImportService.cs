@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions; // added for zip code parsing
 using TravelTracker.Data.Models;
 using TravelTracker.Services.Interfaces;
 
@@ -14,7 +15,7 @@ public class DataImportService : IDataImportService
         _locationService = locationService;
     }
 
-    public async Task<ImportResult> ImportFromJsonAsync(Stream jsonStream, string userId)
+    public async Task<ImportResult> ImportFromJsonAsync(Stream jsonStream, int userId)
     {
         var result = new ImportResult();
 
@@ -63,14 +64,14 @@ public class DataImportService : IDataImportService
         return result;
     }
 
-    public async Task<ImportResult> ImportFromCsvAsync(Stream csvStream, string userId)
+    public async Task<ImportResult> ImportFromCsvAsync(Stream csvStream, int userId)
     {
         var result = new ImportResult();
 
         try
         {
             using var reader = new StreamReader(csvStream);
-            
+
             // Read header
             var header = await reader.ReadLineAsync();
             if (string.IsNullOrWhiteSpace(header))
@@ -80,7 +81,7 @@ public class DataImportService : IDataImportService
             }
 
             // Validate header format
-            var expectedHeader = "RowId,Location,Arrival,Departure,Comments,Address,Latitude,Longitude";
+            var expectedHeader = "Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type";
             if (!header.Trim().Equals(expectedHeader, StringComparison.OrdinalIgnoreCase))
             {
                 result.Errors.Add($"Invalid CSV header. Expected: {expectedHeader}");
@@ -188,7 +189,7 @@ public class DataImportService : IDataImportService
         try
         {
             using var reader = new StreamReader(csvStream);
-            
+
             var header = await reader.ReadLineAsync();
             if (string.IsNullOrWhiteSpace(header))
             {
@@ -197,7 +198,7 @@ public class DataImportService : IDataImportService
                 return result;
             }
 
-            var expectedHeader = "RowId,Location,Arrival,Departure,Comments,Address,Latitude,Longitude";
+            var expectedHeader = "Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type";
             if (!header.Trim().Equals(expectedHeader, StringComparison.OrdinalIgnoreCase))
             {
                 result.IsValid = false;
@@ -252,7 +253,7 @@ public class DataImportService : IDataImportService
         return result;
     }
 
-    private Location MapJsonToLocation(LocationData locData, string userId)
+    private Location MapJsonToLocation(LocationData locData, int userId)
     {
         return new Location
         {
@@ -273,7 +274,7 @@ public class DataImportService : IDataImportService
         };
     }
 
-    private Location? ParseCsvLine(string line, string userId, int lineNumber)
+    private Location? ParseCsvLine(string line, int userId, int lineNumber)
     {
         var fields = ParseCsvFields(line);
 
@@ -282,15 +283,15 @@ public class DataImportService : IDataImportService
             throw new FormatException($"Invalid CSV format. Expected 8 fields, found {fields.Length}.");
         }
 
-        // CSV Format: RowId,Location,Arrival,Departure,Comments,Address,Latitude,Longitude
-        var rowId = fields[0].Trim();
-        var locationName = fields[1].Trim();
-        var arrival = fields[2].Trim();
-        var departure = fields[3].Trim();
-        var comments = fields[4].Trim();
-        var address = fields[5].Trim();
-        var latitudeStr = fields[6].Trim();
-        var longitudeStr = fields[7].Trim();
+        // CSV Format: Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
+        var locationName = fields[0].Trim();
+        var arrival = fields[1].Trim();
+        var departure = fields[2].Trim();
+        var comments = fields[3].Trim();
+        var address = fields[4].Trim();
+        var latitudeStr = fields[5].Trim();
+        var longitudeStr = fields[6].Trim();
+        var rowType = fields[7].Trim();
 
         if (string.IsNullOrWhiteSpace(locationName))
         {
@@ -312,40 +313,35 @@ public class DataImportService : IDataImportService
         DateTime? startDate = null;
         DateTime? endDate = null;
 
-        if (!string.IsNullOrWhiteSpace(arrival))
+        if (!string.IsNullOrWhiteSpace(arrival) && DateTime.TryParse(arrival, out DateTime parsedStart))
         {
-            if (DateTime.TryParse(arrival, out DateTime parsedStart))
-            {
-                startDate = parsedStart;
-            }
+            startDate = parsedStart;
         }
 
-        if (!string.IsNullOrWhiteSpace(departure))
+        if (!string.IsNullOrWhiteSpace(departure) && DateTime.TryParse(departure, out DateTime parsedEnd))
         {
-            if (DateTime.TryParse(departure, out DateTime parsedEnd))
-            {
-                endDate = parsedEnd;
-            }
+            endDate = parsedEnd;
         }
 
         // Extract state from address (try to find 2-letter state code)
         string state = ExtractStateFromAddress(address);
         string city = ExtractCityFromAddress(address);
+        string zip = ExtractZipCodeFromAddress(address); // new zip extraction
 
         return new Location
         {
             UserId = userId,
             Name = locationName,
-            LocationType = "Other", // CSV doesn't specify type
+            LocationType = rowType, // CSV doesn't specify type
             Address = address,
             City = city,
             State = state,
-            ZipCode = string.Empty,
+            ZipCode = zip,
             Latitude = latitude,
             Longitude = longitude,
             StartDate = startDate ?? DateTime.UtcNow,
             EndDate = endDate,
-            Rating = 0, // CSV doesn't specify rating
+            Rating = 5, // CSV doesn't specify rating
             Comments = comments,
             Tags = new List<string>()
         };
@@ -407,6 +403,15 @@ public class DataImportService : IDataImportService
         }
 
         return string.Empty;
+    }
+
+    private string ExtractZipCodeFromAddress(string address)
+    {
+        if (string.IsNullOrWhiteSpace(address)) return string.Empty;
+
+        // Match US ZIP code 5 digits optionally followed by -4 extension
+        var match = Regex.Match(address, @"\b\d{5}(?:-\d{4})?\b");
+        return match.Success ? match.Value : string.Empty;
     }
 
     private string ExtractCityFromAddress(string address)

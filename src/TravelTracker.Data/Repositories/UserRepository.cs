@@ -11,7 +11,7 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task<Models.User?> GetByIdAsync(string id)
+    public async Task<Models.User?> GetByIdAsync(int id)
     {
         _ = await Task.FromResult(true);
         var user = _context.Users.Find(id);
