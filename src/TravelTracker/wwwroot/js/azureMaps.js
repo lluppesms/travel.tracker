@@ -2,27 +2,26 @@
 // This script initializes and manages the Azure Maps instance
 
 let map = null;
-let datasource = null;
 let popup = null;
 
-// Marker icon selection based on location type
-function getMarkerIcon(locationType) {
-    if (!locationType) return 'pin-red';
+// Marker color selection based on location type
+function getMarkerColor(locationType) {
+    if (!locationType) return '#dc3545';
     const t = locationType.toLowerCase();
 
     // National Parks (ensure both words present)
-    if (t.includes('national') && t.includes('park')) return 'pin-darkgreen';
+    if (t.includes('national') && t.includes('park')) return '#006400';
     // State Parks
-    if (t.includes('state') && t.includes('park')) return 'pin-green';
+    if (t.includes('state') && t.includes('park')) return '#28a745';
     // RV Parks / RV Resort / RV Campground
-    if (t.includes('rv')) return 'pin-purple';
+    if (t.includes('rv')) return '#6f42c1';
     // Harvest Host locations
-    if (t.includes('harvest')) return 'pin-yellow';
+    if (t.includes('harvest')) return '#ffc107';
     // Family / Relatives visits
-    if (t.includes('family') || t.includes('relative')) return 'pin-blue';
+    if (t.includes('family') || t.includes('relative')) return '#0d6efd';
 
     // Fallback for anything else
-    return 'pin-red';
+    return '#dc3545';
 }
 
 // Initialize the map
@@ -41,52 +40,10 @@ window.initializeAzureMap = function (subscriptionKey, centerLat, centerLon, zoo
 
         // Wait for the map resources to be ready
         map.events.add('ready', function () {
-            // Create a data source for markers
-            datasource = new atlas.source.DataSource();
-            map.sources.add(datasource);
-
-            // Create a symbol layer to render the markers
-            var symbolLayer = new atlas.layer.SymbolLayer(datasource, null, {
-                iconOptions: {
-                    image: ['get', 'image'], // read per-feature 'image' property
-                    allowOverlap: true,
-                    ignorePlacement: true
-                },
-                textOptions: {
-                    // Could add short labels later if desired
-                }
-            });
-            map.layers.add(symbolLayer);
-
             // Create a popup
             popup = new atlas.Popup({
                 pixelOffset: [0, -18],
                 closeButton: false
-            });
-
-            // Add a hover event to the symbol layer
-            map.events.add('mouseover', symbolLayer, function (e) {
-                if (e.shapes && e.shapes.length > 0) {
-                    var properties = e.shapes[0].getProperties();
-                    popup.setOptions({
-                        content: createPopupContent(properties),
-                        position: e.shapes[0].getCoordinates()
-                    });
-                    popup.open(map);
-                }
-            });
-
-            // Close the popup when the mouse leaves the symbol
-            map.events.add('mouseleave', symbolLayer, function () {
-                popup.close();
-            });
-
-            // Add click event for more details
-            map.events.add('click', symbolLayer, function (e) {
-                if (e.shapes && e.shapes.length > 0) {
-                    var properties = e.shapes[0].getProperties();
-                    alert(`Location: ${properties.name}\nCity: ${properties.city}, ${properties.state}\nDate: ${properties.date}`);
-                }
             });
 
             console.log('Azure Maps initialized successfully');
@@ -99,36 +56,68 @@ window.initializeAzureMap = function (subscriptionKey, centerLat, centerLon, zoo
     }
 };
 
+// Store markers for later cleanup
+let markers = [];
+
 // Update map markers
 window.updateAzureMapMarkers = function (locations) {
     try {
-        if (!datasource) {
-            console.error('Data source not initialized');
+        if (!map) {
+            console.error('Map not initialized');
             return false;
         }
 
         // Clear existing markers
-        datasource.clear();
+        markers.forEach(marker => map.markers.remove(marker));
+        markers = [];
 
-        // Add new markers with individualized icons
-        const features = locations.map(loc => {
-            const icon = getMarkerIcon(loc.locationType);
-            return new atlas.data.Feature(new atlas.data.Point([loc.lon, loc.lat]), {
-                name: loc.name,
-                city: loc.city,
-                state: loc.state,
-                date: loc.date,
-                locationType: loc.locationType || 'Unknown',
-                rating: loc.rating || 0,
-                image: icon // per-feature icon override
+        // Add new HTML markers with individualized colors
+        locations.forEach(loc => {
+            const color = getMarkerColor(loc.locationType);
+            
+            // Create HTML marker with custom color
+            const marker = new atlas.HtmlMarker({
+                position: [loc.lon, loc.lat],
+                color: color,
+                text: '',
+                properties: {
+                    name: loc.name,
+                    city: loc.city,
+                    state: loc.state,
+                    date: loc.date,
+                    locationType: loc.locationType || 'Unknown',
+                    rating: loc.rating || 0
+                }
             });
-        });
 
-        datasource.add(features);
+            // Add hover event
+            map.events.add('mouseover', marker, function (e) {
+                popup.setOptions({
+                    content: createPopupContent(marker.getOptions().properties),
+                    position: marker.getOptions().position
+                });
+                popup.open(map);
+            });
+
+            // Add mouse leave event
+            map.events.add('mouseleave', marker, function () {
+                popup.close();
+            });
+
+            // Add click event
+            map.events.add('click', marker, function (e) {
+                const props = marker.getOptions().properties;
+                alert(`Location: ${props.name}\nCity: ${props.city}, ${props.state}\nDate: ${props.date}`);
+            });
+
+            map.markers.add(marker);
+            markers.push(marker);
+        });
 
         // If we have locations, zoom to fit them
         if (locations.length > 0) {
-            const bounds = atlas.data.BoundingBox.fromData(features);
+            const positions = locations.map(loc => [loc.lon, loc.lat]);
+            const bounds = atlas.data.BoundingBox.fromPositions(positions);
             map.setCamera({
                 bounds: bounds,
                 padding: 50
@@ -201,12 +190,17 @@ window.disposeAzureMap = function () {
             popup = null;
         }
 
+        // Clear markers
+        if (map && markers.length > 0) {
+            markers.forEach(marker => map.markers.remove(marker));
+            markers = [];
+        }
+
         if (map) {
             map.dispose();
             map = null;
         }
 
-        datasource = null;
         console.log('Azure Maps disposed');
         return true;
     } catch (error) {
