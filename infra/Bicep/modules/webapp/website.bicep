@@ -39,11 +39,11 @@ resource appInsightsResource 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource appServiceResource 'Microsoft.Web/serverfarms@2023-01-01' existing = {
+resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = {
   name: appServicePlanName
 }
 
-resource webSiteResource 'Microsoft.Web/sites@2023-01-01' = {
+resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   name: webSiteName
   location: location
   kind: 'app'
@@ -74,7 +74,7 @@ resource webSiteResource 'Microsoft.Web/sites@2023-01-01' = {
   }
 }
 
-resource webSiteAppSettings 'Microsoft.Web/sites/config@2023-01-01' = {
+resource webSiteAppSettings 'Microsoft.Web/sites/config@2024-11-01' = {
   parent: webSiteResource
   name: 'logs'
   properties: {

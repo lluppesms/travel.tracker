@@ -89,7 +89,7 @@ module storageModule './modules/storage/storage-account.bicep' = {
 }
 
 // --------------------------------------------------------------------------------
-module sqlDbModule 'sqlserver.bicep' = {
+module sqlDbModule './modules/database/sqlserver.bicep' = {
   name: 'sql-server${deploymentSuffix}'
   params: {
     sqlServerName: resourceNames.outputs.sqlServerName

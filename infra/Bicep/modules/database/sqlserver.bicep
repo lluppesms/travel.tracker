@@ -56,7 +56,7 @@ var primaryUser =  adAdminUserId == '' ? '' : adAdminUserId
 // var storageSubscriptionId = subscription().subscriptionId
 
 // --------------------------------------------------------------------------------
-resource sqlServerResource 'Microsoft.Sql/servers@2023-02-01-preview' = {
+resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = {
   name: sqlServerName
   location: location
   tags: tags
@@ -76,7 +76,7 @@ resource sqlServerResource 'Microsoft.Sql/servers@2023-02-01-preview' = {
   }
 }
 
-resource sqlDBResource 'Microsoft.Sql/servers/databases@2023-02-01-preview' = {
+resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
   parent: sqlServerResource
   name: sqlDBName
   location: location
@@ -102,7 +102,7 @@ resource sqlDBResource 'Microsoft.Sql/servers/databases@2023-02-01-preview' = {
 }
 
 // This rule will allow all Azure services and resources to access this server
-resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2023-02-01-preview' = {
+resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2024-11-01-preview' = {
   name: 'AllowAllWindowsAzureIps'
   parent: sqlServerResource
   properties: {
@@ -165,7 +165,7 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
 //     isAzureMonitorTargetEnabled: true
 //   }
 // }
-resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2023-02-01-preview' = { // if (isMSDevOpsAuditEnabled) {
+resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-01-preview' = { // if (isMSDevOpsAuditEnabled) {
   parent: sqlServerResource
   name: 'default'
   properties: {

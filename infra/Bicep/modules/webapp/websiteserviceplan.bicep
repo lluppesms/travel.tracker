@@ -20,11 +20,11 @@ var tags = union(commonTags, templateTag, azdTag)
 
 // --------------------------------------------------------------------------------
 
-resource existingAppServiceResource 'Microsoft.Web/serverfarms@2023-01-01' existing = if (!empty(existingServicePlanName)) {
+resource existingAppServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = if (!empty(existingServicePlanName)) {
   name: existingServicePlanName
 }
 
-resource appServiceResource 'Microsoft.Web/serverfarms@2023-01-01' = if (empty(existingServicePlanName)) {
+resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' = if (empty(existingServicePlanName)) {
   name: appServicePlanName
   location: location
   tags: tags
