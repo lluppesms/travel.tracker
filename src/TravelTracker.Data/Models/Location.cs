@@ -20,6 +20,11 @@ public class Location
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
     
+    public int? LocationTypeId { get; set; }
+    
+    [ForeignKey("LocationTypeId")]
+    public LocationType? LocationTypeNavigation { get; set; }
+    
     [MaxLength(100)]
     public string LocationType { get; set; } = string.Empty;
     

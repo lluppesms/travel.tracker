@@ -14,6 +14,7 @@ public class TravelTrackerDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Location> Locations { get; set; }
     public DbSet<NationalPark> NationalParks { get; set; }
+    public DbSet<LocationType> LocationTypes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,6 +49,24 @@ public class TravelTrackerDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.State);
             entity.HasIndex(e => e.Name);
+        });
+
+        // Configure LocationType entity
+        modelBuilder.Entity<LocationType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Name).IsUnique();
+            
+            // Seed initial location types
+            entity.HasData(
+                new LocationType { Id = 1, Name = "National Park", Description = "US National Park" },
+                new LocationType { Id = 2, Name = "Hotel", Description = "Hotel or lodging" },
+                new LocationType { Id = 3, Name = "Restaurant", Description = "Restaurant or dining" },
+                new LocationType { Id = 4, Name = "Museum", Description = "Museum or cultural site" },
+                new LocationType { Id = 5, Name = "Beach", Description = "Beach or coastal area" },
+                new LocationType { Id = 6, Name = "City", Description = "City or town" },
+                new LocationType { Id = 7, Name = "Other", Description = "Other location type" }
+            );
         });
     }
 
