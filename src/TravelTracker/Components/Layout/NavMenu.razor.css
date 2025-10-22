@@ -26,7 +26,7 @@
 }
 
 .bi-map-fill {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-map-fill' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M16 .5a.5.5 0 0 0-.598-.49L10.5.99 5.598.01a.5.5 0 0 0-.196 0l-5 1A.5.5 0 0 0 0 1.5v14a.5.5 0 0 0 .598.49l4.902-.98 4.902.98a.502.502 0 0 0 .196 0l5-1A.5.5 0 0 0 16 14.5V.5zM5 14.09V1.11l.5-.1.5.1v12.98l-.5.1-.5-.1zm5 .8V1.91l.5-.1.5.1v12.98l-.5.1-.5-.1zm4-.8V1.11l.5-.1.5.1v12.98l-.5.1-.5-.1zm-13 0V1.11l.5-.1.5.1v12.98l-.5.1-.5-.1z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-map-fill' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M16 .5a.5.5 0 0 0-.598-.49L10.5.99 5.598.01a.5.5 0 0 0-.196 0l-5 1A.5.5 0 0 0 0 1.5v14a.5.5 0 0 0 .598.49l4.902-.98 4.902.98a.502.502 0 0 0 .196 0l5-1A.5.5 0 0 0 16 14.5V.5zM5 14.09V1.11l.5-.1.5.1v12.98l-.5.1-.5-.1zm5 .8V1.91l.5-.1.5.1v12.98l-.5.1-.5-.1zm4-.8V1.11l.5-.1.5.1v12.98l-.5.1-.5-.1zM1 14.09V1.11l.5-.1.5.1v12.98l-.5.1-.5-.1z'/%3E%3C/svg%3E");
 }
 
 .bi-bar-chart-fill {
@@ -39,6 +39,9 @@
 
 .bi-info-circle-fill {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-info-circle-fill' viewBox='0 0 16 16'%3E%3Cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z'/%3E%3C/svg%3E");
+}
+.bi-chat-dots-fill {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-chat-dots-fill' viewBox='0 0 16 16'%3E%3Cpath d='M.678 11.894a1 1 0 0 1 .287.801 10.972 10.972 0 0 1-.398 1.95c-.07.22.06.416.235.379a21.07 21.07 0 0 0 3.01-.97c.764-.3 1.534-.69 2.266-1.17a11.45 11.45 0 0 0 2.466-2.02A4.76 4.76 0 0 0 8 12c3.866 0 7-2.91 7-6.5S11.866 0 8 0 1 2.91 1 6.5c0 1.23.39 2.374 1.05 3.364.173.27.35.52.53.756.11.146.22.283.324.414a1 1 0 0 1 .194.86z'/%3E%3Cpath d='M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z'/%3E%3C/svg%3E");
 }
 
 .nav-link {
@@ -68,7 +71,7 @@
         margin-top: 0.5rem;
         border-radius: 0.25rem;
     }
-    
+
     .navbar-nav.ms-auto {
         margin-top: 0.5rem;
         padding-top: 0.5rem;
