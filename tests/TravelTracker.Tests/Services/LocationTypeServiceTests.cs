@@ -12,9 +12,9 @@ public class LocationTypeServiceTests
     {
         var expectedTypes = new List<LocationType>
         {
-            new LocationType { Id = 1, Name = "National Park" },
-            new LocationType { Id = 2, Name = "Hotel" },
-            new LocationType { Id = 3, Name = "Restaurant" }
+            new LocationType { Id = 1, Name = "RV Park" },
+            new LocationType { Id = 2, Name = "National Park" },
+            new LocationType { Id = 3, Name = "National Monument" }
         };
 
         var mockRepository = new Mock<ILocationTypeRepository>();
@@ -56,8 +56,8 @@ public class LocationTypeServiceTests
     [Fact]
     public async Task GetLocationTypeByNameAsync_ReturnsCorrectType()
     {
-        var typeName = "Hotel";
-        var expectedType = new LocationType { Id = 2, Name = typeName };
+        var typeName = "RV Park";
+        var expectedType = new LocationType { Id = 1, Name = typeName };
 
         var mockRepository = new Mock<ILocationTypeRepository>();
         mockRepository.Setup(repo => repo.GetByNameAsync(typeName))

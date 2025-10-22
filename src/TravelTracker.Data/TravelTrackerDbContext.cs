@@ -59,12 +59,12 @@ public class TravelTrackerDbContext : DbContext
             
             // Seed initial location types
             entity.HasData(
-                new LocationType { Id = 1, Name = "National Park", Description = "US National Park" },
-                new LocationType { Id = 2, Name = "Hotel", Description = "Hotel or lodging" },
-                new LocationType { Id = 3, Name = "Restaurant", Description = "Restaurant or dining" },
-                new LocationType { Id = 4, Name = "Museum", Description = "Museum or cultural site" },
-                new LocationType { Id = 5, Name = "Beach", Description = "Beach or coastal area" },
-                new LocationType { Id = 6, Name = "City", Description = "City or town" },
+                new LocationType { Id = 1, Name = "RV Park", Description = "RV Park or campground" },
+                new LocationType { Id = 2, Name = "National Park", Description = "US National Park" },
+                new LocationType { Id = 3, Name = "National Monument", Description = "US National Monument" },
+                new LocationType { Id = 4, Name = "Harvest Host", Description = "Harvest Host location" },
+                new LocationType { Id = 5, Name = "State Park", Description = "State Park" },
+                new LocationType { Id = 6, Name = "Family", Description = "Family or friends location" },
                 new LocationType { Id = 7, Name = "Other", Description = "Other location type" }
             );
         });

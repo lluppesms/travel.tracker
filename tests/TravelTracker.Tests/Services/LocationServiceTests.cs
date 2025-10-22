@@ -12,9 +12,12 @@ public class LocationServiceTests
         var mock = new Mock<ILocationTypeRepository>();
         var locationTypes = new List<LocationType>
         {
-            new LocationType { Id = 1, Name = "National Park" },
-            new LocationType { Id = 2, Name = "Hotel" },
-            new LocationType { Id = 3, Name = "Restaurant" },
+            new LocationType { Id = 1, Name = "RV Park" },
+            new LocationType { Id = 2, Name = "National Park" },
+            new LocationType { Id = 3, Name = "National Monument" },
+            new LocationType { Id = 4, Name = "Harvest Host" },
+            new LocationType { Id = 5, Name = "State Park" },
+            new LocationType { Id = 6, Name = "Family" },
             new LocationType { Id = 7, Name = "Other" }
         };
         
@@ -73,7 +76,7 @@ public class LocationServiceTests
         { 
             UserId = 123, 
             Name = "New Location",
-            LocationType = "Hotel",
+            LocationType = "RV Park",
             State = "CA",
             Rating = 5
         };
@@ -132,7 +135,7 @@ public class LocationServiceTests
             Id = 1,
             UserId = 123, 
             Name = "Updated Location",
-            LocationType = "Hotel",
+            LocationType = "RV Park",
             State = "NY",
             Rating = 4
         };
@@ -260,7 +263,7 @@ public class LocationServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Yellowstone", result.Name);
-        Assert.Equal(1, result.LocationTypeId); // National Park has ID 1
+        Assert.Equal(2, result.LocationTypeId); // National Park has ID 2
         mockRepository.Verify(repo => repo.CreateAsync(It.IsAny<Location>()), Times.Once);
     }
 

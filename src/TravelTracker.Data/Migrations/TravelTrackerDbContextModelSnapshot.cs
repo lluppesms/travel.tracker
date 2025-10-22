@@ -145,38 +145,38 @@ namespace TravelTracker.Data.Migrations
                         new
                         {
                             Id = 1,
+                            Description = "RV Park or campground",
+                            Name = "RV Park"
+                        },
+                        new
+                        {
+                            Id = 2,
                             Description = "US National Park",
                             Name = "National Park"
                         },
                         new
                         {
-                            Id = 2,
-                            Description = "Hotel or lodging",
-                            Name = "Hotel"
-                        },
-                        new
-                        {
                             Id = 3,
-                            Description = "Restaurant or dining",
-                            Name = "Restaurant"
+                            Description = "US National Monument",
+                            Name = "National Monument"
                         },
                         new
                         {
                             Id = 4,
-                            Description = "Museum or cultural site",
-                            Name = "Museum"
+                            Description = "Harvest Host location",
+                            Name = "Harvest Host"
                         },
                         new
                         {
                             Id = 5,
-                            Description = "Beach or coastal area",
-                            Name = "Beach"
+                            Description = "State Park",
+                            Name = "State Park"
                         },
                         new
                         {
                             Id = 6,
-                            Description = "City or town",
-                            Name = "City"
+                            Description = "Family or friends location",
+                            Name = "Family"
                         },
                         new
                         {

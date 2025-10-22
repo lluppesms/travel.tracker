@@ -13,9 +13,12 @@ public class DataImportServiceTests
         var mock = new Mock<ILocationTypeRepository>();
         var locationTypes = new List<LocationType>
         {
-            new LocationType { Id = 1, Name = "National Park" },
-            new LocationType { Id = 2, Name = "Hotel" },
-            new LocationType { Id = 3, Name = "Restaurant" },
+            new LocationType { Id = 1, Name = "RV Park" },
+            new LocationType { Id = 2, Name = "National Park" },
+            new LocationType { Id = 3, Name = "National Monument" },
+            new LocationType { Id = 4, Name = "Harvest Host" },
+            new LocationType { Id = 5, Name = "State Park" },
+            new LocationType { Id = 6, Name = "Family" },
             new LocationType { Id = 7, Name = "Other" }
         };
         
@@ -48,7 +51,7 @@ public class DataImportServiceTests
             ""locations"": [
                 {
                     ""name"": ""Test Location"",
-                    ""locationType"": ""Hotel"",
+                    ""locationType"": ""RV Park"",
                     ""state"": ""CA"",
                     ""latitude"": 37.7749,
                     ""longitude"": -122.4194,
@@ -103,7 +106,7 @@ public class DataImportServiceTests
     {
         int userId = 123;
         var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Test Hotel,2024-06-15,2024-06-18,Amazing place,""123 Main St, CA 90210"",34.0522,-118.2437,Hotel";
+Test RV Park,2024-06-15,2024-06-18,Amazing place,""123 Main St, CA 90210"",34.0522,-118.2437,""RV Park""";
 
         var mockLocationService = new Mock<ILocationService>();
         mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
@@ -203,7 +206,7 @@ Test Location,2024-01-01,2024-01-02,Great place,""123 Main St, CA"",37.7749,-122
     {
         int userId = 123;
         var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122.4194,Hotel";
+Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122.4194,""RV Park""";
 
         Location? capturedLocation = null;
         var mockLocationService = new Mock<ILocationService>();
@@ -231,8 +234,8 @@ Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122
     {
         int userId = 123;
         var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Location 1,2024-01-01,2024-01-02,Comment 1,""Address 1, CA"",37.7749,-122.4194,Hotel
-Location 2,2024-02-01,2024-02-02,Comment 2,""Address 2, NY"",40.7128,-74.0060,Restaurant
+Location 1,2024-01-01,2024-01-02,Comment 1,""Address 1, CA"",37.7749,-122.4194,""RV Park""
+Location 2,2024-02-01,2024-02-02,Comment 2,""Address 2, NY"",40.7128,-74.0060,""State Park""
 Location 3,2024-03-01,2024-03-02,Comment 3,""Address 3, TX"",29.7604,-95.3698,Other";
 
         var mockLocationService = new Mock<ILocationService>();
