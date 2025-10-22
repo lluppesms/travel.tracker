@@ -13,6 +13,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Identity.Web" Version="4.0.0" />
     <PackageReference Include="Microsoft.Identity.Web.UI" Version="4.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -20,6 +21,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>4d3c1d3c-3d9d-4d48-ac30-f292251836a5</UserSecretsId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
 </Project>

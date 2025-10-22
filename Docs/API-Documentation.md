@@ -2,6 +2,20 @@
 
 This document describes the RESTful API endpoints available in the Travel Tracker application.
 
+## Interactive API Documentation
+
+The API includes **Swagger/OpenAPI** documentation for easy exploration and testing:
+
+- **Swagger UI**: `http://localhost:5173/api/swagger`
+  - Interactive interface to explore and test all API endpoints
+  - View request/response schemas
+  - Try out API calls directly from the browser
+
+- **OpenAPI Specification**: `http://localhost:5173/swagger/v1/swagger.json`
+  - Download the complete OpenAPI 3.0 specification
+  - Import into API development tools (Postman, Insomnia, etc.)
+  - Use for API client generation
+
 ## Authentication
 
 All location-related and visited parks endpoints require authentication. The API uses the existing authentication service to identify users.
