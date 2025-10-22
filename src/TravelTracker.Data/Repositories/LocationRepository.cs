@@ -91,10 +91,19 @@ public class LocationRepository : ILocationRepository
 
     public async Task<Location> UpdateAsync(Location location)
     {
-        location.ModifiedDate = DateTime.UtcNow;
-        _context.Locations.Update(location);
-        _context.SaveChanges();
-        return location;
+        _ = await Task.FromResult(true);
+        try
+        {
+            location.ModifiedDate = DateTime.UtcNow;
+            _context.Locations.Update(location);
+            _context.SaveChanges();
+            return location;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating location {location.Id}: {ex.Message}");
+            return null;
+        }
     }
 
     public async Task DeleteAsync(int id, int userId)
