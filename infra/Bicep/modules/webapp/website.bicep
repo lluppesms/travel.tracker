@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------------------
 param webSiteName string = ''
 param location string = resourceGroup().location
+param appInsightsLocation string = resourceGroup().location
 param environmentCode string = 'dev'
 param commonTags object = {}
 
@@ -11,20 +12,32 @@ param workspaceId string = ''
 
 @description('The Name of the service plan to deploy into.')
 param appServicePlanName string
-param webAppKind string = 'linux' //  'linux' or 'windows'  (needs to be windows to use my shared app plan right now...)
-
-@description('Shared Application Insights instrumentation key')
-param sharedAppInsightsInstrumentationKey string
-
-param managedIdentityId string
-param managedIdentityPrincipalId string
+param webAppKind string = 'linux'
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~website.bicep'}
 var azdTag = environmentCode == 'azd' ? { 'azd-service-name': 'web' } : {}
+var tags = union(commonTags, templateTag)
 var webSiteTags = union(commonTags, templateTag, azdTag)
 
 // --------------------------------------------------------------------------------
+var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|8.0' : '' // 	The runtime stack of web app
+var appInsightsName = toLower('${webSiteName}-insights')
+
+// --------------------------------------------------------------------------------
+resource appInsightsResource 'Microsoft.Insights/components@2020-02-02' = {
+  name: appInsightsName
+  location: appInsightsLocation
+  tags: tags
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    Request_Source: 'rest'
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
+    WorkspaceResourceId: workspaceId
+  }
+}
 
 resource appServiceResource 'Microsoft.Web/serverfarms@2023-01-01' existing = {
   name: appServicePlanName
@@ -35,32 +48,26 @@ resource webSiteResource 'Microsoft.Web/sites@2023-01-01' = {
   location: location
   kind: 'app'
   identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: { '${managedIdentityId}': {} }
+    type: 'SystemAssigned'
   }
-  // identity: {
-  //   type: 'SystemAssigned'
-  // }
   tags: webSiteTags
   properties: {
     serverFarmId: appServiceResource.id
     httpsOnly: true
     clientAffinityEnabled: false
     siteConfig: {
-      netFrameworkVersion: webAppKind == 'windows' ? 'v8.0' : null
-      linuxFxVersion: webAppKind == 'linux' ? 'DOTNETCORE|8.0' : null
+      linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
-      alwaysOn: true
       remoteDebuggingEnabled: false
       appSettings: [
         { 
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: sharedAppInsightsInstrumentationKey 
+          value: appInsightsResource.properties.InstrumentationKey 
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: 'InstrumentationKey=${sharedAppInsightsInstrumentationKey}'
+          value: 'InstrumentationKey=${appInsightsResource.properties.InstrumentationKey}'
         }
       ]
     }
@@ -153,17 +160,22 @@ resource appServiceMetricLogging 'Microsoft.Insights/diagnosticSettings@2021-05-
       {
         category: 'AllMetrics'
         enabled: true
-        // retentionPolicy: {
-        //   days: 30
-        //   enabled: true 
-        // }
       }
     ]
+    //    this should be right but it's not supported... :(
+    // logs: [
+    //   {
+    //     category: 'AppRequests'
+    //     enabled: true
+    //   }
+    // ]    
   }
 }
-//output principalId string = webSiteResource.identity.principalId
+output principalId string = webSiteResource.identity.principalId
 output name string = webSiteName
 output hostName string = webSiteResource.properties.defaultHostName
-output webappAppPrincipalId string = managedIdentityPrincipalId
+output appInsightsName string = appInsightsName
+output appInsightsKey string = appInsightsResource.properties.InstrumentationKey
+output appInsightsConnectionString string = appInsightsResource.properties.ConnectionString
 // Note: This will give you a warning saying it's not right, but it will contain the right value!
 // output ipAddress string = webSiteResource.properties.inboundIpAddress 

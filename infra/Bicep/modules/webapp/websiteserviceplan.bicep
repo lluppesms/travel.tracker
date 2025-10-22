@@ -11,11 +11,11 @@ param environmentCode string = 'dev'
 param commonTags object = {}
 @allowed(['F1','B1','B2','S1','S2','S3'])
 param sku string = 'B1'
-param webAppKind string = 'linux'  // 'linux' or 'windows'
+param webAppKind string = 'linux'
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~website.bicep'}
-var azdTag = environmentCode == 'azd' ? { 'azd-service-name': 'web-plan' } : {}
+var azdTag = environmentCode == 'azd' ? { 'azd-service-name': 'web' } : {}
 var tags = union(commonTags, templateTag, azdTag)
 
 // --------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ resource appServiceResource 'Microsoft.Web/serverfarms@2023-01-01' = if (empty(e
   }
   kind: webAppKind
   properties: {
-    reserved: webAppKind == 'linux' ? true : false
+    reserved: true
   }
 }
 output name string = empty(existingServicePlanName) ? appServiceResource.name : existingAppServiceResource.name

@@ -4,47 +4,48 @@
 // To deploy this Bicep manually:
 // 	 az login
 //   az account set --subscription <subscriptionId>
-//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_Math.Storm_test --template-file 'main.bicep' --parameters appName=xxx-Math.Storm-test environmentCode=demo keyVaultOwnerUserId=xxxxxxxx-xxxx-xxxx
+//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_traveltracker_test --template-file 'main.bicep' --parameters appName=xxx-traveltracker-test environmentCode=demo keyVaultOwnerUserId=xxxxxxxx-xxxx-xxxx
 // --------------------------------------------------------------------------------
 param appName string = ''
 param environmentCode string = 'azd'
 param location string = resourceGroup().location
+
+param storageSku string = 'Standard_LRS'
 param webSiteSku string = 'B1'
+
+param apiKey string = ''
+
+param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
+param adDomain string = ''
+param adTenantId string = ''
+param adClientId string = ''
+param adCallbackPath string = '/signin-oidc'
+
+param appDataSource string = 'JSON'
+param appSwaggerEnabled string = 'true'
 param servicePlanName string = ''
 param webAppKind string = 'linux' // 'linux' or 'windows'
 
-param storageSku string = 'Standard_LRS'
-param functionAppSku string = 'B1'
-param functionAppSkuFamily string = ''
-param functionAppSkuTier string = 'Dynamic'
+param azureOpenAIChatEndpoint string = ''
+param azureOpenAIChatDeploymentName string = ''
+param azureOpenAIChatApiKey string = ''
+param azureOpenAIChatMaxTokens string = ''
+param azureOpenAIChatTemperature string = ''
+param azureOpenAIChatTopP string = ''
+param azureOpenAIImageEndpoint string = ''
+param azureOpenAIImageDeploymentName string = ''
+param azureOpenAIImageApiKey string = ''
 
-param OpenAI_Endpoint string
+param sqlServerNamePrefix string = ''
+param sqlDatabaseName string = 'traveltracker'
+@allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
+param sqlSkuTier string = 'GeneralPurpose'
+param sqlSkuFamily string = 'Gen5'
+param sqlSkuName string = 'GP_S_Gen5'
+param sqlAdminUser string = ''
 @secure()
-param OpenAI_ApiKey string
+param sqlAdminPassword string = ''
 
-// --------------------------------------------------------------------------------------------------------------
-// Run Settings Parameters
-// --------------------------------------------------------------------------------------------------------------
-@description('Should we run a script to dedupe the KeyVault secrets? (this fails on private networks right now)')
-param deduplicateKeyVaultSecrets bool = true
-@description('Add Role Assignments for the user assigned identity?')
-param addRoleAssignments bool = true
-@description('Should resources be created with public access?')
-param publicAccessEnabled bool = true
-@description('Should we deploy Cosmos DB?')
-param deployCosmos bool = true
-
-// --------------------------------------------------------------------------------------------------------------
-// Personal info Parameters
-// --------------------------------------------------------------------------------------------------------------
-@description('My IP address for network access')
-param myIpAddress string = ''
-@description('Id of the user executing the deployment')
-param principalId string = ''
-
-// --------------------------------------------------------------------------------------------------------------
-// Misc. Parameters
-// --------------------------------------------------------------------------------------------------------------
 param runDateTime string = utcNow()
 
 // --------------------------------------------------------------------------------
@@ -57,167 +58,62 @@ var commonTags = {
 var resourceGroupName = resourceGroup().name
 // var resourceToken = toLower(uniqueString(resourceGroup().id, location))
 
-
 // --------------------------------------------------------------------------------
 module resourceNames 'resourcenames.bicep' = {
   name: 'resourcenames${deploymentSuffix}'
   params: {
     appName: appName
     environmentCode: environmentCode
+    sqlServerNamePrefix: sqlServerNamePrefix
   }
 }
 // --------------------------------------------------------------------------------
-module logAnalyticsWorkspaceModule 'modules/monitor/loganalytics.bicep' = {
+module logAnalyticsWorkspaceModule './modules/monitor/loganalytics.bicep' = {
   name: 'logAnalytics${deploymentSuffix}'
   params: {
     newLogAnalyticsName: resourceNames.outputs.logAnalyticsWorkspaceName
-    newWebApplicationInsightsName: resourceNames.outputs.webSiteAppInsightsName
-    newFunctionApplicationInsightsName: resourceNames.outputs.functionAppInsightsName
     location: location
     tags: commonTags
   }
 }
 
 // --------------------------------------------------------------------------------
-var cosmosDatabaseName = 'MathStormData-${environmentCode}'
-var gameContainerName = 'Game'
-var userContainerName = 'GameUser' 
-var leaderboardContainerName = 'LeaderboardEntry'
-var cosmosContainerArray = [
-  { name: userContainerName, partitionKey: '/id' }
-  { name: gameContainerName, partitionKey: '/id' }
-  { name: leaderboardContainerName, partitionKey: '/id' }
-]
-module cosmosModule 'modules/database/cosmosdb.bicep' = {
-  name: 'cosmos${deploymentSuffix}'
+module storageModule './modules/storage/storage-account.bicep' = {
+  name: 'storage${deploymentSuffix}'
   params: {
-    accountName: deployCosmos ? resourceNames.outputs.cosmosDatabaseName : ''
-    // if this is no, then use the existing cosmos so you don't have to wait 20 minutes every time...
-    existingAccountName: deployCosmos ? '' : resourceNames.outputs.cosmosDatabaseName
-    location: location
-    tags: commonTags
-    containerArray: cosmosContainerArray
-    databaseName: cosmosDatabaseName
-  }
-}
-
-// --------------------------------------------------------------------------------------------------------------
-// -- Identity and Access Resources -----------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------------------
-module identity './modules/iam/identity.bicep' = {
-  name: 'app-identity${deploymentSuffix}'
-  params: {
-    identityName: resourceNames.outputs.userAssignedIdentityName
-    location: location
-  }
-}
-
-module appIdentityRoleAssignments './modules/iam/role-assignments.bicep' = if (addRoleAssignments) {
-  name: 'identity-roles${deploymentSuffix}'
-  params: {
-    identityPrincipalId: identity.outputs.managedIdentityPrincipalId
-    principalType: 'ServicePrincipal'
-    cosmosName: cosmosModule.outputs.name
-    keyVaultName: keyVaultModule.outputs.name
-    storageAccountName: functionStorageModule.outputs.name
-  }
-}
-
-module adminUserRoleAssignments './modules/iam/role-assignments.bicep' = if (addRoleAssignments && !empty(principalId)) {
-  name: 'user-roles${deploymentSuffix}'
-  params: {
-    identityPrincipalId: principalId
-    principalType: 'User'
-    cosmosName: cosmosModule.outputs.name
-    keyVaultName: keyVaultModule.outputs.name
-    storageAccountName: functionStorageModule.outputs.name
-  }
-}
-
-module functionAppRoleAssignments './modules/iam/role-assignments.bicep' = if (addRoleAssignments) {
-  name: 'function-roles${deploymentSuffix}'
-  params: {
-    identityPrincipalId: functionModule.outputs.functionAppPrincipalId
-    principalType: 'ServicePrincipal'
-    cosmosName: cosmosModule.outputs.name
-    keyVaultName: keyVaultModule.outputs.name
-    storageAccountName: functionStorageModule.outputs.name
-  }
-}
-
-// --------------------------------------------------------------------------------
-module keyVaultModule './modules/security/keyvault.bicep' = {
-  name: 'keyvault${deploymentSuffix}'
-  params: {
+    storageSku: storageSku
+    storageAccountName: resourceNames.outputs.storageAccountName
     location: location
     commonTags: commonTags
-    keyVaultName: resourceNames.outputs.keyVaultName
-    keyVaultOwnerUserId: principalId
-    adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
-    publicNetworkAccess: publicAccessEnabled ? 'Enabled' : 'Disabled'
-    keyVaultOwnerIpAddress: myIpAddress
-    createUserAssignedIdentity: false
   }
 }
-module keyVaultSecretList './modules/security/keyvault-list-secret-names.bicep' = if (deduplicateKeyVaultSecrets) {
-  name: 'keyVault-Secret-List-Names${deploymentSuffix}'
+
+// --------------------------------------------------------------------------------
+module sqlDbModule 'sqlserver.bicep' = {
+  name: 'sql-server${deploymentSuffix}'
   params: {
-    keyVaultName: keyVaultModule.outputs.name
+    sqlServerName: resourceNames.outputs.sqlServerName
+    sqlDBName: sqlDatabaseName
+    sqlSkuTier: sqlSkuTier
+    sqlSkuName: sqlSkuName
+    sqlSkuFamily: sqlSkuFamily
+    mincores: 1
+    autopause: 60
     location: location
-    userManagedIdentityId: identity.outputs.managedIdentityId
+    commonTags: commonTags
+    // adAdminUserId: adminLoginUserId
+    // adAdminUserSid: adminLoginUserSid
+    // adAdminTenantId: adminLoginTenantId
+    sqlAdminUser:sqlAdminUser
+    sqlAdminPassword: sqlAdminPassword
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    // storageAccountName: resourceNames.outputs.storageAccountName
   }
 }
 
-module keyVaultSecretAppInsights1 './modules/security/keyvault-secret.bicep' = {
-  name: 'keyVaultSecretAppInsights1${deploymentSuffix}'
-  dependsOn: [ keyVaultModule, logAnalyticsWorkspaceModule, webSiteModule ]
-  params: {
-    keyVaultName: keyVaultModule.outputs.name
-    secretName: 'webAppInsightsInstrumentationKey'
-    secretValue: logAnalyticsWorkspaceModule.outputs.webAppInsightsInstrumentationKey
-    existingSecretNames: deduplicateKeyVaultSecrets ? keyVaultSecretList!.outputs.secretNameList : ''
-  }
-}  
-module keyVaultSecretAppInsights2 './modules/security/keyvault-secret.bicep' = {
-  name: 'keyVaultSecretAppInsights2${deploymentSuffix}'
-  dependsOn: [ keyVaultModule, logAnalyticsWorkspaceModule, functionModule ]
-  params: {
-    keyVaultName: keyVaultModule.outputs.name
-    secretName: 'functionAppInsightsInstrumentationKey'
-    secretValue: logAnalyticsWorkspaceModule.outputs.functionAppInsightsInstrumentationKey
-    existingSecretNames: deduplicateKeyVaultSecrets ? keyVaultSecretList!.outputs.secretNameList : ''
-  }
-}  
 
-module keyVaultSecretCosmos './modules/security/keyvault-cosmos-secret.bicep' = {
-  name: 'keyVaultSecretCosmos${deploymentSuffix}'
-  dependsOn: [ keyVaultModule, cosmosModule, webSiteModule, functionModule  ]
-  params: {
-    keyVaultName: keyVaultModule.outputs.name
-    accountKeySecretName: 'cosmosAccountKey'
-    connectionStringSecretName: 'cosmosConnectionString'
-    cosmosAccountName: cosmosModule.outputs.name
-    existingSecretNames: deduplicateKeyVaultSecrets ? keyVaultSecretList!.outputs.secretNameList : ''
-  }
-}
-
-module keyVaultSecretFunctionKey './modules/security/keyvault-function-secret.bicep' = {
-  name: 'keyVaultSecretFunctionKey${deploymentSuffix}'
-  dependsOn: [ keyVaultModule, functionModule ]
-  params: {
-    keyVaultName: keyVaultModule.outputs.name
-    secretName: 'functionAppApiKey'
-    //secretValue: functionModule.outputs.functionMasterKey
-    functionAppName: functionModule.outputs.name
-    existingSecretNames: deduplicateKeyVaultSecrets ? keyVaultSecretList!.outputs.secretNameList : ''
-  }
-}
-
-// --------------------------------------------------------------------------------
-// Service Plan SHARED by webapp and function app
-// --------------------------------------------------------------------------------
 module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = {
-  name: 'appServicePlan${deploymentSuffix}'
+  name: 'appService${deploymentSuffix}'
   params: {
     location: location
     commonTags: commonTags
@@ -229,7 +125,7 @@ module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = {
   }
 }
 
-// --------------------------------------------------------------------------------
+
 module webSiteModule './modules/webapp/website.bicep' = {
   name: 'webSite${deploymentSuffix}'
   params: {
@@ -240,9 +136,6 @@ module webSiteModule './modules/webapp/website.bicep' = {
     webAppKind: webAppKind
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     appServicePlanName: appServicePlanModule.outputs.name
-    sharedAppInsightsInstrumentationKey: logAnalyticsWorkspaceModule.outputs.webAppInsightsInstrumentationKey
-    managedIdentityId: identity.outputs.managedIdentityId
-    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
   }
 }
 
@@ -254,98 +147,33 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
   name: 'webSiteAppSettings${deploymentSuffix}'
   params: {
     webAppName: webSiteModule.outputs.name
-    appInsightsKey: logAnalyticsWorkspaceModule.outputs.webAppInsightsInstrumentationKey
+    appInsightsKey: webSiteModule.outputs.appInsightsKey
     customAppSettings: {
-      AppSettings__AppInsights_InstrumentationKey: logAnalyticsWorkspaceModule.outputs.webAppInsightsInstrumentationKey
+      AppSettings__AppInsights_InstrumentationKey: webSiteModule.outputs.appInsightsKey
+      APPLICATIONINSIGHTS_CONNECTION_STRING: webSiteModule.outputs.appInsightsConnectionString
       AppSettings__EnvironmentName: environmentCode
-      FunctionService__BaseUrl: 'https://${functionModule.outputs.hostname}'
-      FunctionService__APIKey: keyVaultSecretFunctionKey.outputs.secretUri
-      FunctionService__MasterKey: 'unknown'
-      ConnectionStrings__ApplicationInsights: logAnalyticsWorkspaceModule.outputs.webAppInsightsConnectionString
+      AppSettings__EnableSwagger: appSwaggerEnabled
+      AppSettings__DataSource: appDataSource
+      AppSettings__ApiKey: apiKey
+      AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
+      AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
+      AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
+      AppSettings__AzureOpenAI__Chat__MaxTokens: azureOpenAIChatMaxTokens
+      AppSettings__AzureOpenAI__Chat__Temperature: azureOpenAIChatTemperature
+      AppSettings__AzureOpenAI__Chat__TopP: azureOpenAIChatTopP
+      AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
+      AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
+      AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
+      AzureAD__Instance: adInstance
+      AzureAD__Domain: adDomain
+      AzureAD__TenantId: adTenantId
+      AzureAD__ClientId: adClientId
+      AzureAD__CallbackPath: adCallbackPath
     }
   }
 }
 
-// --------------------------------------------------------------------------------
-// Function App for API endpoints
-// --------------------------------------------------------------------------------
-module functionStorageModule './modules/storage/storage-account.bicep' = {
-  name: 'functionstorage${deploymentSuffix}'
-  params: {
-    storageSku: storageSku
-    storageAccountName: resourceNames.outputs.functionStorageName
-    location: location
-    commonTags: commonTags
-    allowNetworkAccess: true
-    allowPublicNetworkAccess: false
-    allowSharedKeyAccess: false
-  }
-}
 
-module functionModule './modules/functions/functionapp.bicep' = {
-  name: 'function${deploymentSuffix}'
-  dependsOn: [ appIdentityRoleAssignments ]
-  params: {
-    functionAppName: resourceNames.outputs.functionAppName
-    functionAppServicePlanName: resourceNames.outputs.functionAppServicePlanName
-    functionInsightsName: resourceNames.outputs.functionAppInsightsName
-    sharedAppServicePlanName: appServicePlanModule.outputs.name
-    sharedAppInsightsInstrumentationKey: logAnalyticsWorkspaceModule.outputs.functionAppInsightsInstrumentationKey
-    sharedAppInsightsConnectionString: logAnalyticsWorkspaceModule.outputs.functionAppInsightsConnectionString
-    // switch to system assigned principal for secure storage access...
-    // keyVaultName: keyVaultModule.outputs.name
-    managedIdentityId: identity.outputs.managedIdentityId
-    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
-
-    location: location
-    commonTags: commonTags
-
-    functionKind: 'functionapp,linux'
-    functionAppSku: functionAppSku
-    functionAppSkuFamily: functionAppSkuFamily
-    functionAppSkuTier: functionAppSkuTier
-    functionStorageAccountName: functionStorageModule.outputs.name
-    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
-  }
-}
-// resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' existing = {
-//   name: keyVaultModule.outputs.name
-// } 
-module functionAppSettingsModule './modules/functions/functionappsettings.bicep' = {
-  name: 'functionAppSettings${deploymentSuffix}'
-  params: {
-    functionAppName: functionModule.outputs.name
-    functionStorageAccountName: functionModule.outputs.storageAccountName
-    functionInsightsKey: logAnalyticsWorkspaceModule.outputs.functionAppInsightsInstrumentationKey
-    // keyVaultName: keyVaultModule.outputs.name
-
-    cosmosAccountName: cosmosModule.outputs.name
-
-    OpenAI_Gpt4o_DeploymentName: 'gpt-4o-mini'
-    OpenAI_Gpt4o_Endpoint: OpenAI_Endpoint
-    OpenAI_Gpt4o_ApiKey: OpenAI_ApiKey
-    OpenAI_Gpt35_DeploymentName: 'gpt-35-turbo'
-    OpenAI_Gpt35_Endpoint: OpenAI_Endpoint
-    OpenAI_Gpt35_ApiKey: OpenAI_ApiKey
-
-    customAppSettings: {
-      OpenApi__HideSwaggerUI: 'false'
-      OpenApi__HideDocument: 'false'
-      OpenApi__DocTitle: 'MathStorm Game APIs'
-      OpenApi__DocDescription: 'This repo is an example of a GitHub Copilot Agent Vibe Coded Game'
-      appInsightsConnectionString: logAnalyticsWorkspaceModule.outputs.functionAppInsightsConnectionString
-      CosmosDb__DatabaseName: cosmosDatabaseName 
-      CosmosDb__ContainerNames__Users: userContainerName
-      CosmosDb__ContainerNames__Games: gameContainerName
-      CosmosDb__ContainerNames__Leaderboard: leaderboardContainerName
-      OpenAI__DefaultModel: 'gpt_4o_mini' // must use underscores, not hyphens...
-      OpenAI__Temperature: '0.8'     
-    }
-  }
-}
-
-// --------------------------------------------------------------------------------
 output SUBSCRIPTION_ID string = subscription().subscriptionId
 output RESOURCE_GROUP_NAME string = resourceGroupName
-output WEB_HOST_NAME string = webSiteModule.outputs.hostName
-output FUNCTION_HOST_NAME string = functionModule.outputs.hostname
+output HOST_NAME string = webSiteModule.outputs.hostName
