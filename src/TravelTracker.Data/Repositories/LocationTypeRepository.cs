@@ -24,6 +24,6 @@ public class LocationTypeRepository : ILocationTypeRepository
 
     public async Task<LocationType?> GetByNameAsync(string name)
     {
-        return await _context.LocationTypes.FirstOrDefaultAsync(lt => lt.Name == name);
+        return await _context.LocationTypes.AsNoTracking().FirstOrDefaultAsync(lt => lt.Name == name);
     }
 }
