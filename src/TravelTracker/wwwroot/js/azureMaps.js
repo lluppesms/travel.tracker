@@ -26,34 +26,35 @@ function getMarkerColor(locationType) {
 
 // Initialize the map
 window.initializeAzureMap = function (subscriptionKey, centerLat, centerLon, zoom) {
-    try {
-        // Create a map instance
-        map = new atlas.Map('azureMap', {
-            center: [centerLon, centerLat],
-            zoom: zoom || 4,
-            language: 'en-US',
-            authOptions: {
-                authType: 'subscriptionKey',
-                subscriptionKey: subscriptionKey
-            }
-        });
-
-        // Wait for the map resources to be ready
-        map.events.add('ready', function () {
-            // Create a popup
-            popup = new atlas.Popup({
-                pixelOffset: [0, -18],
-                closeButton: false
+    return new Promise((resolve, reject) => {
+        try {
+            // Create a map instance
+            map = new atlas.Map('azureMap', {
+                center: [centerLon, centerLat],
+                zoom: zoom || 4,
+                language: 'en-US',
+                authOptions: {
+                    authType: 'subscriptionKey',
+                    subscriptionKey: subscriptionKey
+                }
             });
 
-            console.log('Azure Maps initialized successfully');
-        });
+            // Wait for the map resources to be ready
+            map.events.add('ready', function () {
+                // Create a popup
+                popup = new atlas.Popup({
+                    pixelOffset: [0, -18],
+                    closeButton: false
+                });
 
-        return true;
-    } catch (error) {
-        console.error('Error initializing Azure Maps:', error);
-        return false;
-    }
+                console.log('Azure Maps initialized successfully');
+                resolve(true);
+            });
+        } catch (error) {
+            console.error('Error initializing Azure Maps:', error);
+            reject(error);
+        }
+    });
 };
 
 // Store markers for later cleanup
