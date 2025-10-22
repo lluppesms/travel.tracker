@@ -12,8 +12,8 @@ using TravelTracker.Data;
 namespace TravelTracker.Data.Migrations
 {
     [DbContext(typeof(TravelTrackerDbContext))]
-    [Migration("20251022132523_AddLocationTypeTable")]
-    partial class AddLocationTypeTable
+    [Migration("20251022140243_20251022")]
+    partial class _20251022
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

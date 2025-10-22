@@ -49,7 +49,9 @@ public class LocationService : ILocationService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error importing {location.Name}: {ex.Message}");
+            var msg = ex.Message;
+            msg += ex.InnerException != null ? " " + ex.InnerException.Message : string.Empty;
+            Console.WriteLine($"Error importing {location.Name}: {msg}");
             return null;
         }
     }
