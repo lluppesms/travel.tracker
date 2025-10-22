@@ -12,6 +12,7 @@ Travel Tracker is a responsive web application that enables users to track, visu
 - 🗺️ **Interactive Maps** - Visualize travels using Azure Maps
 - 📊 **Multiple Views** - Date range, state overview, and national parks modes
 - 📤 **JSON Upload** - Import location data in bulk
+- 🤖 **AI Chatbot** - Ask questions about your travels in natural language
 - 🔐 **Secure Authentication** - Azure AD (Entra ID) integration
 - 📱 **Responsive Design** - Works on desktop and mobile devices
 
@@ -35,6 +36,7 @@ Foundation development is complete. The application structure, data layer, servi
 - **Backend:** C# / ASP.NET Core (.NET 8/9)
 - **Database:** SQL Server (with Entity Framework Core)
 - **Authentication:** Azure AD (Entra ID)
+- **AI/LLM:** Azure AI Foundry
 - **Maps:** Azure Maps
 - **Hosting:** Azure App Service
 - **IaC:** Bicep
@@ -60,7 +62,7 @@ Foundation development is complete. The application structure, data layer, servi
 ### Prerequisites
 - .NET 9 SDK
 - SQL Server (LocalDB, Express, or full SQL Server)
-- Azure subscription (for Azure AD and Azure Maps)
+- Azure subscription (for Azure AD, Azure Maps, and Azure AI Foundry)
 - Visual Studio 2022 or VS Code
 
 ### Database Setup
@@ -82,8 +84,9 @@ Foundation development is complete. The application structure, data layer, servi
 
 1. Clone the repository
 2. Set up the database (see Database Setup above)
-3. Configure Azure services (Azure AD, Azure Maps)
-4. Update `appsettings.json` with your Azure AD and Azure Maps credentials
+3. Configure Azure services (Azure AD, Azure Maps, Azure AI Foundry)
+4. Update `appsettings.json` with your Azure AD, Azure Maps, and Azure AI Foundry credentials
+   - See [Chatbot Setup Guide](./Docs/CHATBOT_SETUP.md) for detailed AI configuration
 5. Run the application:
    ```bash
    cd src/TravelTracker
