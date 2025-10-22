@@ -3,7 +3,7 @@
 @using TravelTracker.Services.Interfaces
 @using System.Text.Json
 @using Microsoft.AspNetCore.Components.Forms
-@inject ILocationService LocationService
+@inject IDataImportService DataImportService
 @inject IAuthenticationService AuthenticationService
 
 <PageTitle>Upload Data - Travel Tracker</PageTitle>
@@ -31,11 +31,35 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Upload JSON File</h5>
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(selectedFormat == "json" ? "active" : "")"
+                                    type="button"
+                                    @onclick="SelectJsonFormat"
+                                    disabled="@isUploading">
+                                JSON Upload
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(selectedFormat == "csv" ? "active" : "")"
+                                    type="button"
+                                    @onclick="SelectCsvFormat"
+                                    disabled="@isUploading">
+                                CSV Upload
+                            </button>
+                        </li>
+                    </ul>
                 </div>
                 <div class="card-body">
-                    <InputFile OnChange="HandleFileSelected" class="form-control mb-3" accept=".json" disabled="@isUploading" />
-                    
+                    @if (selectedFormat == "json")
+                    {
+                        <InputFile OnChange="HandleFileSelected" class="form-control mb-3" accept=".json" disabled="@isUploading" />
+                    }
+                    else
+                    {
+                        <InputFile OnChange="HandleFileSelected" class="form-control mb-3" accept=".csv" disabled="@isUploading" />
+                    }
+
                     @if (selectedFileName != null)
                     {
                         <div class="alert alert-info">
@@ -47,7 +71,7 @@
                                     <ul class="mb-0">
                                         @foreach (var result in validationResults)
                                         {
-                                            <li class="@(result.IsValid ? "text-success" : "text-danger")">
+                                            <li class="@(result.IsSuccess ? "text-success" : "text-danger")">
                                                 @result.Message
                                             </li>
                                         }
@@ -56,21 +80,21 @@
                             }
                         </div>
                     }
-                    
+
                     @if (isUploading)
                     {
                         <div class="progress mb-3">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                 role="progressbar" 
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar"
                                  style="width: @uploadProgress%"
-                                 aria-valuenow="@uploadProgress" 
-                                 aria-valuemin="0" 
+                                 aria-valuenow="@uploadProgress"
+                                 aria-valuemin="0"
                                  aria-valuemax="100">
                                 @uploadProgress%
                             </div>
                         </div>
                     }
-                    
+
                     <div class="mt-3">
                         <button class="btn btn-primary" @onclick="ProcessUpload" disabled="@(!canUpload || isUploading)">
                             @if (isUploading)
@@ -101,15 +125,17 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">JSON Format</h5>
+                    <h5 class="mb-0">@(selectedFormat == "json" ? "JSON" : "CSV") Format</h5>
                 </div>
                 <div class="card-body">
-                    <p class="small">Your JSON file should follow this format:</p>
-                    <pre class="small bg-light p-2"><code>{
+                    @if (selectedFormat == "json")
+                    {
+                        <p class="small">Your JSON file should follow this format:</p>
+                        <pre class="small bg-light p-2"><code>{
   "locations": [
     {
       "name": "Yellowstone NP",
@@ -128,9 +154,22 @@
     }
   ]
 }</code></pre>
-                    <button class="btn btn-sm btn-outline-primary" @onclick="DownloadSample">
+                    }
+                    else
+                    {
+                        <p class="small">Your CSV file should have this header format:</p>
+                        <pre class="small bg-light p-2"><code>Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
+    Yellowstone NP,2024-06-15,2024-06-18,Amazing geysers,"Yellowstone National Park, WY 82190",44.427963,-110.588455,"National Park"
+Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36.1069,-112.1129,"National Park"</code></pre>
+                        <p class="small mt-2 text-muted">
+                            <strong>Note:</strong> State information will be extracted from the Address field.
+                        </p>
+                    }
+                    <a href="@GetSampleFileUrl()"
+                       download="@GetSampleFileName()"
+                       class="btn btn-sm btn-outline-primary">
                         <span class="bi bi-download"></span> Download Sample
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -146,15 +185,29 @@
     private bool canValidate = false;
     private bool canUpload = false;
     private int uploadProgress = 0;
-    private List<ValidationResult> validationResults = new();
+    private List<DisplayValidationResult> validationResults = new();
     private UploadSummary? uploadSummary;
-    private LocationUploadData? uploadData;
-    private string currentUserId = string.Empty;
+    private int currentUserId;
+    private string selectedFormat = "csv";
     private const long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     protected override void OnInitialized()
     {
-        currentUserId = AuthenticationService.GetCurrentUserId();
+        currentUserId = AuthenticationService.GetCurrentUserInternalId();
+    }
+
+    private void SelectJsonFormat()
+    {
+        if (isUploading) return;
+        selectedFormat = "json";
+        ClearSelection();
+    }
+
+    private void SelectCsvFormat()
+    {
+        if (isUploading) return;
+        selectedFormat = "csv";
+        ClearSelection();
     }
 
     private Task HandleFileSelected(InputFileChangeEventArgs e)
@@ -167,7 +220,6 @@
         successMessage = string.Empty;
         canValidate = true;
         canUpload = false;
-        uploadData = null;
         return Task.CompletedTask;
     }
 
@@ -180,88 +232,42 @@
             validationResults.Clear();
             errorMessage = string.Empty;
 
-            // Check file size
             if (selectedFile.Size > MAX_FILE_SIZE)
             {
-                validationResults.Add(new ValidationResult 
-                { 
-                    IsValid = false, 
-                    Message = $"File size exceeds maximum allowed size of {MAX_FILE_SIZE / 1024 / 1024}MB" 
+                validationResults.Add(new DisplayValidationResult
+                {
+                    IsSuccess = false,
+                    Message = $"File size exceeds maximum allowed size of {MAX_FILE_SIZE / 1024 / 1024}MB"
                 });
                 canUpload = false;
                 return;
             }
 
-            validationResults.Add(new ValidationResult { IsValid = true, Message = "File size is acceptable" });
+            validationResults.Add(new DisplayValidationResult { IsSuccess = true, Message = "File size is acceptable" });
 
-            // Read and parse JSON
             using var stream = selectedFile.OpenReadStream(MAX_FILE_SIZE);
-            using var reader = new StreamReader(stream);
-            var jsonContent = await reader.ReadToEndAsync();
 
-            try
+            Services.Interfaces.ValidationResult validationResult;
+            if (selectedFormat == "json")
             {
-                var options = new JsonSerializerOptions 
-                { 
-                    PropertyNameCaseInsensitive = true 
-                };
-                uploadData = JsonSerializer.Deserialize<LocationUploadData>(jsonContent, options);
-
-                if (uploadData == null || uploadData.Locations == null)
-                {
-                    validationResults.Add(new ValidationResult 
-                    { 
-                        IsValid = false, 
-                        Message = "Invalid JSON structure. Missing 'locations' array." 
-                    });
-                    canUpload = false;
-                    return;
-                }
-
-                validationResults.Add(new ValidationResult 
-                { 
-                    IsValid = true, 
-                    Message = $"JSON structure is valid. Found {uploadData.Locations.Count} locations." 
-                });
-
-                // Validate each location has required fields
-                int validLocations = 0;
-                foreach (var loc in uploadData.Locations)
-                {
-                    if (!string.IsNullOrEmpty(loc.Name) && !string.IsNullOrEmpty(loc.State))
-                    {
-                        validLocations++;
-                    }
-                }
-
-                if (validLocations == 0)
-                {
-                    validationResults.Add(new ValidationResult 
-                    { 
-                        IsValid = false, 
-                        Message = "No valid locations found. Each location must have at least a name and state." 
-                    });
-                    canUpload = false;
-                }
-                else
-                {
-                    validationResults.Add(new ValidationResult 
-                    { 
-                        IsValid = true, 
-                        Message = $"{validLocations} locations are ready for import." 
-                    });
-                    canUpload = true;
-                }
+                validationResult = await DataImportService.ValidateJsonAsync(stream);
             }
-            catch (JsonException ex)
+            else
             {
-                validationResults.Add(new ValidationResult 
-                { 
-                    IsValid = false, 
-                    Message = $"JSON parsing error: {ex.Message}" 
-                });
-                canUpload = false;
+                validationResult = await DataImportService.ValidateCsvAsync(stream);
             }
+
+            foreach (var msg in validationResult.ValidationMessages)
+            {
+                validationResults.Add(new DisplayValidationResult { IsSuccess = true, Message = msg });
+            }
+
+            foreach (var error in validationResult.Errors)
+            {
+                validationResults.Add(new DisplayValidationResult { IsSuccess = false, Message = error });
+            }
+
+            canUpload = validationResult.IsValid;
         }
         catch (Exception ex)
         {
@@ -272,9 +278,9 @@
 
     private async Task ProcessUpload()
     {
-        if (uploadData == null || uploadData.Locations == null)
+        if (selectedFile == null)
         {
-            errorMessage = "Please validate the file first.";
+            errorMessage = "Please select a file first.";
             return;
         }
 
@@ -284,52 +290,46 @@
             errorMessage = string.Empty;
             uploadProgress = 0;
 
-            var summary = new UploadSummary
+            using var stream = selectedFile.OpenReadStream(MAX_FILE_SIZE);
+
+            ImportResult result;
+            if (selectedFormat == "json")
             {
-                TotalProcessed = uploadData.Locations.Count
-            };
-
-            int processed = 0;
-            foreach (var locData in uploadData.Locations)
+                result = await DataImportService.ImportFromJsonAsync(stream, currentUserId);
+            }
+            else
             {
-                try
-                {
-                    var location = new Location
-                    {
-                        UserId = currentUserId,
-                        Name = locData.Name ?? "Unknown",
-                        LocationType = locData.LocationType ?? "Other",
-                        Address = locData.Address ?? string.Empty,
-                        City = locData.City ?? string.Empty,
-                        State = locData.State ?? string.Empty,
-                        ZipCode = locData.ZipCode ?? string.Empty,
-                        Latitude = locData.Latitude,
-                        Longitude = locData.Longitude,
-                        StartDate = locData.StartDate,
-                        EndDate = locData.EndDate,
-                        Rating = locData.Rating,
-                        Comments = locData.Comments ?? string.Empty,
-                        Tags = locData.Tags ?? new List<string>()
-                    };
-
-                    await LocationService.CreateLocationAsync(location);
-                    summary.SuccessCount++;
-                }
-                catch (Exception)
-                {
-                    summary.FailureCount++;
-                }
-
-                processed++;
-                uploadProgress = (int)((processed / (double)uploadData.Locations.Count) * 100);
-                StateHasChanged();
-                await Task.Delay(10); // Small delay to show progress
+                result = await DataImportService.ImportFromCsvAsync(stream, currentUserId);
             }
 
-            uploadSummary = summary;
-            successMessage = $"Upload complete! Imported {summary.SuccessCount} out of {summary.TotalProcessed} locations.";
-            
-            // Clear the form
+            uploadProgress = 100;
+            StateHasChanged();
+
+            uploadSummary = new UploadSummary
+            {
+                TotalProcessed = result.TotalRecords,
+                SuccessCount = result.ImportedRecords,
+                FailureCount = result.FailedRecords
+            };
+
+            if (result.Success)
+            {
+                successMessage = $"Upload complete! Imported {result.ImportedRecords} out of {result.TotalRecords} locations.";
+            }
+            else
+            {
+                errorMessage = "Upload failed. Please check validation errors.";
+            }
+
+            if (result.Errors.Any())
+            {
+                errorMessage += " Errors: " + string.Join("; ", result.Errors.Take(5));
+                if (result.Errors.Count > 5)
+                {
+                    errorMessage += $" and {result.Errors.Count - 5} more...";
+                }
+            }
+
             ClearSelection();
         }
         catch (Exception ex)
@@ -350,41 +350,14 @@
         validationResults.Clear();
         canValidate = false;
         canUpload = false;
-        uploadData = null;
     }
 
-    private void DownloadSample()
-    {
-        // This would be implemented with JS interop to download a sample file
-        // For now, just show a message
-        successMessage = "Sample download functionality will be implemented with JavaScript interop.";
-    }
+    private string GetSampleFileUrl() => selectedFormat == "json" ? "/samples/sample-locations.json" : "/samples/sample-locations.csv";
+    private string GetSampleFileName() => selectedFormat == "json" ? "sample-locations.json" : "sample-locations.csv";
 
-    private class LocationUploadData
+    private class DisplayValidationResult
     {
-        public List<LocationData>? Locations { get; set; }
-    }
-
-    private class LocationData
-    {
-        public string? Name { get; set; }
-        public string? LocationType { get; set; }
-        public string? Address { get; set; }
-        public string? City { get; set; }
-        public string? State { get; set; }
-        public string? ZipCode { get; set; }
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public int Rating { get; set; }
-        public string? Comments { get; set; }
-        public List<string>? Tags { get; set; }
-    }
-
-    private class ValidationResult
-    {
-        public bool IsValid { get; set; }
+        public bool IsSuccess { get; set; }
         public string Message { get; set; } = string.Empty;
     }
 

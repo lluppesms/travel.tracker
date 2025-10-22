@@ -13,7 +13,7 @@ public class UserService : IUserService
         _userRepository = userRepository;
     }
 
-    public async Task<User?> GetUserByIdAsync(string id)
+    public async Task<User?> GetUserByIdAsync(int id)
     {
         return await _userRepository.GetByIdAsync(id);
     }
@@ -31,7 +31,6 @@ public class UserService : IUserService
         {
             user = new User
             {
-                Id = entraIdUserId,
                 EntraIdUserId = entraIdUserId,
                 Username = username,
                 Email = email,
@@ -50,7 +49,7 @@ public class UserService : IUserService
         return user;
     }
 
-    public async Task UpdateLastLoginAsync(string userId)
+    public async Task UpdateLastLoginAsync(int userId)
     {
         var user = await _userRepository.GetByIdAsync(userId);
         if (user != null)

@@ -15,21 +15,30 @@ public class AuthenticationService : IAuthenticationService
         _userService = userService;
     }
 
+    public int GetCurrentUserInternalId()
+    {
+        var entraId = GetCurrentUserEntraId();
+        if (string.IsNullOrEmpty(entraId))
+        {
+            // fallback test id
+            var testUser = _userService.GetOrCreateUserAsync("TEST_USER_ENTRA", "Test User", "test@example.com").GetAwaiter().GetResult();
+            return testUser.Id;
+        }
+        var displayName = GetCurrentUserDisplayName();
+        var email = GetCurrentUserEmail();
+        var user = _userService.GetOrCreateUserAsync(entraId, displayName, email).GetAwaiter().GetResult();
+        return user.Id;
+    }
+
+    // Legacy external id (Entra ID or test) kept for compatibility with existing code paths still using string ids.
     public string GetCurrentUserId()
     {
         var entraId = GetCurrentUserEntraId();
         if (string.IsNullOrEmpty(entraId))
         {
-            // For local development without authentication, return a test user ID
-            return "TEST_USER_ID";
+            return "TEST_USER_ENTRA";
         }
-
-        // Try to get the user from the database, or create if doesn't exist
-        var displayName = GetCurrentUserDisplayName();
-        var email = GetCurrentUserEmail();
-        var user = _userService.GetOrCreateUserAsync(entraId, displayName, email).GetAwaiter().GetResult();
-
-        return user?.Id ?? "TEST_USER_ID";
+        return entraId;
     }
 
     public string GetCurrentUserEntraId()
@@ -40,7 +49,6 @@ public class AuthenticationService : IAuthenticationService
             return string.Empty;
         }
 
-        // Try to get the object identifier (oid) claim which is the unique ID in Entra ID
         return user.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value
             ?? user.FindFirst("oid")?.Value
             ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value

@@ -7,8 +7,8 @@ namespace TravelTracker.Data.Models;
 public class User
 {
     [Key]
-    [MaxLength(50)]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
     
     [MaxLength(50)]
     public string Type { get; set; } = "user";

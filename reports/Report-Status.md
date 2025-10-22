@@ -151,6 +151,17 @@ This phase is designed for migrating existing applications. Since Travel Tracker
 - [x] Tested all pages load without authentication errors
 - [x] All 17 tests passing
 
+### Completed Tasks - Week 5 (Data Import Enhancement)
+- [x] Created IDataImportService interface and DataImportService implementation
+- [x] Implemented CSV file upload and parsing functionality
+- [x] Added CSV validation with proper header format checking
+- [x] Enhanced Upload page with tab interface for JSON/CSV selection
+- [x] Implemented state extraction from address field in CSV
+- [x] Added date parsing for CSV Arrival/Departure fields
+- [x] Created 8 comprehensive tests for data import service
+- [x] All 25 tests passing (17 existing + 8 new)
+- [x] Updated format examples in UI for both JSON and CSV
+
 ### In Progress
 - [ ] Configure Azure AD app registration in Azure Portal
 - [ ] Configure Azure Maps service in Azure Portal
@@ -168,7 +179,7 @@ This phase is designed for migrating existing applications. Since Travel Tracker
 - [ ] Add data export functionality
 
 **Estimated Duration:** 10-12 weeks  
-**Progress:** ~60% complete (Foundation + Core Features + Authentication + Maps)
+**Progress:** ~65% complete (Foundation + Core Features + Authentication + Maps + Data Import)
 
 ---
 

@@ -13,7 +13,7 @@ public class LocationRepository : ILocationRepository
         _context = context;
     }
 
-    public async Task<Location?> GetByIdAsync(string id, string userId)
+    public async Task<Location?> GetByIdAsync(int id, int userId)
     {
         _ = await Task.FromResult(true);
         var location = _context.Locations
@@ -27,22 +27,30 @@ public class LocationRepository : ILocationRepository
         return location;
     }
 
-    public async Task<IEnumerable<Location>> GetAllByUserIdAsync(string userId)
+    public async Task<IEnumerable<Location>> GetAllByUserIdAsync(int userId)
     {
         _ = await Task.FromResult(true);
-        var locations = _context.Locations
-            .Where(l => l.UserId == userId)
-            .ToList();
-
-        foreach (var location in locations)
+        try
         {
-            DeserializeTags(location);
-        }
+            var locations = _context.Locations
+                .Where(l => l.UserId == userId)
+                .ToList();
 
-        return locations;
+            foreach (var location in locations)
+            {
+                DeserializeTags(location);
+            }
+
+            return locations;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"error getting locations for {userId} {ex.Message}");
+            return new List<Location>().AsEnumerable();
+        }
     }
 
-    public async Task<IEnumerable<Location>> GetByDateRangeAsync(string userId, DateTime startDate, DateTime endDate)
+    public async Task<IEnumerable<Location>> GetByDateRangeAsync(int userId, DateTime startDate, DateTime endDate)
     {
         var locations = _context.Locations
             .Where(l => l.UserId == userId && l.StartDate >= startDate && l.StartDate <= endDate)
@@ -56,7 +64,7 @@ public class LocationRepository : ILocationRepository
         return locations;
     }
 
-    public async Task<IEnumerable<Location>> GetByStateAsync(string userId, string state)
+    public async Task<IEnumerable<Location>> GetByStateAsync(int userId, string state)
     {
         _ = await Task.FromResult(true);
         var locations = _context.Locations
@@ -83,13 +91,22 @@ public class LocationRepository : ILocationRepository
 
     public async Task<Location> UpdateAsync(Location location)
     {
-        location.ModifiedDate = DateTime.UtcNow;
-        _context.Locations.Update(location);
-        _context.SaveChanges();
-        return location;
+        _ = await Task.FromResult(true);
+        try
+        {
+            location.ModifiedDate = DateTime.UtcNow;
+            _context.Locations.Update(location);
+            _context.SaveChanges();
+            return location;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating location {location.Id}: {ex.Message}");
+            return null;
+        }
     }
 
-    public async Task DeleteAsync(string id, string userId)
+    public async Task DeleteAsync(int id, int userId)
     {
         _ = await Task.FromResult(true);
         var location = _context.Locations

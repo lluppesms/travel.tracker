@@ -20,7 +20,7 @@ public class NationalParkService : INationalParkService
         return await _nationalParkRepository.GetAllAsync();
     }
 
-    public async Task<NationalPark?> GetParkByIdAsync(string id, string state)
+    public async Task<NationalPark?> GetParkByIdAsync(int id, string state)
     {
         return await _nationalParkRepository.GetByIdAsync(id, state);
     }
@@ -30,7 +30,7 @@ public class NationalParkService : INationalParkService
         return await _nationalParkRepository.GetByStateAsync(state);
     }
 
-    public async Task<IEnumerable<NationalPark>> GetVisitedParksAsync(string userId)
+    public async Task<IEnumerable<NationalPark>> GetVisitedParksAsync(int userId)
     {
         var allParks = await _nationalParkRepository.GetAllAsync();
         var userLocations = await _locationRepository.GetAllByUserIdAsync(userId);

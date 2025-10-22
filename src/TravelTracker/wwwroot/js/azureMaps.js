@@ -5,6 +5,26 @@ let map = null;
 let datasource = null;
 let popup = null;
 
+// Marker icon selection based on location type
+function getMarkerIcon(locationType) {
+    if (!locationType) return 'pin-red';
+    const t = locationType.toLowerCase();
+
+    // National Parks (ensure both words present)
+    if (t.includes('national') && t.includes('park')) return 'pin-darkgreen';
+    // State Parks
+    if (t.includes('state') && t.includes('park')) return 'pin-green';
+    // RV Parks / RV Resort / RV Campground
+    if (t.includes('rv')) return 'pin-purple';
+    // Harvest Host locations
+    if (t.includes('harvest')) return 'pin-yellow';
+    // Family / Relatives visits
+    if (t.includes('family') || t.includes('relative')) return 'pin-blue';
+
+    // Fallback for anything else
+    return 'pin-red';
+}
+
 // Initialize the map
 window.initializeAzureMap = function (subscriptionKey, centerLat, centerLon, zoom) {
     try {
@@ -28,9 +48,12 @@ window.initializeAzureMap = function (subscriptionKey, centerLat, centerLon, zoo
             // Create a symbol layer to render the markers
             var symbolLayer = new atlas.layer.SymbolLayer(datasource, null, {
                 iconOptions: {
-                    image: 'pin-red',
+                    image: 'pin-red', // default, overridden per feature by its 'image' property
                     allowOverlap: true,
                     ignorePlacement: true
+                },
+                textOptions: {
+                    // Could add short labels later if desired
                 }
             });
             map.layers.add(symbolLayer);
@@ -87,15 +110,17 @@ window.updateAzureMapMarkers = function (locations) {
         // Clear existing markers
         datasource.clear();
 
-        // Add new markers
+        // Add new markers with individualized icons
         const features = locations.map(loc => {
+            const icon = getMarkerIcon(loc.locationType);
             return new atlas.data.Feature(new atlas.data.Point([loc.lon, loc.lat]), {
                 name: loc.name,
                 city: loc.city,
                 state: loc.state,
                 date: loc.date,
                 locationType: loc.locationType || 'Unknown',
-                rating: loc.rating || 0
+                rating: loc.rating || 0,
+                image: icon // per-feature icon override
             });
         });
 
@@ -141,7 +166,6 @@ window.centerMapOnLocation = function (lat, lon, zoom) {
 // Create popup content HTML
 function createPopupContent(properties) {
     const stars = '★'.repeat(properties.rating) + '☆'.repeat(5 - properties.rating);
-    
     return `
         <div style="padding: 10px;">
             <strong>${properties.name}</strong><br/>
@@ -161,15 +185,7 @@ window.highlightStates = function (states) {
             return false;
         }
 
-        // This would require GeoJSON data for US states
-        // For now, just log the states to be highlighted
         console.log('States to highlight:', states);
-        
-        // In a full implementation, you would:
-        // 1. Load US states GeoJSON
-        // 2. Add a polygon layer
-        // 3. Style visited states differently
-        
         return true;
     } catch (error) {
         console.error('Error highlighting states:', error);
@@ -184,14 +200,13 @@ window.disposeAzureMap = function () {
             popup.close();
             popup = null;
         }
-        
+
         if (map) {
             map.dispose();
             map = null;
         }
-        
+
         datasource = null;
-        
         console.log('Azure Maps disposed');
         return true;
     } catch (error) {

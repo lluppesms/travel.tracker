@@ -11,7 +11,7 @@ public class UserServiceTests
     public async Task GetUserByIdAsync_ReturnsUser_WhenUserExists()
     {
         // Arrange
-        var userId = "user123";
+        int userId = 123;
         var expectedUser = new User 
         { 
             Id = userId, 
@@ -30,7 +30,7 @@ public class UserServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(userId, result.Id);
+        Assert.Equal(userId, result!.Id);
         Assert.Equal("test@example.com", result.Email);
         mockRepository.Verify(repo => repo.GetByIdAsync(userId), Times.Once);
     }
@@ -39,7 +39,7 @@ public class UserServiceTests
     public async Task GetUserByIdAsync_ReturnsNull_WhenUserDoesNotExist()
     {
         // Arrange
-        var userId = "nonexistent";
+        int userId = 999;
 
         var mockRepository = new Mock<IUserRepository>();
         mockRepository.Setup(repo => repo.GetByIdAsync(userId))
@@ -95,7 +95,7 @@ public class UserServiceTests
 
         var existingUser = new User 
         { 
-            Id = "user123", 
+            Id = 123, 
             EntraIdUserId = entraIdUserId,
             Email = email,
             Username = username,
@@ -126,7 +126,7 @@ public class UserServiceTests
     public async Task UpdateLastLoginAsync_UpdatesLastLoginDate()
     {
         // Arrange
-        var userId = "user123";
+        int userId = 123;
         var existingUser = new User 
         { 
             Id = userId, 
@@ -157,7 +157,7 @@ public class UserServiceTests
         var entraIdUserId = "entra-123";
         var expectedUser = new User 
         { 
-            Id = "user123",
+            Id = 123,
             EntraIdUserId = entraIdUserId,
             Email = "test@example.com",
             Username = "testuser"
@@ -174,7 +174,7 @@ public class UserServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(entraIdUserId, result.EntraIdUserId);
+        Assert.Equal(entraIdUserId, result!.EntraIdUserId);
         Assert.Equal("test@example.com", result.Email);
         mockRepository.Verify(repo => repo.GetByEntraIdAsync(entraIdUserId), Times.Once);
     }
