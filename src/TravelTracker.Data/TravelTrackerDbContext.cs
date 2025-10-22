@@ -35,11 +35,11 @@ public class TravelTrackerDbContext : DbContext
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.State);
             entity.HasIndex(e => e.StartDate);
-            
+
             // Handle Tags list as JSON
             entity.Property(e => e.TagsJson)
                 .HasDefaultValue("[]");
-                
+
             entity.Ignore(e => e.Tags);
         });
 
@@ -52,7 +52,7 @@ public class TravelTrackerDbContext : DbContext
 
             // Seed initial location types
             entity.HasData(
-                new NationalPark { Id = 1, Type = "National Park", Name = "Acadia National Park", State = "Maine", Latitude = 44.338974, Longitude = -68.273430, Description = "The only national park in New England, featuring a wild coastal wilderness of mountains, sea cliffs, and beaches." }
+                new NationalPark { Id = 1, Type = "National Park", Name = "Acadia National Park", State = "Maine", Latitude = 44.338974, Longitude = -68.273430, Description = "The only national park in New England, featuring a wild coastal wilderness of mountains, sea cliffs, and beaches." },
                 new NationalPark { Id = 02, Type = "National Park", Name = "American Samoa National Park", State = "American Samoa", Latitude = -14.235000, Longitude = -170.688000, Description = "A tropical park protecting coral reefs, volcanic peaks, and Polynesian culture." },
                 new NationalPark { Id = 03, Type = "National Park", Name = "Arches National Park", State = "Utah", Latitude = 38.733082, Longitude = -109.592514, Description = "Home to the world's largest concentration of natural sandstone arches set in dramatic desert scenery." },
                 new NationalPark { Id = 04, Type = "National Park", Name = "Badlands National Park", State = "South Dakota", Latitude = 43.855438, Longitude = -102.339691, Description = "A rugged landscape of sharply eroded buttes and colorful eroded hills spanning grassland prairie." },
@@ -123,7 +123,7 @@ public class TravelTrackerDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Name).IsUnique();
-            
+
             // Seed initial location types
             entity.HasData(
                 new LocationType { Id = 1, Name = "RV Park", Description = "RV Park or campground" },
