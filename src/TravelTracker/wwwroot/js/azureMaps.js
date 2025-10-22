@@ -76,25 +76,27 @@ window.updateAzureMapMarkers = function (locations) {
         locations.forEach(loc => {
             const color = getMarkerColor(loc.locationType);
             
+            // Store location properties for use in event handlers
+            const locationProps = {
+                name: loc.name,
+                city: loc.city,
+                state: loc.state,
+                date: loc.date,
+                locationType: loc.locationType || 'Unknown',
+                rating: loc.rating || 0
+            };
+            
             // Create HTML marker with custom color
             const marker = new atlas.HtmlMarker({
                 position: [loc.lon, loc.lat],
                 color: color,
-                text: '',
-                properties: {
-                    name: loc.name,
-                    city: loc.city,
-                    state: loc.state,
-                    date: loc.date,
-                    locationType: loc.locationType || 'Unknown',
-                    rating: loc.rating || 0
-                }
+                text: ''
             });
 
-            // Add hover event
+            // Add hover event (using closure to capture locationProps)
             map.events.add('mouseover', marker, function (e) {
                 popup.setOptions({
-                    content: createPopupContent(marker.getOptions().properties),
+                    content: createPopupContent(locationProps),
                     position: marker.getOptions().position
                 });
                 popup.open(map);
@@ -105,10 +107,9 @@ window.updateAzureMapMarkers = function (locations) {
                 popup.close();
             });
 
-            // Add click event
+            // Add click event (using closure to capture locationProps)
             map.events.add('click', marker, function (e) {
-                const props = marker.getOptions().properties;
-                alert(`Location: ${props.name}\nCity: ${props.city}, ${props.state}\nDate: ${props.date}`);
+                alert(`Location: ${locationProps.name}\nCity: ${locationProps.city}, ${locationProps.state}\nDate: ${locationProps.date}`);
             });
 
             map.markers.add(marker);
