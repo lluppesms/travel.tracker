@@ -96,6 +96,17 @@
                     <h6>Statistics</h6>
                     <p class="text-muted small mb-1">Locations shown: @filteredLocations.Count</p>
                     <p class="text-muted small mb-1">States visited: @visitedStates.Count / 50</p>
+
+                    <hr />
+                    <h6>Legend</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li><span class="legend-pin legend-pin-darkgreen"></span> National Park</li>
+                        <li><span class="legend-pin legend-pin-green"></span> State Park</li>
+                        <li><span class="legend-pin legend-pin-purple"></span> RV Park / RV Resort</li>
+                        <li><span class="legend-pin legend-pin-yellow"></span> Harvest Host</li>
+                        <li><span class="legend-pin legend-pin-blue"></span> Family / Relatives</li>
+                        <li><span class="legend-pin legend-pin-red"></span> Other / Uncategorized</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -148,13 +159,31 @@
                     }
                     else
                     {
-                        <div id="azureMap" style="height: 600px; width: 100%;"></div>
+                        <div id="azureMap" style="height: 600px; width: 100%; position: relative;"></div>
                     }
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .legend-pin {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+        border: 1px solid #999;
+    }
+    .legend-pin-darkgreen { background-color: #006400; }
+    .legend-pin-green { background-color: #28a745; }
+    .legend-pin-purple { background-color: #6f42c1; }
+    .legend-pin-yellow { background-color: #ffc107; }
+    .legend-pin-blue { background-color: #0d6efd; }
+    .legend-pin-red { background-color: #dc3545; }
+</style>
 
 @code {
     private enum ViewMode

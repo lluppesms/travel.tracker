@@ -30,16 +30,24 @@ public class LocationRepository : ILocationRepository
     public async Task<IEnumerable<Location>> GetAllByUserIdAsync(int userId)
     {
         _ = await Task.FromResult(true);
-        var locations = _context.Locations
-            .Where(l => l.UserId == userId)
-            .ToList();
-
-        foreach (var location in locations)
+        try
         {
-            DeserializeTags(location);
-        }
+            var locations = _context.Locations
+                .Where(l => l.UserId == userId)
+                .ToList();
 
-        return locations;
+            foreach (var location in locations)
+            {
+                DeserializeTags(location);
+            }
+
+            return locations;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"error getting locations for {userId} {ex.Message}");
+            return new List<Location>().AsEnumerable();
+        }
     }
 
     public async Task<IEnumerable<Location>> GetByDateRangeAsync(int userId, DateTime startDate, DateTime endDate)
