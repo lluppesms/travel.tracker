@@ -43,14 +43,14 @@ public class ChatbotService : IChatbotService
 
     public async Task<string> GetChatResponseAsync(string userMessage, int userId)
     {
-        if (_client == null)
-        {
-            return "Chatbot is not configured. Please configure Azure AI Foundry settings in appsettings.json.";
-        }
-
         if (string.IsNullOrWhiteSpace(userMessage))
         {
             return "Please provide a message.";
+        }
+
+        if (_client == null)
+        {
+            return "Chatbot is not configured. Please configure Azure AI Foundry settings in appsettings.json.";
         }
 
         try
