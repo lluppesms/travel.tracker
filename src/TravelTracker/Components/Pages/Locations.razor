@@ -345,13 +345,13 @@
 
             if (isEditMode)
             {
-                await LocationService.UpdateLocationAsync(currentLocation);
-                successMessage = "Location updated successfully!";
+                var result = await LocationService.UpdateLocationAsync(currentLocation);
+                successMessage = result == null ? "Location update failed!" : "Location updated successfully!";
             }
             else
             {
-                await LocationService.CreateLocationAsync(currentLocation);
-                successMessage = "Location added successfully!";
+                var result = await LocationService.CreateLocationAsync(currentLocation);
+                successMessage = result == null ? "Location add failed!" : "Location added successfully!";
             }
 
             HideLocationForm();
