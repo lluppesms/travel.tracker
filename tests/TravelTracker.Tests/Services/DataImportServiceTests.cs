@@ -1,5 +1,6 @@
 using Moq;
 using TravelTracker.Data.Models;
+using TravelTracker.Data.Repositories;
 using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Services;
 
@@ -7,6 +8,41 @@ namespace TravelTracker.Tests.Services;
 
 public class DataImportServiceTests
 {
+    private Mock<ILocationTypeRepository> CreateMockLocationTypeRepository()
+    {
+        var mock = new Mock<ILocationTypeRepository>();
+        var locationTypes = new List<LocationType>
+        {
+            new LocationType { Id = 1, Name = "RV Park" },
+            new LocationType { Id = 2, Name = "National Park" },
+            new LocationType { Id = 3, Name = "National Monument" },
+            new LocationType { Id = 4, Name = "Harvest Host" },
+            new LocationType { Id = 5, Name = "State Park" },
+            new LocationType { Id = 6, Name = "Family" },
+            new LocationType { Id = 7, Name = "Other" }
+        };
+        
+        mock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(locationTypes);
+        mock.Setup(repo => repo.GetByNameAsync(It.IsAny<string>()))
+            .ReturnsAsync((string name) => locationTypes.FirstOrDefault(lt => lt.Name == name));
+        
+        return mock;
+    }
+
+    private Mock<INationalParkRepository> CreateMockNationalParkRepository()
+    {
+        var mock = new Mock<INationalParkRepository>();
+        var parks = new List<NationalPark>
+        {
+            new NationalPark { Id = 1, Name = "Yellowstone", State = "WY" },
+            new NationalPark { Id = 2, Name = "Yosemite", State = "CA" }
+        };
+        
+        mock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(parks);
+        
+        return mock;
+    }
+
     [Fact]
     public async Task ImportFromJsonAsync_ValidJson_ImportsLocations()
     {
@@ -15,6 +51,7 @@ public class DataImportServiceTests
             ""locations"": [
                 {
                     ""name"": ""Test Location"",
+                    ""locationType"": ""RV Park"",
                     ""state"": ""CA"",
                     ""latitude"": 37.7749,
                     ""longitude"": -122.4194,
@@ -27,7 +64,9 @@ public class DataImportServiceTests
         mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
             .ReturnsAsync((Location loc) => loc);
 
-        var service = new DataImportService(mockLocationService.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
         var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonContent));
 
         // Act
@@ -48,7 +87,9 @@ public class DataImportServiceTests
         var invalidJson = @"{ ""invalid"": ""structure"" }";
 
         var mockLocationService = new Mock<ILocationService>();
-        var service = new DataImportService(mockLocationService.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
         var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(invalidJson));
 
         // Act
@@ -65,13 +106,15 @@ public class DataImportServiceTests
     {
         int userId = 123;
         var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Yellowstone NP,2024-06-15,2024-06-18,Amazing geysers,""Yellowstone National Park, WY 82190"",44.427963,-110.588455,""National Park""";
+Test RV Park,2024-06-15,2024-06-18,Amazing place,""123 Main St, CA 90210"",34.0522,-118.2437,""RV Park""";
 
         var mockLocationService = new Mock<ILocationService>();
         mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
             .ReturnsAsync((Location loc) => loc);
 
-        var service = new DataImportService(mockLocationService.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
         var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
 
         // Act
@@ -93,7 +136,9 @@ Yellowstone NP,2024-06-15,2024-06-18,Amazing geysers,""Yellowstone National Park
 data1,data2";
 
         var mockLocationService = new Mock<ILocationService>();
-        var service = new DataImportService(mockLocationService.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
         var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
 
         // Act
@@ -121,7 +166,9 @@ data1,data2";
         }";
 
         var mockLocationService = new Mock<ILocationService>();
-        var service = new DataImportService(mockLocationService.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
         var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonContent));
 
         // Act
@@ -140,7 +187,9 @@ data1,data2";
 Test Location,2024-01-01,2024-01-02,Great place,""123 Main St, CA"",37.7749,-122.4194,""National Park""";
 
         var mockLocationService = new Mock<ILocationService>();
-        var service = new DataImportService(mockLocationService.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
         var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
 
         // Act
@@ -157,7 +206,7 @@ Test Location,2024-01-01,2024-01-02,Great place,""123 Main St, CA"",37.7749,-122
     {
         int userId = 123;
         var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122.4194,""National Park""";
+Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122.4194,""RV Park""";
 
         Location? capturedLocation = null;
         var mockLocationService = new Mock<ILocationService>();
@@ -165,7 +214,9 @@ Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122
             .Callback<Location>(loc => capturedLocation = loc)
             .ReturnsAsync((Location loc) => loc);
 
-        var service = new DataImportService(mockLocationService.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
         var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
 
         // Act
@@ -183,15 +234,17 @@ Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122
     {
         int userId = 123;
         var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Location 1,2024-01-01,2024-01-02,Comment 1,""Address 1, CA"",37.7749,-122.4194,""National Park""
-Location 2,2024-02-01,2024-02-02,Comment 2,""Address 2, NY"",40.7128,-74.0060,""National Park""
-Location 3,2024-03-01,2024-03-02,Comment 3,""Address 3, TX"",29.7604,-95.3698,""National Park""";
+Location 1,2024-01-01,2024-01-02,Comment 1,""Address 1, CA"",37.7749,-122.4194,""RV Park""
+Location 2,2024-02-01,2024-02-02,Comment 2,""Address 2, NY"",40.7128,-74.0060,""State Park""
+Location 3,2024-03-01,2024-03-02,Comment 3,""Address 3, TX"",29.7604,-95.3698,Other";
 
         var mockLocationService = new Mock<ILocationService>();
         mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
             .ReturnsAsync((Location loc) => loc);
 
-        var service = new DataImportService(mockLocationService.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
         var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
 
         // Act
@@ -203,5 +256,56 @@ Location 3,2024-03-01,2024-03-02,Comment 3,""Address 3, TX"",29.7604,-95.3698,""
         Assert.Equal(3, result.ImportedRecords);
         Assert.Equal(0, result.FailedRecords);
         mockLocationService.Verify(s => s.CreateLocationAsync(It.IsAny<Location>()), Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task ImportFromCsvAsync_ValidNationalPark_ImportsSuccessfully()
+    {
+        int userId = 123;
+        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
+Yellowstone,2024-06-15,2024-06-18,Amazing geysers,""Yellowstone National Park, WY 82190"",44.427963,-110.588455,""National Park""";
+
+        var mockLocationService = new Mock<ILocationService>();
+        mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
+            .ReturnsAsync((Location loc) => loc);
+
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
+        var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
+
+        // Act
+        var result = await service.ImportFromCsvAsync(stream, userId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(1, result.ImportedRecords);
+        mockLocationService.Verify(s => s.CreateLocationAsync(It.IsAny<Location>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ImportFromCsvAsync_InvalidNationalPark_FailsImport()
+    {
+        int userId = 123;
+        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
+Unknown Park,2024-06-15,2024-06-18,Does not exist,""Unknown Location, WY 82190"",44.427963,-110.588455,""National Park""";
+
+        var mockLocationService = new Mock<ILocationService>();
+        mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
+            .ReturnsAsync((Location loc) => loc);
+
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new DataImportService(mockLocationService.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
+        var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
+
+        // Act
+        var result = await service.ImportFromCsvAsync(stream, userId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(0, result.ImportedRecords);
+        Assert.Equal(1, result.FailedRecords);
+        Assert.Contains("not found in the National Parks database", result.Errors[0]);
     }
 }

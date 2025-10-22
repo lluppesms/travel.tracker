@@ -2,6 +2,7 @@
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
 @inject ILocationService LocationService
+@inject ILocationTypeService LocationTypeService
 @inject IAuthenticationService AuthenticationService
 
 <PageTitle>Locations - Travel Tracker</PageTitle>
@@ -119,7 +120,14 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Location Type *</label>
-                                <InputText class="form-control" @bind-Value="currentLocation.LocationType" placeholder="e.g., National Park, Hotel, Restaurant" />
+                                <InputSelect class="form-select" @bind-Value="currentLocation.LocationType">
+                                    <option value="">-- Select Location Type --</option>
+                                    @foreach (var locationType in locationTypes)
+                                    {
+                                        <option value="@locationType.Name">@locationType.Name</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => currentLocation.LocationType)" />
                             </div>
                         </div>
 
@@ -226,6 +234,7 @@
 
 @code {
     private List<Location> locations = new();
+    private List<LocationType> locationTypes = new();
     private Location currentLocation = new();
     private Location? locationToDelete;
     private bool showLocationForm = false;
@@ -241,7 +250,22 @@
     protected override async Task OnInitializedAsync()
     {
         currentUserId = AuthenticationService.GetCurrentUserInternalId();
+        await LoadLocationTypes();
         await LoadLocations();
+    }
+
+    private async Task LoadLocationTypes()
+    {
+        try
+        {
+            var types = await LocationTypeService.GetAllLocationTypesAsync();
+            locationTypes = types.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load location types: {ex.Message}";
+            locationTypes = new List<LocationType>();
+        }
     }
 
     private async Task LoadLocations()
@@ -321,13 +345,13 @@
 
             if (isEditMode)
             {
-                await LocationService.UpdateLocationAsync(currentLocation);
-                successMessage = "Location updated successfully!";
+                var result = await LocationService.UpdateLocationAsync(currentLocation);
+                successMessage = result == null ? "Location update failed!" : "Location updated successfully!";
             }
             else
             {
-                await LocationService.CreateLocationAsync(currentLocation);
-                successMessage = "Location added successfully!";
+                var result = await LocationService.CreateLocationAsync(currentLocation);
+                successMessage = result == null ? "Location add failed!" : "Location added successfully!";
             }
 
             HideLocationForm();

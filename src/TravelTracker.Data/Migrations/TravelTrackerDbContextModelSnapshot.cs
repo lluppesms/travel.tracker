@@ -58,6 +58,9 @@ namespace TravelTracker.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("LocationTypeId")
+                        .HasColumnType("int");
+
                     b.Property<double>("Longitude")
                         .HasColumnType("float");
 
@@ -102,6 +105,8 @@ namespace TravelTracker.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LocationTypeId");
+
                     b.HasIndex("StartDate");
 
                     b.HasIndex("State");
@@ -109,6 +114,76 @@ namespace TravelTracker.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Locations");
+                });
+
+            modelBuilder.Entity("TravelTracker.Data.Models.LocationType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("LocationTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "RV Park or campground",
+                            Name = "RV Park"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "US National Park",
+                            Name = "National Park"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "US National Monument",
+                            Name = "National Monument"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Description = "Harvest Host location",
+                            Name = "Harvest Host"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Description = "State Park",
+                            Name = "State Park"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Description = "Family or friends location",
+                            Name = "Family"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Description = "Other location type",
+                            Name = "Other"
+                        });
                 });
 
             modelBuilder.Entity("TravelTracker.Data.Models.NationalPark", b =>
@@ -195,6 +270,15 @@ namespace TravelTracker.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("TravelTracker.Data.Models.Location", b =>
+                {
+                    b.HasOne("TravelTracker.Data.Models.LocationType", "LocationTypeNavigation")
+                        .WithMany()
+                        .HasForeignKey("LocationTypeId");
+
+                    b.Navigation("LocationTypeNavigation");
                 });
 #pragma warning restore 612, 618
         }

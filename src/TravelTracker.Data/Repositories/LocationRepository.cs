@@ -95,9 +95,34 @@ public class LocationRepository : ILocationRepository
         try
         {
             location.ModifiedDate = DateTime.UtcNow;
-            _context.Locations.Update(location);
+            
+            // Get the existing entity from the database
+            var existingLocation = _context.Locations.FirstOrDefault(l => l.Id == location.Id);
+            if (existingLocation == null)
+            {
+                throw new InvalidOperationException($"Location with ID {location.Id} not found.");
+            }
+
+            // Update only the properties we want to change, avoiding navigation properties
+            existingLocation.UserId = location.UserId;
+            existingLocation.Name = location.Name;
+            existingLocation.LocationType = location.LocationType;
+            existingLocation.LocationTypeId = location.LocationTypeId;
+            existingLocation.Address = location.Address;
+            existingLocation.City = location.City;
+            existingLocation.State = location.State;
+            existingLocation.ZipCode = location.ZipCode;
+            existingLocation.Latitude = location.Latitude;
+            existingLocation.Longitude = location.Longitude;
+            existingLocation.StartDate = location.StartDate;
+            existingLocation.EndDate = location.EndDate;
+            existingLocation.Rating = location.Rating;
+            existingLocation.Comments = location.Comments;
+            existingLocation.TagsJson = location.TagsJson;
+            existingLocation.ModifiedDate = location.ModifiedDate;
+
             _context.SaveChanges();
-            return location;
+            return existingLocation;
         }
         catch (Exception ex)
         {

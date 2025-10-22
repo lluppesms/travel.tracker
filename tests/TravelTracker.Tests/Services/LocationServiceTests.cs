@@ -7,6 +7,41 @@ namespace TravelTracker.Tests.Services;
 
 public class LocationServiceTests
 {
+    private Mock<ILocationTypeRepository> CreateMockLocationTypeRepository()
+    {
+        var mock = new Mock<ILocationTypeRepository>();
+        var locationTypes = new List<LocationType>
+        {
+            new LocationType { Id = 1, Name = "RV Park" },
+            new LocationType { Id = 2, Name = "National Park" },
+            new LocationType { Id = 3, Name = "National Monument" },
+            new LocationType { Id = 4, Name = "Harvest Host" },
+            new LocationType { Id = 5, Name = "State Park" },
+            new LocationType { Id = 6, Name = "Family" },
+            new LocationType { Id = 7, Name = "Other" }
+        };
+        
+        mock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(locationTypes);
+        mock.Setup(repo => repo.GetByNameAsync(It.IsAny<string>()))
+            .ReturnsAsync((string name) => locationTypes.FirstOrDefault(lt => lt.Name == name));
+        
+        return mock;
+    }
+
+    private Mock<INationalParkRepository> CreateMockNationalParkRepository()
+    {
+        var mock = new Mock<INationalParkRepository>();
+        var parks = new List<NationalPark>
+        {
+            new NationalPark { Id = 1, Name = "Yellowstone", State = "WY" },
+            new NationalPark { Id = 2, Name = "Yosemite", State = "CA" }
+        };
+        
+        mock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(parks);
+        
+        return mock;
+    }
+
     [Fact]
     public async Task GetAllLocationsAsync_ReturnsLocationsForUser()
     {
@@ -21,7 +56,9 @@ public class LocationServiceTests
         mockRepository.Setup(repo => repo.GetAllByUserIdAsync(userId))
             .ReturnsAsync(expectedLocations);
 
-        var service = new LocationService(mockRepository.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
 
         // Act
         var result = await service.GetAllLocationsAsync(userId);
@@ -39,6 +76,7 @@ public class LocationServiceTests
         { 
             UserId = 123, 
             Name = "New Location",
+            LocationType = "RV Park",
             State = "CA",
             Rating = 5
         };
@@ -47,7 +85,9 @@ public class LocationServiceTests
         mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Location>()))
             .ReturnsAsync(location);
 
-        var service = new LocationService(mockRepository.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
 
         // Act
         var result = await service.CreateLocationAsync(location);
@@ -73,7 +113,9 @@ public class LocationServiceTests
         mockRepository.Setup(repo => repo.GetAllByUserIdAsync(userId))
             .ReturnsAsync(locations);
 
-        var service = new LocationService(mockRepository.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
 
         // Act
         var result = await service.GetLocationsByStateCountAsync(userId);
@@ -93,6 +135,7 @@ public class LocationServiceTests
             Id = 1,
             UserId = 123, 
             Name = "Updated Location",
+            LocationType = "RV Park",
             State = "NY",
             Rating = 4
         };
@@ -101,7 +144,9 @@ public class LocationServiceTests
         mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<Location>()))
             .ReturnsAsync(location);
 
-        var service = new LocationService(mockRepository.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
 
         // Act
         var result = await service.UpdateLocationAsync(location);
@@ -123,7 +168,9 @@ public class LocationServiceTests
         mockRepository.Setup(repo => repo.DeleteAsync(locationId, userId))
             .Returns(Task.CompletedTask);
 
-        var service = new LocationService(mockRepository.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
 
         // Act
         await service.DeleteLocationAsync(locationId, userId);
@@ -148,7 +195,9 @@ public class LocationServiceTests
         mockRepository.Setup(repo => repo.GetByDateRangeAsync(userId, startDate, endDate))
             .ReturnsAsync(expectedLocations);
 
-        var service = new LocationService(mockRepository.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
 
         // Act
         var result = await service.GetLocationsByDateRangeAsync(userId, startDate, endDate);
@@ -174,7 +223,9 @@ public class LocationServiceTests
         mockRepository.Setup(repo => repo.GetByStateAsync(userId, state))
             .ReturnsAsync(expectedLocations);
 
-        var service = new LocationService(mockRepository.Object);
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
 
         // Act
         var result = await service.GetLocationsByStateAsync(userId, state);
@@ -184,5 +235,85 @@ public class LocationServiceTests
         Assert.Equal(2, result.Count());
         Assert.All(result, loc => Assert.Equal(state, loc.State));
         mockRepository.Verify(repo => repo.GetByStateAsync(userId, state), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateLocationAsync_WithValidNationalPark_Succeeds()
+    {
+        var location = new Location 
+        { 
+            UserId = 123, 
+            Name = "Yellowstone",
+            LocationType = "National Park",
+            State = "WY",
+            Rating = 5
+        };
+
+        var mockRepository = new Mock<ILocationRepository>();
+        mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Location>()))
+            .ReturnsAsync(location);
+
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
+
+        // Act
+        var result = await service.CreateLocationAsync(location);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Yellowstone", result.Name);
+        Assert.Equal(2, result.LocationTypeId); // National Park has ID 2
+        mockRepository.Verify(repo => repo.CreateAsync(It.IsAny<Location>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateLocationAsync_WithInvalidNationalPark_ThrowsException()
+    {
+        var location = new Location 
+        { 
+            UserId = 123, 
+            Name = "Unknown Park",
+            LocationType = "National Park",
+            State = "WY",
+            Rating = 5
+        };
+
+        var mockRepository = new Mock<ILocationRepository>();
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
+
+        // Act & Assert
+        var result = await service.CreateLocationAsync(location);
+        
+        // Since the service catches exceptions and returns null, we expect null
+        Assert.Null(result);
+        mockRepository.Verify(repo => repo.CreateAsync(It.IsAny<Location>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateLocationAsync_WithInvalidLocationType_ReturnsNull()
+    {
+        var location = new Location 
+        { 
+            UserId = 123, 
+            Name = "Test Location",
+            LocationType = "InvalidType",
+            State = "CA",
+            Rating = 5
+        };
+
+        var mockRepository = new Mock<ILocationRepository>();
+        var mockLocationTypeRepo = CreateMockLocationTypeRepository();
+        var mockNationalParkRepo = CreateMockNationalParkRepository();
+        var service = new LocationService(mockRepository.Object, mockLocationTypeRepo.Object, mockNationalParkRepo.Object);
+
+        // Act
+        var result = await service.CreateLocationAsync(location);
+
+        // Assert
+        Assert.Null(result);
+        mockRepository.Verify(repo => repo.CreateAsync(It.IsAny<Location>()), Times.Never);
     }
 }

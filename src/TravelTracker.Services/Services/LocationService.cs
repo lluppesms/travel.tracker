@@ -7,10 +7,17 @@ namespace TravelTracker.Services.Services;
 public class LocationService : ILocationService
 {
     private readonly ILocationRepository _locationRepository;
+    private readonly ILocationTypeRepository _locationTypeRepository;
+    private readonly INationalParkRepository _nationalParkRepository;
 
-    public LocationService(ILocationRepository locationRepository)
+    public LocationService(
+        ILocationRepository locationRepository,
+        ILocationTypeRepository locationTypeRepository,
+        INationalParkRepository nationalParkRepository)
     {
         _locationRepository = locationRepository;
+        _locationTypeRepository = locationTypeRepository;
+        _nationalParkRepository = nationalParkRepository;
     }
 
     public async Task<Location?> GetLocationByIdAsync(int id, int userId)
@@ -37,17 +44,21 @@ public class LocationService : ILocationService
     {
         try
         {
+            await ValidateLocationAsync(location);
             return await _locationRepository.CreateAsync(location);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error importing {location.Name}: {ex.Message}");
+            var msg = ex.Message;
+            msg += ex.InnerException != null ? " " + ex.InnerException.Message : string.Empty;
+            Console.WriteLine($"Error importing {location.Name}: {msg}");
             return null;
         }
     }
 
     public async Task<Location> UpdateLocationAsync(Location location)
     {
+        await ValidateLocationAsync(location);
         return await _locationRepository.UpdateAsync(location);
     }
 
@@ -62,5 +73,40 @@ public class LocationService : ILocationService
         return locations
             .GroupBy(l => l.State)
             .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    private async Task ValidateLocationAsync(Location location)
+    {
+        // Validate location type exists in lookup table
+        if (string.IsNullOrWhiteSpace(location.LocationType))
+        {
+            throw new ArgumentException("Location type is required.");
+        }
+
+        var locationType = await _locationTypeRepository.GetByNameAsync(location.LocationType);
+        if (locationType == null)
+        {
+            var validTypes = await _locationTypeRepository.GetAllAsync();
+            var validTypeNames = string.Join(", ", validTypes.Select(t => t.Name));
+            throw new ArgumentException($"Invalid location type '{location.LocationType}'. Valid types are: {validTypeNames}");
+        }
+
+        // Set the LocationTypeId for the foreign key relationship
+        location.LocationTypeId = locationType.Id;
+
+        // Special validation for National Park type
+        if (location.LocationType.Equals("National Park", StringComparison.OrdinalIgnoreCase))
+        {
+            var allParks = await _nationalParkRepository.GetAllAsync();
+            var matchingPark = allParks.FirstOrDefault(park =>
+                park.Name.Equals(location.Name, StringComparison.OrdinalIgnoreCase) ||
+                park.Name.Contains(location.Name, StringComparison.OrdinalIgnoreCase) ||
+                location.Name.Contains(park.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (matchingPark == null)
+            {
+                throw new ArgumentException($"National Park '{location.Name}' is not found in the National Parks database. Please verify the park name.");
+            }
+        }
     }
 }

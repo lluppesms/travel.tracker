@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions; // added for zip code parsing
 using TravelTracker.Data.Models;
+using TravelTracker.Data.Repositories;
 using TravelTracker.Services.Interfaces;
 
 namespace TravelTracker.Services.Services;
@@ -9,10 +10,17 @@ namespace TravelTracker.Services.Services;
 public class DataImportService : IDataImportService
 {
     private readonly ILocationService _locationService;
+    private readonly ILocationTypeRepository _locationTypeRepository;
+    private readonly INationalParkRepository _nationalParkRepository;
 
-    public DataImportService(ILocationService locationService)
+    public DataImportService(
+        ILocationService locationService,
+        ILocationTypeRepository locationTypeRepository,
+        INationalParkRepository nationalParkRepository)
     {
         _locationService = locationService;
+        _locationTypeRepository = locationTypeRepository;
+        _nationalParkRepository = nationalParkRepository;
     }
 
     public async Task<ImportResult> ImportFromJsonAsync(Stream jsonStream, int userId)
@@ -43,7 +51,7 @@ public class DataImportService : IDataImportService
             {
                 try
                 {
-                    var location = MapJsonToLocation(locData, userId);
+                    var location = await MapJsonToLocationAsync(locData, userId);
                     await _locationService.CreateLocationAsync(location);
                     result.ImportedRecords++;
                 }
@@ -98,7 +106,7 @@ public class DataImportService : IDataImportService
 
                 try
                 {
-                    var location = ParseCsvLine(line, userId, lineNumber);
+                    var location = await ParseCsvLineAsync(line, userId, lineNumber);
                     if (location != null)
                     {
                         await _locationService.CreateLocationAsync(location);
@@ -253,13 +261,19 @@ public class DataImportService : IDataImportService
         return result;
     }
 
-    private Location MapJsonToLocation(LocationData locData, int userId)
+    private async Task<Location> MapJsonToLocationAsync(LocationData locData, int userId)
     {
+        var locationName = locData.Name ?? "Unknown";
+        var locationType = locData.LocationType ?? "Other";
+        
+        // Validate location type
+        locationType = await ValidateAndNormalizeLocationTypeAsync(locationType, locationName);
+        
         return new Location
         {
             UserId = userId,
-            Name = locData.Name ?? "Unknown",
-            LocationType = locData.LocationType ?? "Other",
+            Name = locationName,
+            LocationType = locationType,
             Address = locData.Address ?? string.Empty,
             City = locData.City ?? string.Empty,
             State = locData.State ?? string.Empty,
@@ -274,7 +288,7 @@ public class DataImportService : IDataImportService
         };
     }
 
-    private Location? ParseCsvLine(string line, int userId, int lineNumber)
+    private async Task<Location?> ParseCsvLineAsync(string line, int userId, int lineNumber)
     {
         var fields = ParseCsvFields(line);
 
@@ -328,11 +342,15 @@ public class DataImportService : IDataImportService
         string city = ExtractCityFromAddress(address);
         string zip = ExtractZipCodeFromAddress(address); // new zip extraction
 
+        // Validate location type
+        var locationType = string.IsNullOrWhiteSpace(rowType) ? "Other" : rowType;
+        locationType = await ValidateAndNormalizeLocationTypeAsync(locationType, locationName);
+
         return new Location
         {
             UserId = userId,
             Name = locationName,
-            LocationType = rowType, // CSV doesn't specify type
+            LocationType = locationType,
             Address = address,
             City = city,
             State = state,
@@ -436,6 +454,41 @@ public class DataImportService : IDataImportService
         }
 
         return string.Empty;
+    }
+
+    private async Task<string> ValidateAndNormalizeLocationTypeAsync(string locationType, string locationName)
+    {
+        if (string.IsNullOrWhiteSpace(locationType))
+        {
+            throw new ArgumentException("Location type is required.");
+        }
+
+        var normalizedType = locationType.Trim();
+        var validType = await _locationTypeRepository.GetByNameAsync(normalizedType);
+        
+        if (validType == null)
+        {
+            var validTypes = await _locationTypeRepository.GetAllAsync();
+            var validTypeNames = string.Join(", ", validTypes.Select(t => t.Name));
+            throw new ArgumentException($"Invalid location type '{normalizedType}'. Valid types are: {validTypeNames}");
+        }
+
+        // Special validation for National Park type
+        if (normalizedType.Equals("National Park", StringComparison.OrdinalIgnoreCase))
+        {
+            var allParks = await _nationalParkRepository.GetAllAsync();
+            var matchingPark = allParks.FirstOrDefault(park =>
+                park.Name.Equals(locationName, StringComparison.OrdinalIgnoreCase) ||
+                park.Name.Contains(locationName, StringComparison.OrdinalIgnoreCase) ||
+                locationName.Contains(park.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (matchingPark == null)
+            {
+                throw new ArgumentException($"National Park '{locationName}' is not found in the National Parks database. Please verify the park name.");
+            }
+        }
+
+        return normalizedType;
     }
 
     private class LocationUploadData
