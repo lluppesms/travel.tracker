@@ -48,7 +48,7 @@ window.initializeAzureMap = function (subscriptionKey, centerLat, centerLon, zoo
             // Create a symbol layer to render the markers
             var symbolLayer = new atlas.layer.SymbolLayer(datasource, null, {
                 iconOptions: {
-                    image: 'pin-red', // default, overridden per feature by its 'image' property
+                    image: ['get', 'image'], // read per-feature 'image' property
                     allowOverlap: true,
                     ignorePlacement: true
                 },
