@@ -69,7 +69,7 @@ public class LocationsControllerTests
         // Arrange
         var location = new Location { Id = 1, UserId = TestUserId, Name = "Test Location" };
         _mockLocationService.Setup(s => s.GetLocationByIdAsync(1, TestUserId))
-            .ReturnsAsync(location);
+            .ReturnsAsync((Location?)location);
 
         // Act
         var result = await _controller.GetLocationById(1);
@@ -172,7 +172,7 @@ public class LocationsControllerTests
             UserId = TestUserId
         };
         _mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
-            .ReturnsAsync(createdLocation);
+            .ReturnsAsync((Location?)createdLocation);
 
         // Act
         var result = await _controller.CreateLocation(location);
@@ -218,7 +218,7 @@ public class LocationsControllerTests
             Rating = 4
         };
         _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
-            .ReturnsAsync(location);
+            .ReturnsAsync((Location?)location);
         _mockLocationService.Setup(s => s.UpdateLocationAsync(It.IsAny<Location>()))
             .ReturnsAsync((Location?)location);
 
@@ -267,7 +267,7 @@ public class LocationsControllerTests
         var locationId = 1;
         var location = new Location { Id = locationId, UserId = TestUserId };
         _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
-            .ReturnsAsync(location);
+            .ReturnsAsync((Location?)location);
 
         // Act
         var result = await _controller.DeleteLocation(locationId);
