@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\TravelTracker.Data\TravelTracker.Data.csproj" />
     <ProjectReference Include="..\..\src\TravelTracker.Services\TravelTracker.Services.csproj" />
+    <ProjectReference Include="..\..\src\TravelTracker\TravelTracker.csproj" />
   </ItemGroup>
 
 </Project>

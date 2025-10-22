@@ -95,6 +95,34 @@ else
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add API controllers
+builder.Services.AddControllers();
+
+// Add Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Travel Tracker API",
+        Version = "v1",
+        Description = "API for managing travel locations, national parks, and location types. Designed for MCP protocol integration and Agent Framework usage.",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Travel Tracker",
+            Url = new Uri("https://github.com/lluppesms/travel.tracker")
+        }
+    });
+
+    // Include XML comments for better API documentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
+
 // Add HTTP context accessor for getting authenticated user
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
@@ -111,6 +139,16 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Enable Swagger middleware
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Travel Tracker API v1");
+    options.RoutePrefix = "api/swagger";
+    options.DocumentTitle = "Travel Tracker API Documentation";
+    options.DisplayRequestDuration();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -118,6 +156,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorPages();
+app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
