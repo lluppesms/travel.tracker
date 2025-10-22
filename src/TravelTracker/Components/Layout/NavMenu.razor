@@ -1,53 +1,76 @@
 @using Microsoft.AspNetCore.Components.Authorization
 
-<div class="top-row ps-3 navbar navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand" href="">TravelTracker</a>
-        <AuthorizeView>
-            <Authorized>
-                <span class="text-white">Hello, @context.User.Identity?.Name!</span>
-                <a class="btn btn-sm btn-outline-light ms-2" href="MicrosoftIdentity/Account/SignOut">Logout</a>
-            </Authorized>
-            <NotAuthorized>
-                <a class="btn btn-sm btn-outline-light" href="MicrosoftIdentity/Account/SignIn">Login</a>
-            </NotAuthorized>
-        </AuthorizeView>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"
+                @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="@NavMenuCssClass" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="locations">
+                        <span class="bi bi-geo-alt-fill" aria-hidden="true"></span> Locations
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="map">
+                        <span class="bi bi-map-fill" aria-hidden="true"></span> Map View
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="statistics">
+                        <span class="bi bi-bar-chart-fill" aria-hidden="true"></span> Statistics
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="upload">
+                        <span class="bi bi-upload" aria-hidden="true"></span> Upload Data
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="about">
+                        <span class="bi bi-info-circle-fill" aria-hidden="true"></span> About
+                    </NavLink>
+                </li>
+            </ul>
+            <AuthorizeView>
+                <Authorized>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <span class="navbar-text text-white me-2">Hello, @context.User.Identity?.Name!</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-outline-light" href="MicrosoftIdentity/Account/SignOut">Logout</a>
+                        </li>
+                    </ul>
+                </Authorized>
+                <NotAuthorized>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-outline-light" href="MicrosoftIdentity/Account/SignIn">Login</a>
+                        </li>
+                    </ul>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
     </div>
-</div>
+</nav>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@code {
+    private bool collapseNavMenu = true;
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse navbar-collapse" : "navbar-collapse";
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="locations">
-                <span class="bi bi-geo-alt-fill" aria-hidden="true"></span> Locations
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="map">
-                <span class="bi bi-map-fill" aria-hidden="true"></span> Map View
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="statistics">
-                <span class="bi bi-bar-chart-fill" aria-hidden="true"></span> Statistics
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="upload">
-                <span class="bi bi-upload" aria-hidden="true"></span> Upload Data
-            </NavLink>
-        </div>
-    </nav>
-</div>
-
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}
