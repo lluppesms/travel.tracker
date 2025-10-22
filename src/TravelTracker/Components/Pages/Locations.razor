@@ -53,44 +53,43 @@
                     }
                     else
                     {
+                        <div class="mb-3">
+                            <input type="text" 
+                                   class="form-control" 
+                                   placeholder="Filter by name, type, city, or state..." 
+                                   @bind="filterText" 
+                                   @bind:event="oninput"
+                                   @bind:after="ApplyFilter" />
+                        </div>
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Type</th>
-                                        <th>Location</th>
-                                        <th>Date</th>
-                                        <th>Rating</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var location in locations)
+                            <QuickGrid Items="@FilteredLocations" 
+                                      Pagination="@pagination"
+                                      Class="table table-hover">
+                                <PropertyColumn Property="@(l => l.Name)" Sortable="true" Title="Name" />
+                                <PropertyColumn Property="@(l => l.LocationType)" Sortable="true" Title="Type" />
+                                <TemplateColumn Title="Location" Sortable="true" SortBy="GridSort<Location>.ByAscending(l => l.City).ThenAscending(l => l.State)">
+                                    @context.City, @context.State
+                                </TemplateColumn>
+                                <PropertyColumn Property="@(l => l.StartDate)" Sortable="true" Title="Date" Format="MM/dd/yyyy" />
+                                <TemplateColumn Title="Rating" Sortable="true" SortBy="GridSort<Location>.ByAscending(l => l.Rating)">
+                                    @for (int i = 1; i <= 5; i++)
                                     {
-                                        <tr>
-                                            <td>@location.Name</td>
-                                            <td>@location.LocationType</td>
-                                            <td>@location.City, @location.State</td>
-                                            <td>@location.StartDate.ToString("MM/dd/yyyy")</td>
-                                            <td>
-                                                @for (int i = 1; i <= 5; i++)
-                                                {
-                                                    <span class="@(i <= location.Rating ? "text-warning" : "text-muted")">★</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEditLocationForm(location)">
-                                                    Edit
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ShowDeleteConfirmation(location)">
-                                                    Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                        var rating = i;
+                                        <span class="@(rating <= context.Rating ? "text-warning" : "text-muted")">★</span>
                                     }
-                                </tbody>
-                            </table>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Actions">
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEditLocationForm(context)">
+                                        Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ShowDeleteConfirmation(context)">
+                                        Delete
+                                    </button>
+                                </TemplateColumn>
+                            </QuickGrid>
+                        </div>
+                        <div class="mt-2">
+                            <Paginator State="@pagination" />
                         </div>
                     }
                 </div>
@@ -246,6 +245,34 @@
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
     private int currentUserId;
+    private string filterText = string.Empty;
+    private PaginationState pagination = new() { ItemsPerPage = 15 };
+
+    private IQueryable<Location> FilteredLocations
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filterText))
+            {
+                return locations.AsQueryable();
+            }
+
+            var filter = filterText.ToLower();
+            return locations
+                .Where(l => 
+                    (l.Name?.ToLower().Contains(filter) ?? false) ||
+                    (l.LocationType?.ToLower().Contains(filter) ?? false) ||
+                    (l.City?.ToLower().Contains(filter) ?? false) ||
+                    (l.State?.ToLower().Contains(filter) ?? false))
+                .AsQueryable();
+        }
+    }
+
+    private async Task ApplyFilter()
+    {
+        // Reset to first page when filter changes
+        await pagination.SetCurrentPageIndexAsync(0);
+    }
 
     protected override async Task OnInitializedAsync()
     {
