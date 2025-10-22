@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Azure;
 using Azure.AI.Inference;
 using Azure.Core;
+using Azure.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TravelTracker.Data.Configuration;
@@ -18,26 +19,29 @@ public class ChatbotService : IChatbotService
     private readonly ILogger<ChatbotService> _logger;
     private readonly AzureAIFoundrySettings _settings;
     private readonly ChatCompletionsClient? _client;
+    private readonly DefaultAzureCredential _credential = new();
 
     public ChatbotService(
         ILocationService locationService,
         INationalParkService nationalParkService,
         ILocationTypeService locationTypeService,
         ILogger<ChatbotService> logger,
-        IOptions<AzureAIFoundrySettings> settings)
+        IOptions<AzureAIFoundrySettings> settings,
+        DefaultAzureCredential credentials)
     {
         _locationService = locationService;
         _nationalParkService = nationalParkService;
         _locationTypeService = locationTypeService;
         _logger = logger;
         _settings = settings.Value;
+        _credential = credentials;
 
         // Initialize client only if settings are configured
         if (!string.IsNullOrEmpty(_settings.Endpoint) && !string.IsNullOrEmpty(_settings.ApiKey))
         {
-            _client = new ChatCompletionsClient(
-                new Uri(_settings.Endpoint),
-                new AzureKeyCredential(_settings.ApiKey));
+            _client = new ChatCompletionsClient(new Uri(_settings.Endpoint), _credential);
+
+            // _client = new ChatCompletionsClient(new Uri(_settings.Endpoint), new AzureKeyCredential(_settings.ApiKey));
         }
     }
 
@@ -57,7 +61,7 @@ public class ChatbotService : IChatbotService
         {
             // Analyze the user's query and fetch relevant data
             var contextData = await GatherContextDataAsync(userMessage, userId);
-            
+
             var systemPrompt = "You are a helpful travel assistant for the Travel Tracker application. " +
                 "You help users find information about their travel locations, national parks, and location types. " +
                 "Be conversational, helpful, and use the provided context data to answer questions accurately. " +
@@ -85,7 +89,7 @@ public class ChatbotService : IChatbotService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing chatbot request");
-            return $"I encountered an error processing your request. Please try again later.";
+            return $"I encountered an error processing your request. Please try again later. {ex.Message}";
         }
     }
 
@@ -156,7 +160,7 @@ public class ChatbotService : IChatbotService
             }
 
             // Check if asking about location types
-            if (Regex.IsMatch(messageLower, @"\b(types?|kinds?|categories)\b") && 
+            if (Regex.IsMatch(messageLower, @"\b(types?|kinds?|categories)\b") &&
                 Regex.IsMatch(messageLower, @"\b(location|place)\b"))
             {
                 var types = await _locationTypeService.GetAllLocationTypesAsync();
