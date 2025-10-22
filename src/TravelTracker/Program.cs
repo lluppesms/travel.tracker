@@ -95,6 +95,9 @@ else
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add API controllers
+builder.Services.AddControllers();
+
 // Add HTTP context accessor for getting authenticated user
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
@@ -118,6 +121,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorPages();
+app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
