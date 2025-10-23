@@ -5,10 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using ModelContextProtocol.AspNetCore;
 using TravelTracker.Components;
 using TravelTracker.Data;
 using TravelTracker.Data.Configuration;
 using TravelTracker.Data.Repositories;
+using TravelTracker.Mcp;
 using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Services;
 
@@ -99,6 +101,11 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<IDataImportService, DataImportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
     builder.Services.AddScoped<IChatbotService, ChatbotService>();
+
+    // Add MCP tools
+    builder.Services.AddScoped<LocationTools>();
+    builder.Services.AddScoped<NationalParkTools>();
+    builder.Services.AddScoped<ChatbotTools>();
 }
 else
 {
@@ -154,6 +161,21 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
+// Add Model Context Protocol (MCP) Server
+if (!string.IsNullOrEmpty(sqlConnectionString))
+{
+    Console.WriteLine("Configuring MCP server...");
+    builder.Services.AddMcpServer(options =>
+    {
+        options.ServerInfo = new()
+        {
+            Name = "Travel Tracker MCP Server",
+            Version = "1.0.0"
+        };
+    }).WithHttpTransport()
+      .WithToolsFromAssembly();
+}
+
 // Add HTTP context accessor for getting authenticated user
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
@@ -190,5 +212,12 @@ app.MapRazorPages();
 app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Map MCP endpoint
+if (!string.IsNullOrEmpty(builder.Configuration["SqlServer:ConnectionString"]))
+{
+    app.MapMcp("/api/mcp");
+    Console.WriteLine("MCP server endpoint configured at /api/mcp");
+}
 
 app.Run();

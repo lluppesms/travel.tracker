@@ -16,6 +16,26 @@ The API includes **Swagger/OpenAPI** documentation for easy exploration and test
   - Import into API development tools (Postman, Insomnia, etc.)
   - Use for API client generation
 
+## Model Context Protocol (MCP) Server
+
+The Travel Tracker API is also available as an **MCP (Model Context Protocol) Server**, enabling AI agents and assistants to interact with your travel data using structured tools.
+
+- **MCP Endpoint**: `http://localhost:5173/api/mcp`
+  - Exposes travel tracking functionality as discoverable tools for AI agents
+  - Supports standard MCP protocol for tool discovery and invocation
+  - Enables integration with AI assistants like Claude, GitHub Copilot, and Azure AI agents
+  - Compatible with Microsoft's Agent Framework
+
+### MCP Tools Available
+
+The MCP server exposes the following tool categories:
+
+1. **Location Tools** - Create, read, update, and delete travel locations
+2. **National Park Tools** - Query national parks information
+3. **Chatbot Tools** - Interact with the AI travel assistant
+
+For more information about MCP, see the [Microsoft Learn documentation](https://learn.microsoft.com/en-us/azure/developer/ai/intro-agents-mcp).
+
 ## Authentication
 
 All location-related and visited parks endpoints require authentication. The API uses the existing authentication service to identify users.
@@ -284,11 +304,46 @@ Common HTTP status codes:
 
 ---
 
-## Future Enhancements
+## MCP Tools Reference
 
-These APIs are designed to be ready for:
-- MCP (Model Context Protocol) integration
-- Agent Framework integration
-- Chatbot interface development
+The MCP server exposes the following tools for AI agents:
 
-The endpoints follow RESTful conventions and return JSON data suitable for these future integrations.
+### Location Management Tools
+
+- **GetAllLocations** - Retrieve all travel locations for the authenticated user
+- **GetLocationById** - Get details of a specific location by ID
+- **GetLocationsByState** - Get all locations in a specific US state
+- **GetLocationsByDateRange** - Get locations visited within a date range
+- **GetLocationCountByState** - Get count of locations grouped by state
+- **CreateLocation** - Create a new travel location
+- **UpdateLocation** - Update details of an existing location
+- **DeleteLocation** - Delete a location by ID
+
+### National Park Tools
+
+- **GetAllNationalParks** - Get a list of all US national parks
+- **GetNationalParkById** - Get details of a specific national park
+- **GetNationalParksByState** - Get all national parks in a specific state
+- **GetVisitedNationalParks** - Get national parks visited by the user (requires authentication)
+
+### Chatbot Tools
+
+- **SendMessageToChatbot** - Send a message to the AI travel assistant and get a response
+
+### Using MCP Tools
+
+AI agents can discover and invoke these tools through the MCP protocol. Each tool includes:
+- **Description** - What the tool does
+- **Parameters** - Required and optional input parameters with descriptions
+- **Authentication** - Whether the tool requires user authentication
+- **Return Type** - The structure of the response data
+
+Example MCP tool invocation flow:
+1. Agent connects to `/api/mcp`
+2. Agent lists available tools
+3. Agent invokes tool with parameters
+4. Server executes the tool and returns structured results
+
+For implementation details, see:
+- [Microsoft MCP Documentation](https://learn.microsoft.com/en-us/azure/developer/ai/intro-agents-mcp)
+- [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk)
