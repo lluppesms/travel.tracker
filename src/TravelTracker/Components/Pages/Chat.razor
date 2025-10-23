@@ -1,0 +1,181 @@
+@page "/chat"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Newtonsoft.Json
+@using TravelTracker.Services.Interfaces
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IChatbotService ChatbotService
+@inject IAuthenticationService AuthService
+@attribute [Authorize]
+
+<PageTitle>Travel Assistant Chat</PageTitle>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>🤖 Travel Assistant</h2>
+            <p class="text-muted">Ask me anything about your travels, locations, or national parks!</p>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body" style="height: 500px; overflow-y: auto;" id="chatMessages">
+                    @if (messages.Count == 0)
+                    {
+                        <div class="alert alert-info">
+                            <h5>Welcome! I'm your Travel Assistant 👋</h5>
+                            <p>I can help you with:</p>
+                            <ul>
+                                <li>Finding locations you've visited</li>
+                                <li>Searching by state or date range</li>
+                                <li>Getting travel statistics</li>
+                                <li>Information about national parks</li>
+                                <li>Available location types</li>
+                            </ul>
+                            <p class="mb-0"><strong>Try asking:</strong> "What locations have I visited in California?" or "How many states have I visited?"</p>
+                        </div>
+                    }
+
+                    @foreach (var msg in messages)
+                    {
+                        <div class="mb-3 @(msg.IsUser ? "text-end" : "text-start")">
+                            <div class="d-inline-block p-3 rounded @(msg.IsUser ? "bg-primary text-white" : "bg-light")"
+                                 style="max-width: 75%;">
+                                <div class="small mb-1">
+                                    <strong>@(msg.IsUser ? "You" : "Assistant")</strong>
+                                    <span class="text-muted ms-2">@msg.Timestamp.ToLocalTime().ToString("h:mm tt")</span>
+                                </div>
+                                <div style="white-space: pre-wrap;">@msg.Content</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (isLoading)
+                    {
+                        <div class="text-start mb-3">
+                            <div class="d-inline-block p-3 rounded bg-light">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span>Assistant is thinking...</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="input-group">
+                <input type="text"
+                       class="form-control"
+                       placeholder="Type your message here..."
+                       @bind="currentMessage"
+                       @onkeypress="HandleKeyPress"
+                       disabled="@isLoading" />
+                <button class="btn btn-primary"
+                        @onclick="SendMessage"
+                        disabled="@(isLoading || string.IsNullOrWhiteSpace(currentMessage))">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    }
+                    else
+                    {
+                        <span class="bi bi-send-fill me-1"></span>
+                    }
+                    Send
+                </button>
+            </div>
+            @if (!string.IsNullOrEmpty(currentThreadId))
+            {
+                <div class="form-text text-muted mt-1">Thread: @currentThreadId (Latest: @latestMessageDate?.ToLocalTime().ToString("MM/dd/yyyy HH:mm:ss"))</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ChatMessage> messages = new();
+    private string currentMessage = string.Empty;
+    private bool isLoading = false;
+    private string? currentThreadId = null;
+    private DateTimeOffset? latestMessageDate = null;
+
+    private class ChatMessage
+    {
+        public string Content { get; set; } = string.Empty;
+        public bool IsUser { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(currentMessage) && !isLoading)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(currentMessage) || isLoading)
+            return;
+
+        var userMessage = currentMessage.Trim();
+        currentMessage = string.Empty;
+
+        messages.Add(new ChatMessage
+        {
+            Content = userMessage,
+            IsUser = true,
+            Timestamp = DateTime.UtcNow
+        });
+
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var userId = AuthService.GetCurrentUserInternalId();
+            var (message, latestDate, threadId) = await ChatbotService.GetChatResponseAsync(userMessage, userId, currentThreadId, latestMessageDate);
+
+            latestMessageDate = latestDate;
+            currentThreadId = threadId;
+
+            messages.Add(new ChatMessage
+            {
+                Content = message,
+                IsUser = false,
+                Timestamp = latestDate?.UtcDateTime ?? DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            messages.Add(new ChatMessage
+            {
+                Content = $"Error: {ex.Message}",
+                IsUser = false,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private class ChatResponseDto
+    {
+        public string Message { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public string ThreadId { get; set; } = string.Empty;
+        public DateTimeOffset? LatestMessageDate { get; set; }
+    }
+}
