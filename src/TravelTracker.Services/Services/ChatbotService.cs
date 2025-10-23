@@ -61,7 +61,7 @@ public class ChatbotService : IChatbotService
         }
     }
 
-    public async Task<string> GetChatResponseAsync(string userMessage, int userId)
+    public async Task<string> GetChatResponseAsync(string userMessage, int userId, PersistentAgentThread? lastThread, DateTimeOffset? lastMessageTime)
     {
         if (string.IsNullOrWhiteSpace(userMessage))
         {
@@ -95,7 +95,10 @@ public class ChatbotService : IChatbotService
 
             Pageable<PersistentThreadMessage> messages = _chatClient.Messages.GetMessages(thread.Id, order: ListSortOrder.Ascending);
 
-            var messageContent = string.Empty;
+            // look at the threadMessages and get the latest CreatedAt date from them
+            DateTimeOffset? latestMessageDate = messages
+              .Select(m => m.CreatedAt)
+              .Max();
 
             var agentMessages = from PersistentThreadMessage threadMessage in messages
                 where threadMessage.Role == MessageRole.Agent
@@ -103,11 +106,11 @@ public class ChatbotService : IChatbotService
                 where contentItem is MessageTextContent textItem
                 select (MessageTextContent)contentItem;
 
+            var messageContent = string.Empty;
             foreach (var msg in agentMessages)
             {
-                messageContent += msg.Text;
+                messageContent += msg.Text + " ";
             }
-
             return messageContent;
         }
         catch (Exception ex)
