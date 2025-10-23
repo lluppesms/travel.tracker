@@ -52,6 +52,7 @@ public class LocationRepository : ILocationRepository
 
     public async Task<IEnumerable<Location>> GetByDateRangeAsync(int userId, DateTime startDate, DateTime endDate)
     {
+        _ = await Task.FromResult(true);
         var locations = _context.Locations
             .Where(l => l.UserId == userId && l.StartDate >= startDate && l.StartDate <= endDate)
             .ToList();

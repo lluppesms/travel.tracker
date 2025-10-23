@@ -17,6 +17,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add configuration
 builder.Services.Configure<SqlServerSettings>(builder.Configuration.GetSection("SqlServer"));
 builder.Services.Configure<AzureAIFoundrySettings>(builder.Configuration.GetSection("AzureAIFoundry"));
+var config = builder.Configuration;
+// add config to scope
+builder.Services.AddSingleton<IConfiguration>(config);
 
 // Add authentication only if Azure AD is configured
 var azureAdConfigured = !string.IsNullOrEmpty(builder.Configuration["AzureAd:TenantId"]) &&

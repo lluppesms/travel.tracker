@@ -1,11 +1,19 @@
-using System.Text.Json;
-using System.Text.RegularExpressions;
+using AutoGen.Core;
 using Azure;
+using Azure.AI.Agents.Persistent;
 using Azure.AI.Inference;
 using Azure.Core;
+using Azure.Core.Pipeline;
 using Azure.Identity;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
+using Microsoft.VisualBasic;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading;
 using TravelTracker.Data.Configuration;
 using TravelTracker.Services.Interfaces;
 
@@ -18,8 +26,17 @@ public class ChatbotService : IChatbotService
     private readonly ILocationTypeService _locationTypeService;
     private readonly ILogger<ChatbotService> _logger;
     private readonly AzureAIFoundrySettings _settings;
-    private readonly ChatCompletionsClient? _client;
-    private readonly DefaultAzureCredential _credential = new();
+    //private readonly ChatCompletionsClient? _client;
+    private readonly PersistentAgentsClient _chatClient;
+    //private readonly DefaultAzureCredential _credential = new();
+    private IConfiguration Configuration { get; }
+
+    private readonly string systemPrompt =
+        "You are a helpful travel assistant for the Travel Tracker application. " +
+        "You help users find information about their travel locations, national parks, and location types. " +
+        "Be conversational, helpful, and use the provided context data to answer questions accurately. " +
+        "If the context data is empty or doesn't contain the information needed, politely let the user know.";
+
 
     public ChatbotService(
         ILocationService locationService,
@@ -27,21 +44,20 @@ public class ChatbotService : IChatbotService
         ILocationTypeService locationTypeService,
         ILogger<ChatbotService> logger,
         IOptions<AzureAIFoundrySettings> settings,
-        DefaultAzureCredential credentials)
+        IConfiguration configuration)
     {
         _locationService = locationService;
         _nationalParkService = nationalParkService;
         _locationTypeService = locationTypeService;
         _logger = logger;
         _settings = settings.Value;
-        _credential = credentials;
+        Configuration = configuration;
 
         // Initialize client only if settings are configured
         if (!string.IsNullOrEmpty(_settings.Endpoint) && !string.IsNullOrEmpty(_settings.ApiKey))
         {
-            _client = new ChatCompletionsClient(new Uri(_settings.Endpoint), _credential);
-
-            // _client = new ChatCompletionsClient(new Uri(_settings.Endpoint), new AzureKeyCredential(_settings.ApiKey));
+            var creds = CredentialsHelper.GetCredentials(Configuration);
+            _chatClient = new(_settings.Endpoint, creds);
         }
     }
 
@@ -51,45 +67,54 @@ public class ChatbotService : IChatbotService
         {
             return "Please provide a message.";
         }
-
-        if (_client == null)
+        if (_chatClient == null)
         {
-            return "Chatbot is not configured. Please configure Azure AI Foundry settings in appsettings.json.";
+            return "The Chatbot is not configured properly. Please configure the Azure AI Foundry settings in the application settings!";
         }
-
         try
         {
             // Analyze the user's query and fetch relevant data
             var contextData = await GatherContextDataAsync(userMessage, userId);
 
-            var systemPrompt = "You are a helpful travel assistant for the Travel Tracker application. " +
-                "You help users find information about their travel locations, national parks, and location types. " +
-                "Be conversational, helpful, and use the provided context data to answer questions accurately. " +
-                "If the context data is empty or doesn't contain the information needed, politely let the user know.";
-
-            if (!string.IsNullOrEmpty(contextData))
+            var enhancedSystemPrompt = $"{systemPrompt}\n\nContext data from the database:\n{contextData}";
+            PersistentAgentThread thread = _chatClient.Threads.CreateThread();
+            PersistentAgent chatAgent = _chatClient.Administration.CreateAgent(
+                model: _settings.DeploymentName,
+                name: "Travel Tracker Expert",
+                instructions: enhancedSystemPrompt
+            );
+            var messageResponse = await _chatClient.Messages.CreateMessageAsync(thread.Id, MessageRole.User, userMessage);
+            ThreadRun run = _chatClient.Runs.CreateRun(thread.Id, chatAgent.Id);
+            do
             {
-                systemPrompt += $"\n\nContext data from the database:\n{contextData}";
+                Thread.Sleep(TimeSpan.FromMilliseconds(500));
+                run = _chatClient.Runs.GetRun(thread.Id, run.Id);
+            }
+            while (run.Status == RunStatus.Queued || run.Status == RunStatus.InProgress);
+            if (run.Status != RunStatus.Completed) { throw new InvalidOperationException($"Run failed or was canceled: {run.LastError?.Message}"); }
+
+            Pageable<PersistentThreadMessage> messages = _chatClient.Messages.GetMessages(thread.Id, order: ListSortOrder.Ascending);
+
+            var messageContent = string.Empty;
+
+            var agentMessages = from PersistentThreadMessage threadMessage in messages
+                where threadMessage.Role == MessageRole.Agent
+                from MessageContent contentItem in threadMessage.ContentItems
+                where contentItem is MessageTextContent textItem
+                select (MessageTextContent)contentItem;
+
+            foreach (var msg in agentMessages)
+            {
+                messageContent += msg.Text;
             }
 
-            var messages = new List<ChatRequestMessage>
-            {
-                new ChatRequestSystemMessage(systemPrompt),
-                new ChatRequestUserMessage(userMessage)
-            };
-
-            var chatCompletionsOptions = new ChatCompletionsOptions(messages)
-            {
-                Model = _settings.DeploymentName
-            };
-
-            var response = await _client.CompleteAsync(chatCompletionsOptions);
-            return response.Value.Content;
+            return messageContent;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing chatbot request");
-            return $"I encountered an error processing your request. Please try again later. {ex.Message}";
+            var msg = $"I've encountered an error processing your request to {_settings.Endpoint}. Please try again later. {ex.Message}";
+            return msg;
         }
     }
 
@@ -107,11 +132,11 @@ public class ChatbotService : IChatbotService
                 var locations = await _locationService.GetAllLocationsAsync(userId);
                 if (locations.Any())
                 {
-                    var summary = locations.Select(l => $"- {l.Name} in {l.City}, {l.State} ({l.LocationType}, Rating: {l.Rating}/5, Visited: {l.StartDate:yyyy-MM-dd})").Take(20);
+                    var summary = locations.Select(l => $"- {l.Name} in {l.City}, {l.State} ({l.LocationType}, Visited: {l.StartDate:yyyy-MM-dd})").Take(250);
                     contextParts.Add($"User's locations:\n{string.Join("\n", summary)}");
-                    if (locations.Count() > 20)
+                    if (locations.Count() > 250)
                     {
-                        contextParts.Add($"(showing 20 of {locations.Count()} total locations)");
+                        contextParts.Add($"(showing 250 of {locations.Count()} total locations)");
                     }
                 }
             }
@@ -139,7 +164,7 @@ public class ChatbotService : IChatbotService
                     var totalStates = counts.Count;
                     var totalLocations = counts.Values.Sum();
                     contextParts.Add($"Travel statistics: {totalLocations} locations across {totalStates} states");
-                    var topStates = counts.OrderByDescending(kvp => kvp.Value).Take(5);
+                    var topStates = counts.OrderByDescending(kvp => kvp.Value).Take(10);
                     contextParts.Add($"Top states: {string.Join(", ", topStates.Select(kvp => $"{kvp.Key} ({kvp.Value})"))}");
                 }
             }
@@ -150,12 +175,15 @@ public class ChatbotService : IChatbotService
                 var parks = await _nationalParkService.GetAllParksAsync();
                 if (parks.Any())
                 {
-                    var summary = parks.Take(10).Select(p => $"- {p.Name} in {p.State}");
+                    var summary = parks.Take(80).Select(p => $"- {p.Name} in {p.State}");
                     contextParts.Add($"National Parks in database:\n{string.Join("\n", summary)}");
-                    if (parks.Count() > 10)
-                    {
-                        contextParts.Add($"(showing 10 of {parks.Count()} total parks)");
-                    }
+                }
+                var locations = await _locationService.GetAllLocationsAsync(userId);
+                if (locations.Any())
+                {
+                    var parksVisited = locations.Where(l => l.LocationType == "National Park");
+                    var summary = parksVisited.Select(l => $"- {l.Name} visited {l.StartDate:yyyy-MM-dd}").Take(250);
+                    contextParts.Add($"National Parks Visited:\n{string.Join("\n", summary)}");
                 }
             }
 

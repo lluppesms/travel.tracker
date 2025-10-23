@@ -6,6 +6,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoGen.AzureAIInference" Version="0.2.3" />
+    <PackageReference Include="Azure.AI.Agents.Persistent" Version="1.2.0-beta.6" />
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
