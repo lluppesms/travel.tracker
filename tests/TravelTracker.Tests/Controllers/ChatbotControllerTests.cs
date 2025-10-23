@@ -34,8 +34,8 @@ public class ChatbotControllerTests
         // Arrange
         var request = new ChatRequest { Message = "What locations have I visited?" };
         var expectedResponse = "You have visited 5 locations.";
-        _mockChatbotService.Setup(s => s.GetChatResponseAsync(request.Message, TestUserId))
-            .ReturnsAsync(expectedResponse);
+        _mockChatbotService.Setup(s => s.GetChatResponseAsync(request.Message, TestUserId, null, null))
+            .ReturnsAsync((expectedResponse, DateTimeOffset.UtcNow, "thread-123"));
 
         // Act
         var result = await _controller.SendMessage(request);
@@ -45,6 +45,7 @@ public class ChatbotControllerTests
         var response = Assert.IsType<ChatResponse>(okResult.Value);
         Assert.Equal(expectedResponse, response.Message);
         Assert.True(response.Timestamp <= DateTime.UtcNow);
+        Assert.Equal("thread-123", response.ThreadId);
     }
 
     [Fact]
@@ -95,7 +96,7 @@ public class ChatbotControllerTests
     {
         // Arrange
         var request = new ChatRequest { Message = "Test message" };
-        _mockChatbotService.Setup(s => s.GetChatResponseAsync(request.Message, TestUserId))
+        _mockChatbotService.Setup(s => s.GetChatResponseAsync(request.Message, TestUserId, null, null))
             .ThrowsAsync(new Exception("Test exception"));
 
         // Act

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -15,6 +16,7 @@ public class ChatbotServiceTests
     private readonly Mock<ILocationTypeService> _mockLocationTypeService;
     private readonly Mock<ILogger<ChatbotService>> _mockLogger;
     private readonly IOptions<AzureAIFoundrySettings> _emptySettings;
+    private readonly IConfiguration _configuration; // added
     private const int TestUserId = 123;
 
     public ChatbotServiceTests()
@@ -23,6 +25,7 @@ public class ChatbotServiceTests
         _mockNationalParkService = new Mock<INationalParkService>();
         _mockLocationTypeService = new Mock<ILocationTypeService>();
         _mockLogger = new Mock<ILogger<ChatbotService>>();
+        _configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>()).Build();
         
         // Use empty settings for most tests (not configured)
         _emptySettings = Options.Create(new AzureAIFoundrySettings
@@ -42,13 +45,15 @@ public class ChatbotServiceTests
             _mockNationalParkService.Object,
             _mockLocationTypeService.Object,
             _mockLogger.Object,
-            _emptySettings);
+            _emptySettings,
+            _configuration);
 
         // Act
-        var result = await service.GetChatResponseAsync("Hello", TestUserId);
+        var (message, latest, threadId) = await service.GetChatResponseAsync("Hello", TestUserId);
 
         // Assert
-        Assert.Contains("not configured", result);
+        Assert.Contains("not configured", message.ToLower());
+        Assert.True(string.IsNullOrEmpty(threadId));
     }
 
     [Fact]
@@ -60,13 +65,14 @@ public class ChatbotServiceTests
             _mockNationalParkService.Object,
             _mockLocationTypeService.Object,
             _mockLogger.Object,
-            _emptySettings);
+            _emptySettings,
+            _configuration);
 
         // Act
-        var result = await service.GetChatResponseAsync("", TestUserId);
+        var (message, latest, threadId) = await service.GetChatResponseAsync("", TestUserId);
 
         // Assert
-        Assert.Contains("provide a message", result);
+        Assert.Contains("provide a message", message.ToLower());
     }
 
     [Fact]
@@ -78,13 +84,14 @@ public class ChatbotServiceTests
             _mockNationalParkService.Object,
             _mockLocationTypeService.Object,
             _mockLogger.Object,
-            _emptySettings);
+            _emptySettings,
+            _configuration);
 
         // Act
-        var result = await service.GetChatResponseAsync("   ", TestUserId);
+        var (message, latest, threadId) = await service.GetChatResponseAsync("   ", TestUserId);
 
         // Assert
-        Assert.Contains("provide a message", result);
+        Assert.Contains("provide a message", message.ToLower());
     }
 
     [Fact]
@@ -96,7 +103,8 @@ public class ChatbotServiceTests
             _mockNationalParkService.Object,
             _mockLocationTypeService.Object,
             _mockLogger.Object,
-            _emptySettings);
+            _emptySettings,
+            _configuration);
         
         Assert.NotNull(service);
     }
@@ -118,7 +126,8 @@ public class ChatbotServiceTests
             _mockNationalParkService.Object,
             _mockLocationTypeService.Object,
             _mockLogger.Object,
-            validSettings);
+            validSettings,
+            _configuration);
         
         Assert.NotNull(service);
     }

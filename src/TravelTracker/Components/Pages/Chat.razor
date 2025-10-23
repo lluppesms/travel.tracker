@@ -92,6 +92,10 @@
                     Send
                 </button>
             </div>
+            @if (!string.IsNullOrEmpty(currentThreadId))
+            {
+                <div class="form-text text-muted mt-1">Thread: @currentThreadId (Latest: @latestMessageDate?.ToLocalTime().ToString("MM/dd/yyyy HH:mm:ss"))</div>
+            }
         </div>
     </div>
 </div>
@@ -100,6 +104,8 @@
     private List<ChatMessage> messages = new();
     private string currentMessage = string.Empty;
     private bool isLoading = false;
+    private string? currentThreadId = null;
+    private DateTimeOffset? latestMessageDate = null;
 
     private class ChatMessage
     {
@@ -124,7 +130,6 @@
         var userMessage = currentMessage.Trim();
         currentMessage = string.Empty;
 
-        // Add user message to chat
         messages.Add(new ChatMessage
         {
             Content = userMessage,
@@ -138,13 +143,16 @@
         try
         {
             var userId = AuthService.GetCurrentUserInternalId();
-            var responseText = await ChatbotService.GetChatResponseAsync(userMessage, userId);
+            var (message, latestDate, threadId) = await ChatbotService.GetChatResponseAsync(userMessage, userId, currentThreadId, latestMessageDate);
+
+            latestMessageDate = latestDate;
+            currentThreadId = threadId;
 
             messages.Add(new ChatMessage
             {
-                Content = responseText,
+                Content = message,
                 IsUser = false,
-                Timestamp = DateTime.UtcNow
+                Timestamp = latestDate?.UtcDateTime ?? DateTime.UtcNow
             });
         }
         catch (Exception ex)
@@ -167,5 +175,7 @@
     {
         public string Message { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
+        public string ThreadId { get; set; } = string.Empty;
+        public DateTimeOffset? LatestMessageDate { get; set; }
     }
 }

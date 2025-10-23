@@ -40,11 +40,13 @@ public class ChatbotController : ControllerBase
 
         try
         {
-            var response = await _chatbotService.GetChatResponseAsync(request.Message, userId);
+            var (message, latestMessageDate, threadId) = await _chatbotService.GetChatResponseAsync(request.Message, userId, request.ThreadId, request.LastMessageDate);
             return Ok(new ChatResponse
             {
-                Message = response,
-                Timestamp = DateTime.UtcNow
+                Message = message,
+                Timestamp = latestMessageDate?.UtcDateTime ?? DateTime.UtcNow,
+                ThreadId = threadId,
+                LatestMessageDate = latestMessageDate
             });
         }
         catch (Exception ex)
@@ -58,10 +60,14 @@ public class ChatbotController : ControllerBase
 public class ChatRequest
 {
     public string Message { get; set; } = string.Empty;
+    public string? ThreadId { get; set; }
+    public DateTimeOffset? LastMessageDate { get; set; }
 }
 
 public class ChatResponse
 {
     public string Message { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
+    public string ThreadId { get; set; } = string.Empty;
+    public DateTimeOffset? LatestMessageDate { get; set; }
 }
