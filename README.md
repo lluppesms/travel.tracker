@@ -13,6 +13,7 @@ Travel Tracker is a responsive web application that enables users to track, visu
 - 📊 **Multiple Views** - Date range, state overview, and national parks modes
 - 📤 **JSON Upload** - Import location data in bulk
 - 🤖 **AI Chatbot** - Ask questions about your travels in natural language
+- 🔌 **MCP Server** - Model Context Protocol support for AI agent integration
 - 🔐 **Secure Authentication** - Azure AD (Entra ID) integration
 - 📱 **Responsive Design** - Works on desktop and mobile devices
 
@@ -29,14 +30,17 @@ Foundation development is complete. The application structure, data layer, servi
 - **[Application Plan](./reports/Travel-Tracker-Application-Plan.md)** - Complete specification and development guide
 - **[Status Report](./reports/Report-Status.md)** - Project status and progress tracking
 - **[Reports README](./reports/README.md)** - Navigation guide for all planning documents
+- **[API Documentation](./Docs/API-Documentation.md)** - REST API and MCP endpoints reference
+- **[MCP Setup Guide](./Docs/MCP-SETUP.md)** - Model Context Protocol server configuration and usage
 
 ## Technology Stack
 
 - **Frontend:** Blazor (Server + WebAssembly)
-- **Backend:** C# / ASP.NET Core (.NET 8/9)
+- **Backend:** C# / ASP.NET Core (.NET 9)
 - **Database:** SQL Server (with Entity Framework Core)
 - **Authentication:** Azure AD (Entra ID)
 - **AI/LLM:** Azure AI Foundry
+- **MCP:** Model Context Protocol server for AI agent integration
 - **Maps:** Azure Maps
 - **Hosting:** Azure App Service
 - **IaC:** Bicep
@@ -108,8 +112,10 @@ dotnet test
 - ✅ Service layer for business logic
 - ✅ Dependency injection configuration
 - ✅ Basic UI pages and navigation
-- ✅ Unit tests (17 passing)
+- ✅ Unit tests (73 passing)
 - ✅ Database migrations
+- ✅ REST API with Swagger documentation
+- ✅ Model Context Protocol (MCP) server for AI agent integration
 
 ### In Progress
 - 🔄 Azure AD authentication
