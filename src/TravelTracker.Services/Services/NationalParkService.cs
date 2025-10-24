@@ -1,7 +1,3 @@
-using TravelTracker.Data.Models;
-using TravelTracker.Data.Repositories;
-using TravelTracker.Services.Interfaces;
-
 namespace TravelTracker.Services.Services;
 
 public class NationalParkService : INationalParkService
@@ -34,17 +30,17 @@ public class NationalParkService : INationalParkService
     {
         var allParks = await _nationalParkRepository.GetAllAsync();
         var userLocations = await _locationRepository.GetAllByUserIdAsync(userId);
-        
+
         var nationalParkLocations = userLocations
             .Where(l => l.LocationType.Equals("National Park", StringComparison.OrdinalIgnoreCase))
             .ToList();
-        
+
         var visitedParks = allParks
-            .Where(park => nationalParkLocations.Any(loc => 
+            .Where(park => nationalParkLocations.Any(loc =>
                 loc.Name.Contains(park.Name, StringComparison.OrdinalIgnoreCase) ||
                 park.Name.Contains(loc.Name, StringComparison.OrdinalIgnoreCase)))
             .ToList();
-        
+
         return visitedParks;
     }
 }

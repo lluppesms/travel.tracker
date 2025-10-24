@@ -1,6 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using TravelTracker.Data.Models;
-
 namespace TravelTracker.Data.Repositories;
 
 public class LocationTypeRepository : ILocationTypeRepository

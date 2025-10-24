@@ -1,7 +1,3 @@
-using TravelTracker.Data.Models;
-using TravelTracker.Data.Repositories;
-using TravelTracker.Services.Interfaces;
-
 namespace TravelTracker.Services.Services;
 
 public class LocationService : ILocationService

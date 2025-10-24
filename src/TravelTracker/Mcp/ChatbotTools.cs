@@ -1,12 +1,9 @@
-using System.ComponentModel;
-using ModelContextProtocol.Server;
-using TravelTracker.Services.Interfaces;
-
 namespace TravelTracker.Mcp;
 
 /// <summary>
 /// MCP tools for interacting with the travel chatbot
 /// </summary>
+[AllowAnonymous]
 [McpServerToolType]
 public class ChatbotTools
 {

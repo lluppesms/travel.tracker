@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using TravelTracker.Services.Interfaces;
+using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace TravelTracker.Controllers;
 

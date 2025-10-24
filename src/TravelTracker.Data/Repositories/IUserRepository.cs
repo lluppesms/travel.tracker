@@ -1,5 +1,3 @@
-using TravelTracker.Data.Models;
-
 namespace TravelTracker.Data.Repositories;
 
 public interface IUserRepository

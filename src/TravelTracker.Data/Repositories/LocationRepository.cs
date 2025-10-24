@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using TravelTracker.Data.Models;
 using System.Text.Json;
 
 namespace TravelTracker.Data.Repositories;
@@ -96,7 +94,7 @@ public class LocationRepository : ILocationRepository
         try
         {
             location.ModifiedDate = DateTime.UtcNow;
-            
+
             // Get the existing entity from the database
             var existingLocation = _context.Locations.FirstOrDefault(l => l.Id == location.Id);
             if (existingLocation == null)

@@ -1,13 +1,9 @@
-using System.ComponentModel;
-using ModelContextProtocol.Server;
-using TravelTracker.Data.Models;
-using TravelTracker.Services.Interfaces;
-
 namespace TravelTracker.Mcp;
 
 /// <summary>
 /// MCP tools for accessing national park information
 /// </summary>
+[AllowAnonymous]
 [McpServerToolType]
 public class NationalParkTools
 {

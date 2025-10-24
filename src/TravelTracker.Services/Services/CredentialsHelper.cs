@@ -1,7 +1,4 @@
-﻿using Azure.Identity;
-using Microsoft.Extensions.Configuration;
-
-namespace TravelTracker.Services.Services;
+﻿namespace TravelTracker.Services.Services;
 
 public static class CredentialsHelper
 {

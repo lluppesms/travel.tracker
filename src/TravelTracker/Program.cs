@@ -1,18 +1,3 @@
-using Azure.Identity;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Components;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.UI;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using ModelContextProtocol.AspNetCore;
-using TravelTracker.Components;
-using TravelTracker.Data;
-using TravelTracker.Data.Configuration;
-using TravelTracker.Data.Repositories;
-using TravelTracker.Mcp;
-using TravelTracker.Services.Interfaces;
-using TravelTracker.Services.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -159,6 +144,26 @@ builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(xmlPath);
     }
+
+    // API Key header security scheme
+    var securityScheme = new OpenApiSecurityScheme
+    {
+        Name = "X-API-Key",
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Description = "API Key required for secured endpoints",
+        Reference = new OpenApiReference
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = "ApiKeyAuth"
+        }
+    };
+    options.AddSecurityDefinition("ApiKeyAuth", securityScheme);
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            { securityScheme, Array.Empty<string>() }
+        });
+
 });
 
 // Add Model Context Protocol (MCP) Server
@@ -180,6 +185,14 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
 
+// Add Weather Tool for MCP Servers
+builder.Services.AddHttpClient("WeatherAPI", client =>
+{
+    client.BaseAddress = new Uri("https://api.weather.gov/");
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("mcp-weather-server", "1.0"));
+});
+
+// --------------------------------------------------------------------------------------------------------------------------------------------
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -201,6 +214,9 @@ app.UseSwaggerUI(options =>
     options.DocumentTitle = "Travel Tracker API Documentation";
     options.DisplayRequestDuration();
 });
+
+// Add API key middleware
+app.UseMiddleware<TravelTracker.ApiKeyMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

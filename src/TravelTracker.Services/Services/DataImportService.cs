@@ -1,9 +1,4 @@
-using System.Globalization;
 using System.Text.Json;
-using System.Text.RegularExpressions; // added for zip code parsing
-using TravelTracker.Data.Models;
-using TravelTracker.Data.Repositories;
-using TravelTracker.Services.Interfaces;
 
 namespace TravelTracker.Services.Services;
 
@@ -265,10 +260,10 @@ public class DataImportService : IDataImportService
     {
         var locationName = locData.Name ?? "Unknown";
         var locationType = locData.LocationType ?? "Other";
-        
+
         // Validate location type
         locationType = await ValidateAndNormalizeLocationTypeAsync(locationType, locationName);
-        
+
         return new Location
         {
             UserId = userId,
@@ -465,7 +460,7 @@ public class DataImportService : IDataImportService
 
         var normalizedType = locationType.Trim();
         var validType = await _locationTypeRepository.GetByNameAsync(normalizedType);
-        
+
         if (validType == null)
         {
             var validTypes = await _locationTypeRepository.GetAllAsync();

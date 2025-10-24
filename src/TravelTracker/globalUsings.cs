@@ -1,0 +1,21 @@
+﻿global using Azure.Identity;
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+global using Microsoft.AspNetCore.Components;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.Identity.Web;
+global using Microsoft.Identity.Web.UI;
+global using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+global using Microsoft.OpenApi.Models;
+global using ModelContextProtocol.Server;
+global using System.ComponentModel;
+global using System.Net.Http.Headers;
+
+global using TravelTracker.Components;
+global using TravelTracker.Data;
+global using TravelTracker.Data.Configuration;
+global using TravelTracker.Data.Models;
+global using TravelTracker.Data.Repositories;
+global using TravelTracker.Mcp;
+global using TravelTracker.Services.Interfaces;
+global using TravelTracker.Services.Services;

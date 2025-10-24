@@ -1,10 +1,4 @@
-using Azure;
 using Azure.AI.Agents.Persistent;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using TravelTracker.Data.Configuration;
-using TravelTracker.Services.Interfaces;
 
 namespace TravelTracker.Services.Services;
 

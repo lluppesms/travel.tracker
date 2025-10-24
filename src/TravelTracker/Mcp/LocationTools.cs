@@ -1,13 +1,9 @@
-using System.ComponentModel;
-using ModelContextProtocol.Server;
-using TravelTracker.Data.Models;
-using TravelTracker.Services.Interfaces;
-
 namespace TravelTracker.Mcp;
 
 /// <summary>
 /// MCP tools for managing travel locations
 /// </summary>
+[AllowAnonymous]
 [McpServerToolType]
 public class LocationTools
 {
@@ -203,7 +199,7 @@ public class LocationTools
         if (endDate.HasValue) existingLocation.EndDate = endDate;
         if (rating.HasValue) existingLocation.Rating = rating.Value;
         if (comments != null) existingLocation.Comments = comments;
-        
+
         existingLocation.ModifiedDate = DateTime.UtcNow;
 
         return await _locationService.UpdateLocationAsync(existingLocation);

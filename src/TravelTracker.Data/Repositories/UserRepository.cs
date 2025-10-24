@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace TravelTracker.Data.Repositories;
 
 public class UserRepository : IUserRepository
