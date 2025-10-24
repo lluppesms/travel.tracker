@@ -1,19 +1,8 @@
-using AutoGen.Core;
 using Azure;
 using Azure.AI.Agents.Persistent;
-using Azure.AI.Inference;
-using Azure.Core;
-using Azure.Core.Pipeline;
-using Azure.Identity;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
-using Microsoft.VisualBasic;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Threading;
 using TravelTracker.Data.Configuration;
 using TravelTracker.Services.Interfaces;
 

@@ -42,7 +42,7 @@ public class ChatbotTools
             throw new ArgumentException("Message cannot be empty");
         }
 
-        var (responseMessage, latestMessageDate, responseThreadId) = 
+        var (responseMessage, latestMessageDate, responseThreadId) =
             await _chatbotService.GetChatResponseAsync(message, userId, threadId, lastMessageDate);
 
         return new ChatbotResponse
