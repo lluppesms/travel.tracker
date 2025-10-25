@@ -56,7 +56,7 @@
                         <div class="mb-3">
                             <input type="text" 
                                    class="form-control" 
-                                   placeholder="Filter by name, type, city, or state..." 
+                                   placeholder="Filter by name, trip name, type, city, or state..." 
                                    @bind="filterText" 
                                    @bind:event="oninput"
                                    @bind:after="ApplyFilter" />
@@ -66,6 +66,7 @@
                                       Pagination="@pagination"
                                       Class="table table-hover">
                                 <PropertyColumn Property="@(l => l.Name)" Sortable="true" Title="Name" />
+                                <PropertyColumn Property="@(l => l.TripName)" Sortable="true" Title="Trip Name" />
                                 <PropertyColumn Property="@(l => l.LocationType)" Sortable="true" Title="Type" />
                                 <TemplateColumn Title="Location" Sortable="true" SortBy="GridSort<Location>.ByAscending(l => l.City).ThenAscending(l => l.State)">
                                     @context.City, @context.State
@@ -118,6 +119,13 @@
                                 <ValidationMessage For="@(() => currentLocation.Name)" />
                             </div>
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Trip Name</label>
+                                <InputText class="form-control" @bind-Value="currentLocation.TripName" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label">Location Type *</label>
                                 <InputSelect class="form-select" @bind-Value="currentLocation.LocationType">
                                     <option value="">-- Select Location Type --</option>
@@ -261,6 +269,7 @@
             return locations
                 .Where(l => 
                     (l.Name?.ToLower().Contains(filter) ?? false) ||
+                    (l.TripName?.ToLower().Contains(filter) ?? false) ||
                     (l.LocationType?.ToLower().Contains(filter) ?? false) ||
                     (l.City?.ToLower().Contains(filter) ?? false) ||
                     (l.State?.ToLower().Contains(filter) ?? false))
@@ -335,6 +344,7 @@
             Id = location.Id,
             UserId = location.UserId,
             Name = location.Name,
+            TripName = location.TripName,
             LocationType = location.LocationType,
             Address = location.Address,
             City = location.City,

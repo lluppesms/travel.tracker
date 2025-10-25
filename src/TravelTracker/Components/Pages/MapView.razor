@@ -84,6 +84,17 @@
                         </div>
                     }
 
+                    <div class="mb-3">
+                        <label class="form-label">Trip Name Filter</label>
+                        <select class="form-select" @bind="filterTripName">
+                            <option value="">All Trips</option>
+                            @foreach (var trip in tripNames.OrderBy(t => t))
+                            {
+                                <option value="@trip">@trip</option>
+                            }
+                        </select>
+                    </div>
+
                     <button class="btn btn-sm btn-primary w-100" @onclick="ApplyFilters">
                         Apply Filters
                     </button>
@@ -197,6 +208,7 @@
     private List<Location> allLocations = new();
     private List<Location> filteredLocations = new();
     private HashSet<string> visitedStates = new();
+    private HashSet<string> tripNames = new();
     private bool isLoading = false;
     private bool isMapInitialized = false;
     private bool afterRenderCalled = false; // Diagnostic flag
@@ -208,6 +220,7 @@
     private DateTime? filterStartDate;
     private DateTime? filterEndDate;
     private string filterState = string.Empty;
+    private string filterTripName = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -289,6 +302,7 @@
                     lat = l.Latitude,
                     lon = l.Longitude,
                     name = l.Name,
+                    tripName = l.TripName ?? string.Empty,
                     city = l.City,
                     state = l.State,
                     date = l.StartDate.ToString("yyyy-MM-dd"),
@@ -336,6 +350,11 @@
             visitedStates = allLocations
                 .Where(l => !string.IsNullOrEmpty(l.State))
                 .Select(l => l.State)
+                .ToHashSet();
+
+            tripNames = allLocations
+                .Where(l => !string.IsNullOrEmpty(l.TripName))
+                .Select(l => l.TripName!)
                 .ToHashSet();
 
             Logger.LogInformation("Loaded locations. Count={Count}", allLocations.Count);
@@ -394,6 +413,14 @@
                 .ToList();
         }
 
+        // Apply trip name filter across all view modes
+        if (!string.IsNullOrEmpty(filterTripName))
+        {
+            filteredLocations = filteredLocations
+                .Where(l => l.TripName == filterTripName)
+                .ToList();
+        }
+
         Logger.LogDebug("Filters applied. Filtered count={Count}", filteredLocations.Count);
 
         if (!string.IsNullOrEmpty(azureMapsKey))
@@ -409,6 +436,7 @@
         filterStartDate = null;
         filterEndDate = null;
         filterState = string.Empty;
+        filterTripName = string.Empty;
         Logger.LogInformation("Cleared filters");
         return ApplyFilters();
     }

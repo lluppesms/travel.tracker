@@ -6,6 +6,7 @@ CREATE TABLE [dbo].[Locations](
 	[Type] [nvarchar](50) NOT NULL,
 	[UserId] [int] NOT NULL,
 	[Name] [nvarchar](200) NOT NULL,
+	[TripName] [nvarchar](200) NULL,
 	[LocationTypeId] [int] NULL,
 	[LocationType] [nvarchar](100) NOT NULL,
 	[Address] [nvarchar](300) NOT NULL,
