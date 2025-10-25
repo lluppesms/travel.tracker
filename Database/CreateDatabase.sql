@@ -22,6 +22,7 @@ CREATE TABLE [dbo].[Locations](
 	[TagsJson] [nvarchar](2000) NOT NULL,
 	[CreatedDate] [datetime2](7) NOT NULL,
 	[ModifiedDate] [datetime2](7) NOT NULL,
+	[TripName] [nvarchar](200) NOT NULL,
  CONSTRAINT [PK_Locations] PRIMARY KEY CLUSTERED ([Id] ASC)
 )
 GO
