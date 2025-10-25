@@ -79,6 +79,7 @@ window.updateAzureMapMarkers = function (locations) {
             // Store location properties for use in event handlers
             const locationProps = {
                 name: loc.name,
+                tripName: loc.tripName || '',
                 city: loc.city,
                 state: loc.state,
                 date: loc.date,
@@ -157,10 +158,11 @@ window.centerMapOnLocation = function (lat, lon, zoom) {
 // Create popup content HTML
 function createPopupContent(properties) {
     const stars = '★'.repeat(properties.rating) + '☆'.repeat(5 - properties.rating);
+    const tripNameLine = properties.tripName ? `<span style="color: #666;">🧳 ${properties.tripName}</span><br/>` : '';
     return `
         <div style="padding: 10px;">
             <strong>${properties.name}</strong><br/>
-            <span style="color: #666;">📍 ${properties.city}, ${properties.state}</span><br/>
+            ${tripNameLine}<span style="color: #666;">📍 ${properties.city}, ${properties.state}</span><br/>
             <span style="color: #666;">📅 ${properties.date}</span><br/>
             <span style="color: #666;">🏷️ ${properties.locationType}</span><br/>
             <span style="color: #ffc107;">${stars}</span>
