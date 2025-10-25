@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TravelTracker.Data;
 
@@ -11,9 +12,11 @@ using TravelTracker.Data;
 namespace TravelTracker.Data.Migrations
 {
     [DbContext(typeof(TravelTrackerDbContext))]
-    partial class TravelTrackerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251025115713_AddTripNameToLocation")]
+    partial class AddTripNameToLocation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

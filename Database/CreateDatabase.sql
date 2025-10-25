@@ -6,6 +6,7 @@ CREATE TABLE [dbo].[Locations](
 	[Type] [nvarchar](50) NOT NULL,
 	[UserId] [int] NOT NULL,
 	[Name] [nvarchar](200) NOT NULL,
+	[TripName] [nvarchar](200) NULL,
 	[LocationTypeId] [int] NULL,
 	[LocationType] [nvarchar](100) NOT NULL,
 	[Address] [nvarchar](300) NOT NULL,
@@ -21,6 +22,7 @@ CREATE TABLE [dbo].[Locations](
 	[TagsJson] [nvarchar](2000) NOT NULL,
 	[CreatedDate] [datetime2](7) NOT NULL,
 	[ModifiedDate] [datetime2](7) NOT NULL,
+	[TripName] [nvarchar](200) NOT NULL,
  CONSTRAINT [PK_Locations] PRIMARY KEY CLUSTERED ([Id] ASC)
 )
 GO

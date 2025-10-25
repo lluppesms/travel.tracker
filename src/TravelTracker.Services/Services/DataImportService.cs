@@ -84,7 +84,7 @@ public class DataImportService : IDataImportService
             }
 
             // Validate header format
-            var expectedHeader = "Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type";
+            var expectedHeader = "Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName";
             if (!header.Trim().Equals(expectedHeader, StringComparison.OrdinalIgnoreCase))
             {
                 result.Errors.Add($"Invalid CSV header. Expected: {expectedHeader}");
@@ -201,7 +201,7 @@ public class DataImportService : IDataImportService
                 return result;
             }
 
-            var expectedHeader = "Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type";
+            var expectedHeader = "Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName";
             if (!header.Trim().Equals(expectedHeader, StringComparison.OrdinalIgnoreCase))
             {
                 result.IsValid = false;
@@ -268,6 +268,7 @@ public class DataImportService : IDataImportService
         {
             UserId = userId,
             Name = locationName,
+            TripName = locData.TripName,
             LocationType = locationType,
             Address = locData.Address ?? string.Empty,
             City = locData.City ?? string.Empty,
@@ -289,10 +290,10 @@ public class DataImportService : IDataImportService
 
         if (fields.Length < 8)
         {
-            throw new FormatException($"Invalid CSV format. Expected 8 fields, found {fields.Length}.");
+            throw new FormatException($"Invalid CSV format. Expected at least 8 fields, found {fields.Length}.");
         }
 
-        // CSV Format: Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
+        // CSV Format: Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
         var locationName = fields[0].Trim();
         var arrival = fields[1].Trim();
         var departure = fields[2].Trim();
@@ -301,6 +302,7 @@ public class DataImportService : IDataImportService
         var latitudeStr = fields[5].Trim();
         var longitudeStr = fields[6].Trim();
         var rowType = fields[7].Trim();
+        var tripName = fields.Length > 8 ? fields[8].Trim() : string.Empty;
 
         if (string.IsNullOrWhiteSpace(locationName))
         {
@@ -345,6 +347,7 @@ public class DataImportService : IDataImportService
         {
             UserId = userId,
             Name = locationName,
+            TripName = string.IsNullOrWhiteSpace(tripName) ? null : tripName,
             LocationType = locationType,
             Address = address,
             City = city,
@@ -494,6 +497,7 @@ public class DataImportService : IDataImportService
     private class LocationData
     {
         public string? Name { get; set; }
+        public string? TripName { get; set; }
         public string? LocationType { get; set; }
         public string? Address { get; set; }
         public string? City { get; set; }

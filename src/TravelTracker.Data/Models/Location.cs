@@ -17,6 +17,9 @@ public class Location
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
 
+    [MaxLength(200)]
+    public string? TripName { get; set; }
+
     public int? LocationTypeId { get; set; }
 
     [ForeignKey("LocationTypeId")]

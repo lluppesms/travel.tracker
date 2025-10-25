@@ -105,8 +105,8 @@ public class DataImportServiceTests
     public async Task ImportFromCsvAsync_ValidCsv_ImportsLocations()
     {
         int userId = 123;
-        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Test RV Park,2024-06-15,2024-06-18,Amazing place,""123 Main St, CA 90210"",34.0522,-118.2437,""RV Park""";
+        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+Test RV Park,2024-06-15,2024-06-18,Amazing place,""123 Main St, CA 90210"",34.0522,-118.2437,""RV Park"",""Summer Trip""";
 
         var mockLocationService = new Mock<ILocationService>();
         mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
@@ -183,8 +183,8 @@ data1,data2";
     [Fact]
     public async Task ValidateCsvAsync_ValidCsv_ReturnsValid()
     {
-        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Test Location,2024-01-01,2024-01-02,Great place,""123 Main St, CA"",37.7749,-122.4194,""National Park""";
+        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+Test Location,2024-01-01,2024-01-02,Great place,""123 Main St, CA"",37.7749,-122.4194,""National Park"",""Trip 2024""";
 
         var mockLocationService = new Mock<ILocationService>();
         var mockLocationTypeRepo = CreateMockLocationTypeRepository();
@@ -205,8 +205,8 @@ Test Location,2024-01-01,2024-01-02,Great place,""123 Main St, CA"",37.7749,-122
     public async Task ImportFromCsvAsync_ExtractsStateFromAddress()
     {
         int userId = 123;
-        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122.4194,""RV Park""";
+        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122.4194,""RV Park"",""""";
 
         Location? capturedLocation = null;
         var mockLocationService = new Mock<ILocationService>();
@@ -233,10 +233,10 @@ Test Location,2024-01-01,2024-01-02,Comment,""City Name, CA 12345"",37.7749,-122
     public async Task ImportFromCsvAsync_MultipleLocations_ImportsAll()
     {
         int userId = 123;
-        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Location 1,2024-01-01,2024-01-02,Comment 1,""Address 1, CA"",37.7749,-122.4194,""RV Park""
-Location 2,2024-02-01,2024-02-02,Comment 2,""Address 2, NY"",40.7128,-74.0060,""State Park""
-Location 3,2024-03-01,2024-03-02,Comment 3,""Address 3, TX"",29.7604,-95.3698,Other";
+        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+Location 1,2024-01-01,2024-01-02,Comment 1,""Address 1, CA"",37.7749,-122.4194,""RV Park"",""Trip A""
+Location 2,2024-02-01,2024-02-02,Comment 2,""Address 2, NY"",40.7128,-74.0060,""State Park"",""Trip B""
+Location 3,2024-03-01,2024-03-02,Comment 3,""Address 3, TX"",29.7604,-95.3698,Other,""Trip C""";
 
         var mockLocationService = new Mock<ILocationService>();
         mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
@@ -262,8 +262,8 @@ Location 3,2024-03-01,2024-03-02,Comment 3,""Address 3, TX"",29.7604,-95.3698,Ot
     public async Task ImportFromCsvAsync_ValidNationalPark_ImportsSuccessfully()
     {
         int userId = 123;
-        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Yellowstone,2024-06-15,2024-06-18,Amazing geysers,""Yellowstone National Park, WY 82190"",44.427963,-110.588455,""National Park""";
+        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+Yellowstone,2024-06-15,2024-06-18,Amazing geysers,""Yellowstone National Park, WY 82190"",44.427963,-110.588455,""National Park"",""NP Tour""";
 
         var mockLocationService = new Mock<ILocationService>();
         mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
@@ -287,8 +287,8 @@ Yellowstone,2024-06-15,2024-06-18,Amazing geysers,""Yellowstone National Park, W
     public async Task ImportFromCsvAsync_InvalidNationalPark_FailsImport()
     {
         int userId = 123;
-        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type
-Unknown Park,2024-06-15,2024-06-18,Does not exist,""Unknown Location, WY 82190"",44.427963,-110.588455,""National Park""";
+        var csvContent = @"Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+Unknown Park,2024-06-15,2024-06-18,Does not exist,""Unknown Location, WY 82190"",44.427963,-110.588455,""National Park"",""Test Trip""";
 
         var mockLocationService = new Mock<ILocationService>();
         mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))

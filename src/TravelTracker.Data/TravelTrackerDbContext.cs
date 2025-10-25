@@ -111,10 +111,10 @@ public class TravelTrackerDbContext : DbContext
                 new NationalPark { Id = 57, Type = "National Park", Name = "Voyageurs National Park", State = "Minnesota", Latitude = 48.450000, Longitude = -92.850000, Description = "Water-based park of interconnected lakes, boreal forests, and historic trade routes." },
                 new NationalPark { Id = 58, Type = "National Park", Name = "White Sands National Park", State = "New Mexico", Latitude = 32.779720, Longitude = -106.171669, Description = "World's largest gypsum dune field with otherworldly white sand dunes." },
                 new NationalPark { Id = 59, Type = "National Park", Name = "Wind Cave National Park", State = "South Dakota", Latitude = 43.587800, Longitude = -103.450300, Description = "Home to one of the world's longest boxwork cave systems and mixed-grass prairie." },
-                new NationalPark { Id = 60, Type = "National Park", Name = "Wrangell-St. Elias National Park", State = "Alaska", Latitude = 61.710445, Longitude = 142.985687, Description = "The largest national park in the United States, spanning approximately 13.2 million acres of towering volcanic and glaciated mountain ranges-including Mount St. Elias-and vast wilderness from sea level to 18,008 ft peaks." },
-                new NationalPark { Id = 61, Type = "National Park", Name = "Yellowstone National Park", State = "Wyoming", Latitude = 44.427895, Longitude = 110.588379, Description = "The world's first national park, famed for hydrothermal features like Old Faithful and abundant megafauna." },
-                new NationalPark { Id = 62, Type = "National Park", Name = "Yosemite National Park", State = "California", Latitude = 37.865101, Longitude = 119.538330, Description = "Iconic granite cliffs, giant sequoias, waterfalls, and deep valleys define this legendary park" },
-                new NationalPark { Id = 63, Type = "National Park", Name = "Zion National Park", State = "Utah", Latitude = 37.297817, Longitude = 113.028770, Description = "Known fo6 its towering red sandstone cliffs, narrow canyons, and the Virgin River's carved landscapes" }
+                new NationalPark { Id = 60, Type = "National Park", Name = "Wrangell-St. Elias National Park", State = "Alaska", Latitude = 61.710445, Longitude = -142.985687, Description = "The largest national park in the United States, spanning approximately 13.2 million acres of towering volcanic and glaciated mountain ranges-including Mount St. Elias-and vast wilderness from sea level to 18,008 ft peaks." },
+                new NationalPark { Id = 61, Type = "National Park", Name = "Yellowstone National Park", State = "Wyoming", Latitude = 44.427895, Longitude = -110.588379, Description = "The world's first national park, famed for hydrothermal features like Old Faithful and abundant megafauna." },
+                new NationalPark { Id = 62, Type = "National Park", Name = "Yosemite National Park", State = "California", Latitude = 37.865101, Longitude = -119.538330, Description = "Iconic granite cliffs, giant sequoias, waterfalls, and deep valleys define this legendary park" },
+                new NationalPark { Id = 63, Type = "National Park", Name = "Zion National Park", State = "Utah", Latitude = 37.297817, Longitude = -113.028770, Description = "Known fo6 its towering red sandstone cliffs, narrow canyons, and the Virgin River's carved landscapes" }
             );
         });
 
@@ -129,10 +129,14 @@ public class TravelTrackerDbContext : DbContext
                 new LocationType { Id = 1, Name = "RV Park", Description = "RV Park or campground" },
                 new LocationType { Id = 2, Name = "National Park", Description = "US National Park" },
                 new LocationType { Id = 3, Name = "National Monument", Description = "US National Monument" },
-                new LocationType { Id = 4, Name = "Harvest Host", Description = "Harvest Host location" },
-                new LocationType { Id = 5, Name = "State Park", Description = "State Park" },
-                new LocationType { Id = 6, Name = "Family", Description = "Family or friends location" },
-                new LocationType { Id = 7, Name = "Other", Description = "Other location type" }
+                new LocationType { Id = 4, Name = "National Memorial", Description = "US National Memorial" },
+                new LocationType { Id = 5, Name = "National Military Battlefield", Description = "National Military Battlefield" },
+                new LocationType { Id = 6, Name = "Harvest Host", Description = "Harvest Host location" },
+                new LocationType { Id = 7, Name = "State Park", Description = "State Park" },
+                new LocationType { Id = 8, Name = "Family", Description = "Family or friends location" },
+                new LocationType { Id = 9, Name = "Presidential Library", Description = "Presidential Library" },
+                new LocationType { Id = 10, Name = "Boondocking", Description = "Boondocking" },
+                new LocationType { Id = 11, Name = "Other", Description = "Other location type" }
             );
         });
     }

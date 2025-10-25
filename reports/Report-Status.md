@@ -162,6 +162,21 @@ This phase is designed for migrating existing applications. Since Travel Tracker
 - [x] All 25 tests passing (17 existing + 8 new)
 - [x] Updated format examples in UI for both JSON and CSV
 
+### Completed Tasks - Week 6 (Trip Name Feature - Issue #14)
+- [x] Added TripName field to Location model (nullable, max 200 chars)
+- [x] Updated database schema to include TripName column
+- [x] Enhanced JSON import to support TripName field
+- [x] Enhanced CSV import to support TripName field (new 9th column)
+- [x] Updated Locations page to include TripName in create/edit form
+- [x] Added TripName column to Locations list table
+- [x] Enhanced Locations filter to include TripName
+- [x] Added TripName filter dropdown to MapView page
+- [x] Updated map markers to display TripName in popup
+- [x] Updated Upload page sample formats to show TripName
+- [x] Updated all CSV-related tests for new format
+- [x] All 73 tests passing
+- [x] Updated status report with completed tasks
+
 ### In Progress
 - [ ] Configure Azure AD app registration in Azure Portal
 - [ ] Configure Azure Maps service in Azure Portal
@@ -179,7 +194,7 @@ This phase is designed for migrating existing applications. Since Travel Tracker
 - [ ] Add data export functionality
 
 **Estimated Duration:** 10-12 weeks  
-**Progress:** ~65% complete (Foundation + Core Features + Authentication + Maps + Data Import)
+**Progress:** ~70% complete (Foundation + Core Features + Authentication + Maps + Data Import + Trip Name Feature)
 
 ---
 
