@@ -7,22 +7,20 @@ using './main.bicep'
 param appName = '#{appName}#'
 param environmentCode = '#{environmentNameLower}#'
 
+param location = '#{location}#'
+param servicePlanName = '#{servicePlanName}#'
+
+param apiKey = '#{apiKey}#'
+
 param adInstance = '#{adInstance}#'
 param adDomain = '#{adDomain}#'
 param adTenantId = '#{adTenantId}#'
 param adClientId = '#{adClientId}#'
-param apiKey = '#{apiKey}#'
-param location = '#{location}#'
-param servicePlanName = '#{servicePlanName}#'
+param adClientSecret = '#{adClientSecret}#'
 
-param azureOpenAIChatEndpoint = '#{azureOpenAIChatEndpoint}#'
-param azureOpenAIChatDeploymentName = '#{azureOpenAIChatDeploymentName}#'
-param azureOpenAIChatApiKey = '#{azureOpenAIChatApiKey}#'
-param azureOpenAIChatMaxTokens = '#{azureOpenAIChatMaxTokens}#'
-param azureOpenAIChatTemperature = '#{azureOpenAIChatTemperature}#'
-param azureOpenAIChatTopP = '#{azureOpenAIChatTopP}#'
-param azureOpenAIImageEndpoint = '#{azureOpenAIImageEndpoint}#'
-param azureOpenAIImageDeploymentName = '#{azureOpenAIImageDeploymentName}#'
-param azureOpenAIImageApiKey = '#{azureOpenAIImageApiKey}#'
+param azureMapsSubscriptionKey = '#{AzureMaps_SubscriptionKey}#'
+param azureMapsClientId = '#{AzureMaps_ClientId}#'
 
-
+param azureAIFoundryEndpoint = '#{AzureAIFoundry_Endpoint}#'
+param azureAIFoundryApiKey = '#{AzureAIFoundry_ApiKey}#'
+param azureAIFoundryDeploymentName = '#{AzureAIFoundry_DeploymentName}#'

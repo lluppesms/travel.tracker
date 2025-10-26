@@ -19,22 +19,23 @@ param adInstance string = environment().authentication.loginEndpoint // 'https:/
 param adDomain string = ''
 param adTenantId string = ''
 param adClientId string = ''
+@secure()
+param adClientSecret string = ''
 param adCallbackPath string = '/signin-oidc'
+
+@secure()
+param azureMapsSubscriptionKey string = ''
+param azureMapsClientId string = ''
+
+param azureAIFoundryEndpoint string = ''
+@secure()
+param azureAIFoundryApiKey string = ''
+param azureAIFoundryDeploymentName string = ''
 
 param appDataSource string = 'JSON'
 param appSwaggerEnabled string = 'true'
 param servicePlanName string = ''
 param webAppKind string = 'linux' // 'linux' or 'windows'
-
-param azureOpenAIChatEndpoint string = ''
-param azureOpenAIChatDeploymentName string = ''
-param azureOpenAIChatApiKey string = ''
-param azureOpenAIChatMaxTokens string = ''
-param azureOpenAIChatTemperature string = ''
-param azureOpenAIChatTopP string = ''
-param azureOpenAIImageEndpoint string = ''
-param azureOpenAIImageDeploymentName string = ''
-param azureOpenAIImageApiKey string = ''
 
 param sqlServerNamePrefix string = ''
 param sqlDatabaseName string = 'traveltracker'
@@ -143,6 +144,7 @@ module webSiteModule './modules/webapp/website.bicep' = {
 // configured in App Service as AppSettings__MyKey for the key name. 
 // In other words, any : should be replaced by __ (double underscore).
 // NOTE: See https://learn.microsoft.com/en-us/azure/app-service/configure-common?tabs=portal  
+var sqlConnectionString = '-${runDateTime}'
 module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
   name: 'webSiteAppSettings${deploymentSuffix}'
   params: {
@@ -154,21 +156,24 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       AppSettings__EnvironmentName: environmentCode
       AppSettings__EnableSwagger: appSwaggerEnabled
       AppSettings__DataSource: appDataSource
-      AppSettings__ApiKey: apiKey
-      AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
-      AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
-      AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
-      AppSettings__AzureOpenAI__Chat__MaxTokens: azureOpenAIChatMaxTokens
-      AppSettings__AzureOpenAI__Chat__Temperature: azureOpenAIChatTemperature
-      AppSettings__AzureOpenAI__Chat__TopP: azureOpenAIChatTopP
-      AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
-      AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
-      AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
+      
+      ApiKey: apiKey
+
+      SqlServer__ConnectionString:	'Server=${resourceNames.outputs.sqlServerName};Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true'
+
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
       AzureAD__TenantId: adTenantId
       AzureAD__ClientId: adClientId
+      AzureAD__ClientSecret: adClientSecret
       AzureAD__CallbackPath: adCallbackPath
+
+      AzureMaps_SubscriptionKey: azureMapsSubscriptionKey
+      AzureMaps_ClientId: azureMapsClientId
+
+      AzureAIFoundry_Endpoint: azureAIFoundryEndpoint
+      AzureAIFoundry_ApiKey: azureAIFoundryApiKey
+      AzureAIFoundry_DeploymentName: azureAIFoundryDeploymentName
     }
   }
 }
