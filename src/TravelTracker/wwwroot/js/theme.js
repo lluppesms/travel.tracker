@@ -28,9 +28,12 @@
     
     // Update toggle button icon
     function updateToggleButton(theme) {
+        const icon = document.getElementById('theme-icon');
+        if (icon) {
+            icon.textContent = theme === 'light' ? '🌙' : '☀️';
+        }
         const button = document.getElementById('theme-toggle');
         if (button) {
-            button.innerHTML = theme === 'light' ? '🌙' : '☀️';
             button.setAttribute('aria-label', `Switch to ${theme === 'light' ? 'dark' : 'light'} mode`);
         }
     }

@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject IChatbotService ChatbotService
 @inject IAuthenticationService AuthService
+@inject IJSRuntime JSRuntime
 @attribute [Authorize]
 
 <PageTitle>Travel Assistant Chat</PageTitle>
@@ -168,6 +169,19 @@
         {
             isLoading = false;
             StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("scrollToBottom", "chatMessages");
+        }
+        catch (Exception)
+        {
+            // Ignore JS interop errors
         }
     }
 

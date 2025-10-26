@@ -2,11 +2,16 @@
 
 .home-hero {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-    color: white;
+    color: white !important;
     padding: 4rem 0;
     margin: calc(var(--spacing-lg) * -1) calc(var(--spacing-md) * -1) 0;
     border-radius: 0 0 2rem 2rem;
     box-shadow: var(--shadow-lg);
+}
+
+.home-hero h1,
+.home-hero .lead {
+    color: white !important;
 }
 
 .feature-icon {
