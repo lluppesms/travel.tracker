@@ -34,7 +34,7 @@ gh auth login
 
 gh variable set APP_NAME -b "xxx-traveltracker"
 gh variable set RESOURCEGROUP_LOCATION -b "eastus"
-gh variable set RESOURCEGROUP_PREFIX -b "rg_traveltracker-webg" 
+gh variable set RESOURCEGROUP_PREFIX -b "rg_traveltracker_webg" 
 gh secret set API_KEY -b "somesecretstring"
 
 gh secret set LOGIN_CLIENTID -b "<yourADClientId>"
