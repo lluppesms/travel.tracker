@@ -293,42 +293,59 @@ a:hover {
 
 /* Dark mode table overrides */
 [data-theme="dark"] .table {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border-color: var(--border-color);
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .table thead th {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    border-color: var(--border-color);
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .table tbody td {
-    color: var(--text-primary);
-    border-color: var(--border-color);
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .table-hover tbody tr:hover {
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-tertiary) !important;
 }
 
 /* QuickGrid specific styling */
 .quickgrid {
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .quickgrid {
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .quickgrid thead th {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .quickgrid tbody td {
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
+}
+
+/* Additional dark mode overrides for cards containing tables */
+[data-theme="dark"] .card {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .card-header {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card-body {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
 }
 
 /* Smooth transitions */
