@@ -93,15 +93,11 @@ jobs:
         echo "DTS=$DTS"
         echo "DTS=$DTS" >> $GITHUB_OUTPUT
 
-        RESOURCEGROUPNAME="$(echo "${{ vars.RESOURCEGROUP_PREFIX }}-$ENV_INITIAL-${{ vars.GLOBAL_REGION_CODE }}-${{ vars.INSTANCE_NUMBER }}" | tr '[:lower:]' '[:upper:]')"
-        echo "RESOURCEGROUPNAME=$RESOURCEGROUPNAME"
-        echo "RESOURCEGROUPNAME=$RESOURCEGROUPNAME" >> $GITHUB_OUTPUT
-
     - name: Display Variables and Files
       run: |-
         echo "env.generatedAppEnvName=${{ env.generatedAppEnvName }}"
         echo "inputs.envCode=${{ inputs.envCode }}"
-        echo "step.resourceGroupName=${{ steps.create-vars.outputs.RESOURCEGROUPNAME }}"
+        echo "env.generatedResourceGroupName=${{ env.generatedResourceGroupName }}"
         echo "deployInResourceGroup=${{ inputs.deployInResourceGroup }}"
         echo "templateFilePath=${{ inputs.templatePath }}${{ inputs.templateFile }}"
         echo "parameterFilePath=${{ inputs.templatePath }}${{ inputs.parameterFile }}"
@@ -155,7 +151,6 @@ jobs:
         client-id: ${{ secrets.CICD_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        client-secret: ${{ secrets.CICD_CLIENT_SECRET }}
 
     - name: Create Resource Group
       if: ${{ inputs.runCreateInfra && inputs.deployInResourceGroup && inputs.createResourceGroup }}
