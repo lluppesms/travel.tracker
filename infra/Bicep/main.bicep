@@ -116,7 +116,8 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
     adAdminUserId: sqlADAdminLoginUserId
     adAdminUserSid: sqlADAdminLoginUserSid
     adAdminTenantId: sqlADAdminLoginTenantId
-    userAssignedIdentityId: identity.outputs.managedIdentityPrincipalId
+    //userAssignedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    userAssignedIdentityResourceId: identity.outputs.managedIdentityId
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
