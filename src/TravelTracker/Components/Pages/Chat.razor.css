@@ -1,0 +1,70 @@
+/* Chat message styling */
+.chat-message-assistant {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+.chat-message-user {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .chat-message-assistant {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .alert-info {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* Loading indicator styling */
+.loading-indicator {
+    background-color: #f8f9fa;
+}
+
+[data-theme="dark"] .loading-indicator {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Card styling for chat container */
+[data-theme="dark"] .card {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .card-body {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Form control styling */
+[data-theme="dark"] .form-control {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .form-control:focus {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .form-control:disabled {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* Form text styling */
+[data-theme="dark"] .form-text {
+    color: var(--text-secondary) !important;
+}

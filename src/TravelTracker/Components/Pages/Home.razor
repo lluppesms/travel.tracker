@@ -2,70 +2,100 @@
 
 <PageTitle>Travel Tracker - Dashboard</PageTitle>
 
-<h1>Welcome to Travel Tracker</h1>
-
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">🗺️ Track Your Travels!</h4>
-                <p>Travel Tracker helps you document and visualize your journeys across the United States. 
-                   Upload your travel data, view interactive maps, and track your progress visiting all states and national parks.</p>
-            </div>
-        </div>
+<div class="home-hero">
+    <div class="container">
+        <h1 class="display-4 mb-3">Welcome to Travel Tracker</h1>
+        <p class="lead">Document and visualize your journeys across the United States with interactive maps and comprehensive travel statistics.</p>
     </div>
+</div>
 
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <h3>Getting Started</h3>
-            <p>Begin tracking your adventures by exploring the features below. Add locations you've visited, view your travel statistics, 
-               and upload your travel history to see your journey come to life on interactive maps.</p>
-        </div>
-    </div>
-
-    <div class="row mt-4">
+<div class="container mt-5">
+    <div class="row g-4">
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">📍 Locations</h5>
+            <div class="card h-100 hover-lift">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">📍</div>
+                    <h5 class="card-title">Locations</h5>
                     <p class="card-text">Manage all your visited locations, add ratings, and comments.</p>
-                    <a href="/locations" class="btn btn-primary btn-sm">View Locations</a>
+                    <a href="/locations" class="btn btn-primary">View Locations</a>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">📊 Statistics</h5>
-                    <p class="card-text">View travel statistics, state progress, and national parks visited.</p>
-                    <a href="/statistics" class="btn btn-primary btn-sm">View Statistics</a>
+            <div class="card h-100 hover-lift">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">🗺️</div>
+                    <h5 class="card-title">Interactive Maps</h5>
+                    <p class="card-text">Visualize your travels on beautiful, interactive maps with custom filters.</p>
+                    <a href="/map" class="btn btn-primary">View Map</a>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">📤 Upload Data</h5>
-                    <p class="card-text">Import your travel history in JSON format to quickly populate your tracker.</p>
-                    <a href="/upload" class="btn btn-primary btn-sm">Upload Data</a>
+            <div class="card h-100 hover-lift">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">📊</div>
+                    <h5 class="card-title">Statistics</h5>
+                    <p class="card-text">Track your progress across states and national parks you've visited.</p>
+                    <a href="/statistics" class="btn btn-primary">View Stats</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-4">
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon me-3">📤</div>
+                        <h5 class="card-title mb-0">Upload Data</h5>
+                    </div>
+                    <p class="card-text">Import your travel history in JSON format to quickly populate your tracker with past adventures.</p>
+                    <a href="/upload" class="btn btn-outline-primary">Upload Data</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon me-3">🤖</div>
+                        <h5 class="card-title mb-0">AI Chat</h5>
+                    </div>
+                    <p class="card-text">Ask questions about your travels in natural language and get intelligent insights about your journey.</p>
+                    <a href="/chat" class="btn btn-outline-primary">Start Chatting</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5 mb-5">
         <div class="col-md-12">
-            <h3>Key Features</h3>
-            <ul>
-                <li>📤 <strong>JSON Data Upload:</strong> Import your travel history in bulk</li>
-                <li>🗺️ <strong>Multiple Map Views:</strong> Date range, state overview, and national parks modes</li>
-                <li>⭐ <strong>Location Ratings:</strong> Rate and comment on places you've visited</li>
-                <li>📊 <strong>Travel Statistics:</strong> Track your progress across states and national parks</li>
-                <li>📱 <strong>Responsive Design:</strong> Works on desktop and mobile devices</li>
-                <li>🔒 <strong>Secure & Private:</strong> Your data is protected with Azure AD authentication</li>
-            </ul>
+            <div class="card feature-card">
+                <div class="card-body">
+                    <h3 class="mb-4">Key Features</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="feature-list">
+                                <li>📤 <strong>JSON Data Upload:</strong> Import travel history in bulk</li>
+                                <li>🗺️ <strong>Multiple Map Views:</strong> Date range and location type filters</li>
+                                <li>⭐ <strong>Location Ratings:</strong> Rate and comment on places visited</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="feature-list">
+                                <li>📊 <strong>Travel Statistics:</strong> Track progress across states</li>
+                                <li>📱 <strong>Responsive Design:</strong> Works on all devices</li>
+                                <li>🔒 <strong>Secure & Private:</strong> Protected with Azure AD</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

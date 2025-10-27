@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject IChatbotService ChatbotService
 @inject IAuthenticationService AuthService
+@inject IJSRuntime JSRuntime
 @attribute [Authorize]
 
 <PageTitle>Travel Assistant Chat</PageTitle>
@@ -42,7 +43,7 @@
                     @foreach (var msg in messages)
                     {
                         <div class="mb-3 @(msg.IsUser ? "text-end" : "text-start")">
-                            <div class="d-inline-block p-3 rounded @(msg.IsUser ? "bg-primary text-white" : "bg-light")"
+                            <div class="d-inline-block p-3 rounded @(msg.IsUser ? "chat-message-user" : "chat-message-assistant")"
                                  style="max-width: 75%;">
                                 <div class="small mb-1">
                                     <strong>@(msg.IsUser ? "You" : "Assistant")</strong>
@@ -56,7 +57,7 @@
                     @if (isLoading)
                     {
                         <div class="text-start mb-3">
-                            <div class="d-inline-block p-3 rounded bg-light">
+                            <div class="d-inline-block p-3 rounded loading-indicator">
                                 <div class="spinner-border spinner-border-sm me-2" role="status">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
@@ -138,8 +139,11 @@
         });
 
         isLoading = true;
-        StateHasChanged();
-
+        
+        // Force UI update immediately to show loading state
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(1); // Small delay to ensure UI updates
+        
         try
         {
             var userId = AuthService.GetCurrentUserInternalId();
@@ -168,6 +172,19 @@
         {
             isLoading = false;
             StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("scrollToBottom", "chatMessages");
+        }
+        catch (Exception)
+        {
+            // Ignore JS interop errors
         }
     }
 

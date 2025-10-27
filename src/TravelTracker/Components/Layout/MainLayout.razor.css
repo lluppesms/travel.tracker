@@ -13,6 +13,24 @@ main {
     padding-bottom: 1.5rem;
 }
 
+.footer {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 1rem 0;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+}
+
+.footer p {
+    font-size: 0.875rem;
+}
+
+[data-theme="dark"] .footer {
+    background: var(--bg-tertiary);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 #blazor-error-ui {
     color-scheme: light only;
     background: lightyellow;

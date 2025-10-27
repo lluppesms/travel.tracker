@@ -10,18 +10,7 @@
 
 <PageTitle>Map - Travel Tracker</PageTitle>
 
-<h1>Interactive Map</h1>
-
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">🗺️ Map Visualization</h4>
-                <p>Visualize your travels on an interactive Azure Map with multiple viewing modes.</p>
-            </div>
-        </div>
-    </div>
-
+<div class="map-container">
     @if (!string.IsNullOrEmpty(errorMessage))
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -30,147 +19,120 @@
         </div>
     }
 
-    <div class="row mt-4">
-        <div class="col-md-3">
-            <div class="card">
+    <div class="map-layout">
+        <!-- Left Sidebar with Filters -->
+        <div class="map-sidebar">
+            <div class="card h-100">
                 <div class="card-header">
-                    <h5 class="mb-0">View Mode</h5>
+                    <h5 class="mb-0">Filters</h5>
                 </div>
                 <div class="card-body">
-                    <div class="btn-group-vertical w-100" role="group">
-                        <button type="button"
-                                class="btn @(viewMode == ViewMode.DateRange ? "btn-primary" : "btn-outline-primary")"
-                                @onclick="() => ChangeViewMode(ViewMode.DateRange)">
-                            📅 Date Range
-                        </button>
-                        <button type="button"
-                                class="btn @(viewMode == ViewMode.StateOverview ? "btn-primary" : "btn-outline-primary")"
-                                @onclick="() => ChangeViewMode(ViewMode.StateOverview)">
-                            🗺️ State Overview
-                        </button>
-                        <button type="button"
-                                class="btn @(viewMode == ViewMode.NationalParks ? "btn-primary" : "btn-outline-primary")"
-                                @onclick="() => ChangeViewMode(ViewMode.NationalParks)">
-                            🏞️ National Parks
-                        </button>
+                    <!-- Location Type Filters -->
+                    <div class="filter-section">
+                        <h6 class="filter-title">Location Types</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterNationalParks" 
+                                   @bind="filterNationalParks" @bind:after="ApplyFilters">
+                            <label class="form-check-label" for="filterNationalParks">
+                                Natl Parks/Monuments
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterHarvestHosts" 
+                                   @bind="filterHarvestHosts" @bind:after="ApplyFilters">
+                            <label class="form-check-label" for="filterHarvestHosts">
+                                Harvest Hosts
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterPresidentialLibraries" 
+                                   @bind="filterPresidentialLibraries" @bind:after="ApplyFilters">
+                            <label class="form-check-label" for="filterPresidentialLibraries">
+                                Presidential Libraries
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterRVParks" 
+                                   @bind="filterRVParks" @bind:after="ApplyFilters">
+                            <label class="form-check-label" for="filterRVParks">
+                                RV Parks
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterFamily" 
+                                   @bind="filterFamily" @bind:after="ApplyFilters">
+                            <label class="form-check-label" for="filterFamily">
+                                Family
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterBoondocking" 
+                                   @bind="filterBoondocking" @bind:after="ApplyFilters">
+                            <label class="form-check-label" for="filterBoondocking">
+                                Boondocking
+                            </label>
+                        </div>
                     </div>
 
                     <hr />
 
-                    <h6>Filters</h6>
-                    @if (viewMode == ViewMode.DateRange)
-                    {
+                    <!-- Date Range Filter -->
+                    <div class="filter-section">
+                        <h6 class="filter-title">Dates</h6>
                         <div class="mb-3">
-                            <label class="form-label">Start Date</label>
-                            <input type="date" class="form-control" @bind="filterStartDate" @bind:event="oninput" />
+                            <label class="form-label">Start</label>
+                            <input type="date" class="form-control" @bind="filterStartDate" @bind:after="ApplyFilters" />
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">End Date</label>
-                            <input type="date" class="form-control" @bind="filterEndDate" @bind:event="oninput" />
+                            <label class="form-label">End</label>
+                            <input type="date" class="form-control" @bind="filterEndDate" @bind:after="ApplyFilters" />
                         </div>
-                    }
-
-                    @if (viewMode == ViewMode.StateOverview)
-                    {
-                        <div class="mb-3">
-                            <label class="form-label">State Filter</label>
-                            <select class="form-select" @bind="filterState">
-                                <option value="">All States</option>
-                                @foreach (var state in visitedStates.OrderBy(s => s))
-                                {
-                                    <option value="@state">@state</option>
-                                }
-                            </select>
-                        </div>
-                    }
-
-                    <div class="mb-3">
-                        <label class="form-label">Trip Name Filter</label>
-                        <select class="form-select" @bind="filterTripName">
-                            <option value="">All Trips</option>
-                            @foreach (var trip in tripNames.OrderBy(t => t))
-                            {
-                                <option value="@trip">@trip</option>
-                            }
-                        </select>
                     </div>
 
-                    <button class="btn btn-sm btn-primary w-100" @onclick="ApplyFilters">
-                        Apply Filters
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary w-100 mt-2" @onclick="ClearFilters">
-                        Clear Filters
+                    <button class="btn btn-outline-secondary w-100 mb-2" @onclick="ClearFilters">
+                        Clear Filter
                     </button>
 
                     <hr />
 
-                    <h6>Statistics</h6>
-                    <p class="text-muted small mb-1">Locations shown: @filteredLocations.Count</p>
-                    <p class="text-muted small mb-1">States visited: @visitedStates.Count / 50</p>
-
-                    <hr />
-                    <h6>Legend</h6>
-                    <ul class="list-unstyled small mb-0">
-                        <li><span class="legend-pin legend-pin-darkgreen"></span> National Park</li>
-                        <li><span class="legend-pin legend-pin-green"></span> State Park</li>
-                        <li><span class="legend-pin legend-pin-purple"></span> RV Park / RV Resort</li>
-                        <li><span class="legend-pin legend-pin-yellow"></span> Harvest Host</li>
-                        <li><span class="legend-pin legend-pin-blue"></span> Family / Relatives</li>
-                        <li><span class="legend-pin legend-pin-red"></span> Other / Uncategorized</li>
-                    </ul>
+                    <!-- Statistics -->
+                    <div class="filter-section">
+                        <h6 class="filter-title">Statistics</h6>
+                        <p class="stat-text">Locations: @filteredLocations.Count</p>
+                        <p class="stat-text">States: @visitedStates.Count / 50</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-9">
-            <div class="card">
-                <div class="card-body" style="min-height: 600px;">
+        <!-- Map Area -->
+        <div class="map-area">
+            <div class="card h-100">
+                <div class="card-body p-0" style="position: relative;">
                     @if (isLoading)
                     {
-                        <div class="d-flex align-items-center justify-content-center" style="height: 500px;">
+                        <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 600px;">
                             <div class="text-center">
-                                <div class="spinner-border" role="status">
+                                <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
-                                <p class="mt-2">Loading map data...</p>
+                                <p class="mt-3">Loading map data...</p>
                             </div>
                         </div>
                     }
                     else if (string.IsNullOrEmpty(azureMapsKey))
                     {
-                        <div class="d-flex align-items-center justify-content-center" style="height: 500px;">
-                            <div class="text-center">
-                                <h3 class="text-muted">🗺️</h3>
-                                <p class="text-muted">Azure Maps is not configured</p>
-                                <p class="text-muted small">Please configure Azure Maps subscription key in appsettings.json to enable map visualization.</p>
-                                <p class="text-muted small mt-3">Meanwhile, showing location data:</p>
-                                <div class="table-responsive mt-3" style="max-height: 400px; overflow-y: auto;">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>Location</th>
-                                                <th>Date</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var loc in filteredLocations.Take(20))
-                                            {
-                                                <tr>
-                                                    <td>@loc.Name</td>
-                                                    <td>@loc.City, @loc.State</td>
-                                                    <td>@loc.StartDate.ToString("MM/dd/yyyy")</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
+                        <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 600px;">
+                            <div class="text-center p-4">
+                                <h3 class="text-muted mb-3">🗺️</h3>
+                                <h5 class="mb-3">Azure Maps Not Configured</h5>
+                                <p class="text-muted">Configure Azure Maps in appsettings.json to enable map visualization.</p>
                             </div>
                         </div>
                     }
                     else
                     {
-                        <div id="azureMap" style="height: 600px; width: 100%; position: relative;"></div>
+                        <div id="azureMap" style="height: 100%; width: 100%; min-height: 600px;"></div>
                     }
                 </div>
             </div>
@@ -179,48 +141,94 @@
 </div>
 
 <style>
-    .legend-pin {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        margin-right: 6px;
-        vertical-align: middle;
-        border: 1px solid #999;
+    .map-container {
+        padding: 0;
+        margin: 0;
     }
-    .legend-pin-darkgreen { background-color: #006400; }
-    .legend-pin-green { background-color: #28a745; }
-    .legend-pin-purple { background-color: #6f42c1; }
-    .legend-pin-yellow { background-color: #ffc107; }
-    .legend-pin-blue { background-color: #0d6efd; }
-    .legend-pin-red { background-color: #dc3545; }
+
+    .map-layout {
+        display: flex;
+        gap: 1.5rem;
+        height: calc(100vh - 120px);
+        min-height: 600px;
+    }
+
+    .map-sidebar {
+        flex: 0 0 320px;
+        max-width: 320px;
+        overflow-y: auto;
+    }
+
+    .map-area {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .filter-section {
+        margin-bottom: 1rem;
+    }
+
+    .filter-title {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+
+    .form-check {
+        margin-bottom: 0.5rem;
+    }
+
+    .form-check-label {
+        font-size: 0.9rem;
+    }
+
+    .stat-text {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    @@media (max-width: 991px) {
+        .map-layout {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .map-sidebar {
+            flex: 0 0 auto;
+            max-width: 100%;
+        }
+
+        .map-area {
+            min-height: 500px;
+        }
+    }
 </style>
 
 @code {
-    private enum ViewMode
-    {
-        DateRange,
-        StateOverview,
-        NationalParks
-    }
-
-    private ViewMode viewMode = ViewMode.DateRange;
     private List<Location> allLocations = new();
     private List<Location> filteredLocations = new();
     private HashSet<string> visitedStates = new();
     private HashSet<string> tripNames = new();
     private bool isLoading = false;
     private bool isMapInitialized = false;
-    private bool afterRenderCalled = false; // Diagnostic flag
+    private bool afterRenderCalled = false;
     private string errorMessage = string.Empty;
     private int currentUserId;
     private string? azureMapsKey;
 
-    // Filters
+    // New checkbox filters
+    private bool filterNationalParks = false;
+    private bool filterHarvestHosts = false;
+    private bool filterPresidentialLibraries = false;
+    private bool filterRVParks = false;
+    private bool filterFamily = false;
+    private bool filterBoondocking = false;
+
+    // Date filters
     private DateTime? filterStartDate;
     private DateTime? filterEndDate;
-    private string filterState = string.Empty;
-    private string filterTripName = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -248,7 +256,6 @@
             Logger.LogInformation("OnAfterRenderAsync invoked. firstRender={FirstRender}", firstRender);
         }
 
-        // Even if key is missing we still log firstRender to prove lifecycle execution
         if (firstRender)
         {
             if (string.IsNullOrEmpty(azureMapsKey))
@@ -371,53 +378,46 @@
         }
     }
 
-    private async Task ChangeViewMode(ViewMode newMode)
-    {
-        viewMode = newMode;
-        Logger.LogInformation("Changed view mode to {Mode}", viewMode);
-        await ApplyFilters();
-    }
-
     private async Task ApplyFilters()
     {
         filteredLocations = allLocations;
 
-        if (viewMode == ViewMode.DateRange)
+        // Apply location type filters
+        if (filterNationalParks || filterHarvestHosts || filterPresidentialLibraries || 
+            filterRVParks || filterFamily || filterBoondocking)
         {
-            if (filterStartDate.HasValue)
+            filteredLocations = filteredLocations.Where(l =>
             {
-                filteredLocations = filteredLocations
-                    .Where(l => l.StartDate >= filterStartDate.Value)
-                    .ToList();
-            }
-            if (filterEndDate.HasValue)
-            {
-                filteredLocations = filteredLocations
-                    .Where(l => l.StartDate <= filterEndDate.Value)
-                    .ToList();
-            }
-        }
-        else if (viewMode == ViewMode.StateOverview)
-        {
-            if (!string.IsNullOrEmpty(filterState))
-            {
-                filteredLocations = filteredLocations
-                    .Where(l => l.State == filterState)
-                    .ToList();
-            }
-        }
-        else if (viewMode == ViewMode.NationalParks)
-        {
-            filteredLocations = filteredLocations
-                .Where(l => l.LocationType?.Contains("National", StringComparison.OrdinalIgnoreCase) == true && l.LocationType?.Contains("Park", StringComparison.OrdinalIgnoreCase) == true)
-                .ToList();
+                var locType = l.LocationType?.ToLower() ?? "";
+                
+                if (filterNationalParks && (locType.Contains("national park") || locType.Contains("national monument")))
+                    return true;
+                if (filterHarvestHosts && locType.Contains("harvest host"))
+                    return true;
+                if (filterPresidentialLibraries && locType.Contains("presidential"))
+                    return true;
+                if (filterRVParks && (locType.Contains("rv park") || locType.Contains("rv resort")))
+                    return true;
+                if (filterFamily && locType.Contains("family"))
+                    return true;
+                if (filterBoondocking && locType.Contains("boondocking"))
+                    return true;
+                    
+                return false;
+            }).ToList();
         }
 
-        // Apply trip name filter across all view modes
-        if (!string.IsNullOrEmpty(filterTripName))
+        // Apply date filters
+        if (filterStartDate.HasValue)
         {
             filteredLocations = filteredLocations
-                .Where(l => l.TripName == filterTripName)
+                .Where(l => l.StartDate >= filterStartDate.Value)
+                .ToList();
+        }
+        if (filterEndDate.HasValue)
+        {
+            filteredLocations = filteredLocations
+                .Where(l => l.StartDate <= filterEndDate.Value)
                 .ToList();
         }
 
@@ -433,10 +433,14 @@
 
     private Task ClearFilters()
     {
+        filterNationalParks = false;
+        filterHarvestHosts = false;
+        filterPresidentialLibraries = false;
+        filterRVParks = false;
+        filterFamily = false;
+        filterBoondocking = false;
         filterStartDate = null;
         filterEndDate = null;
-        filterState = string.Empty;
-        filterTripName = string.Empty;
         Logger.LogInformation("Cleared filters");
         return ApplyFilters();
     }
