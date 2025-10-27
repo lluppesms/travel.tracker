@@ -157,7 +157,7 @@
                     @if (selectedFormat == "json")
                     {
                         <p class="small">Your JSON file should follow this format:</p>
-                        <pre class="small bg-light p-2"><code>{
+                        <pre class="small code-example p-2"><code>{
   "locations": [
     {
       "name": "Yellowstone NP",
@@ -181,7 +181,7 @@
                     else
                     {
                         <p class="small">Your CSV file should have this header format:</p>
-                        <pre class="small bg-light p-2"><code>Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+                        <pre class="small code-example p-2"><code>Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
     Yellowstone NP,2024-06-15,2024-06-18,Amazing geysers,"Yellowstone National Park, WY 82190",44.427963,-110.588455,"National Park","Summer Vacation 2024"
 Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36.1069,-112.1129,"National Park","Summer Vacation 2024"</code></pre>
                         <p class="small mt-2 text-muted">
@@ -259,7 +259,7 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
                     @if (selectedFormat == "json")
                     {
                         <p class="small">Your data will be exported in this JSON format:</p>
-                        <pre class="small bg-light p-2"><code>{
+                        <pre class="small code-example p-2"><code>{
   "locations": [
     {
       "name": "Yellowstone NP",
@@ -283,7 +283,7 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
                     else
                     {
                         <p class="small">Your data will be exported in this CSV format:</p>
-                        <pre class="small bg-light p-2"><code>Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+                        <pre class="small code-example p-2"><code>Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
 Yellowstone NP,2024-06-15,2024-06-18,Amazing geysers,"Yellowstone National Park, WY 82190",44.427963,-110.588455,"National Park","Summer Vacation 2024"
 Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36.1069,-112.1129,"National Park","Summer Vacation 2024"</code></pre>
                     }
