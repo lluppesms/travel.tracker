@@ -300,23 +300,37 @@ a:hover {
 
 /* Dark mode table overrides */
 [data-theme="dark"] .table {
+    --bs-table-color: var(--text-primary) !important;
+    --bs-table-bg: var(--bg-primary) !important;
+    --bs-table-border-color: var(--border-color) !important;
     background-color: var(--bg-primary) !important;
     color: var(--text-primary) !important;
     border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .table thead th {
+    --bs-table-color: var(--text-primary) !important;
+    --bs-table-bg: var(--bg-secondary) !important;
+    --bs-table-border-color: var(--border-color) !important;
     background-color: var(--bg-secondary) !important;
     color: var(--text-primary) !important;
     border-color: var(--border-color) !important;
 }
 
 [data-theme="dark"] .table tbody td {
+    --bs-table-color: var(--text-primary) !important;
+    --bs-table-border-color: var(--border-color) !important;
     color: var(--text-primary) !important;
     border-color: var(--border-color) !important;
 }
 
+[data-theme="dark"] .table tbody tr {
+    --bs-table-color: var(--text-primary) !important;
+}
+
 [data-theme="dark"] .table-hover tbody tr:hover {
+    --bs-table-hover-bg: var(--bg-tertiary) !important;
+    --bs-table-hover-color: var(--text-primary) !important;
     background-color: var(--bg-tertiary) !important;
 }
 
