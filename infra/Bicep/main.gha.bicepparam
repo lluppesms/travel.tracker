@@ -4,23 +4,23 @@
 
 using './main.bicep'
 
-param appName = '#{appName}#'
-param environmentCode = '#{environmentNameLower}#'
+param appName = '#{APP_NAME}#'
+param environmentCode = '#{envCode}#'
 
-param location = '#{location}#'
-param servicePlanName = '#{servicePlanName}#'
+param location = '#{RESOURCEGROUP_LOCATION}#'
+//param servicePlanName = '#{servicePlanName}#'
 
-param apiKey = '#{apiKey}#'
+param apiKey = '#{API_KEY}#'
 
-param adInstance = '#{adInstance}#'
-param adDomain = '#{adDomain}#'
-param adTenantId = '#{adTenantId}#'
-param adClientId = '#{adClientId}#'
-param adClientSecret = '#{adClientSecret}#'
+param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
+param adDomain = '#{LOGIN_DOMAIN}#'
+param adTenantId = '#{LOGIN_TENANTID}#'
+param adClientId = '#{LOGIN_CLIENTID}#'
+//param adClientSecret = '#{LOGIN_CLIENTSECRET}#'
 
-param azureMapsSubscriptionKey = '#{AzureMaps_SubscriptionKey}#'
-param azureMapsClientId = '#{AzureMaps_ClientId}#'
+param azureMapsSubscriptionKey = '#{AZUREMAPS_SUBSCRIPTIONKEY}#'
+param azureMapsClientId = '#{AZUREMAPS_CLIENTID}#'
 
-param azureAIFoundryEndpoint = '#{AzureAIFoundry_Endpoint}#'
-param azureAIFoundryApiKey = '#{AzureAIFoundry_ApiKey}#'
-param azureAIFoundryDeploymentName = '#{AzureAIFoundry_DeploymentName}#'
+param azureAIFoundryEndpoint = '#{AZUREAIFOUNDRY_ENDPOINT}#'
+param azureAIFoundryApiKey = '#{AZUREAIFOUNDRY_APIKEY}#'
+param azureAIFoundryDeploymentName = '#{AZUREAIFOUNDRY_DEPLOYMENTNAME}#'
