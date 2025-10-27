@@ -32,42 +32,42 @@
                         <h6 class="filter-title">Location Types</h6>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="filterNationalParks" 
-                                   @bind="filterNationalParks" @bind:event="oninput">
+                                   @bind="filterNationalParks" @bind:after="ApplyFilters">
                             <label class="form-check-label" for="filterNationalParks">
                                 Natl Parks/Monuments
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="filterHarvestHosts" 
-                                   @bind="filterHarvestHosts" @bind:event="oninput">
+                                   @bind="filterHarvestHosts" @bind:after="ApplyFilters">
                             <label class="form-check-label" for="filterHarvestHosts">
                                 Harvest Hosts
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="filterPresidentialLibraries" 
-                                   @bind="filterPresidentialLibraries" @bind:event="oninput">
+                                   @bind="filterPresidentialLibraries" @bind:after="ApplyFilters">
                             <label class="form-check-label" for="filterPresidentialLibraries">
                                 Presidential Libraries
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="filterRVParks" 
-                                   @bind="filterRVParks" @bind:event="oninput">
+                                   @bind="filterRVParks" @bind:after="ApplyFilters">
                             <label class="form-check-label" for="filterRVParks">
                                 RV Parks
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="filterFamily" 
-                                   @bind="filterFamily" @bind:event="oninput">
+                                   @bind="filterFamily" @bind:after="ApplyFilters">
                             <label class="form-check-label" for="filterFamily">
                                 Family
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="filterBoondocking" 
-                                   @bind="filterBoondocking" @bind:event="oninput">
+                                   @bind="filterBoondocking" @bind:after="ApplyFilters">
                             <label class="form-check-label" for="filterBoondocking">
                                 Boondocking
                             </label>
@@ -81,11 +81,11 @@
                         <h6 class="filter-title">Dates</h6>
                         <div class="mb-3">
                             <label class="form-label">Start</label>
-                            <input type="date" class="form-control" @bind="filterStartDate" @bind:event="oninput" />
+                            <input type="date" class="form-control" @bind="filterStartDate" @bind:after="ApplyFilters" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label">End</label>
-                            <input type="date" class="form-control" @bind="filterEndDate" @bind:event="oninput" />
+                            <input type="date" class="form-control" @bind="filterEndDate" @bind:after="ApplyFilters" />
                         </div>
                     </div>
 
