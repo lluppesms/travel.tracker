@@ -37,7 +37,6 @@ param appSwaggerEnabled string = 'true'
 param servicePlanName string = ''
 param webAppKind string = 'linux' // 'linux' or 'windows'
 
-param sqlServerNamePrefix string = ''
 param sqlDatabaseName string = 'traveltracker'
 @allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
 param sqlSkuTier string = 'GeneralPurpose'
@@ -65,7 +64,6 @@ module resourceNames 'resourcenames.bicep' = {
   params: {
     appName: appName
     environmentCode: environmentCode
-    sqlServerNamePrefix: sqlServerNamePrefix
   }
 }
 // --------------------------------------------------------------------------------

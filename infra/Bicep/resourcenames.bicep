@@ -6,7 +6,6 @@ param appName string = ''
 param environmentCode string = 'azd'
 param functionStorageNameSuffix string = 'func'
 param dataStorageNameSuffix string = 'data'
-param sqlServerNamePrefix string = 'mysqlserver'
 
 // --------------------------------------------------------------------------------
 var sanitizedEnvironment = toLower(environmentCode)
@@ -22,7 +21,7 @@ output webSiteName string                = webSiteName
 output webSiteAppServicePlanName string  = '${webSiteName}-${resourceAbbreviations.webServerFarms}'
 output webSiteAppInsightsName string     = '${webSiteName}-${resourceAbbreviations.webSitesAppService}'
 
-output sqlServerName string             = toLower('${sqlServerNamePrefix}${sanitizedEnvironment}')
+output sqlServerName string             = toLower('${sanitizedAppName}-${resourceAbbreviations.sqlServers}-${sanitizedEnvironment}')
 output cosmosDatabaseName string         = toLower('${sanitizedAppName}-${resourceAbbreviations.documentDBDatabaseAccounts}-${sanitizedEnvironment}')
 
 output logAnalyticsWorkspaceName string  = toLower('${sanitizedAppNameWithDashes}-${sanitizedEnvironment}-${resourceAbbreviations.operationalInsightsWorkspaces}')
