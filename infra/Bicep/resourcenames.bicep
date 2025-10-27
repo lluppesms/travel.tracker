@@ -29,5 +29,5 @@ output userAssignedIdentityName string   = toLower('${sanitizedAppName}-${resour
 
 // Key Vaults and Storage Accounts can only be 24 characters long
 output keyVaultName string               = take('${sanitizedAppName}${resourceAbbreviations.keyVaultVaults}${sanitizedEnvironment}', 24)
-output storageAccountName string         = take('${sanitizedAppName}${resourceAbbreviations.storageStorageAccounts}${sanitizedEnvironment}${dataStorageNameSuffix}', 24)
-output functionStorageName string        = take('${sanitizedAppName}${resourceAbbreviations.storageStorageAccounts}${sanitizedEnvironment}${functionStorageNameSuffix}', 24)
+output storageAccountName string         = take('${sanitizedAppName}${sanitizedEnvironment}${resourceAbbreviations.storageStorageAccounts}${dataStorageNameSuffix}', 24)
+output functionStorageName string        = take('${sanitizedAppName}${sanitizedEnvironment}${resourceAbbreviations.storageStorageAccounts}${functionStorageNameSuffix}', 24)
