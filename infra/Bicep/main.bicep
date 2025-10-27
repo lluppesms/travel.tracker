@@ -88,6 +88,15 @@ module storageModule './modules/storage/storage-account.bicep' = {
 }
 
 // --------------------------------------------------------------------------------
+module identity './modules/iam/identity.bicep' = {
+  name: 'app-identity${deploymentSuffix}'
+  params: {
+    identityName: resourceNames.outputs.userAssignedIdentityName
+    location: location
+  }
+}
+
+// --------------------------------------------------------------------------------
 module sqlDbModule './modules/database/sqlserver.bicep' = {
   name: 'sql-server${deploymentSuffix}'
   params: {
@@ -103,6 +112,7 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
     // adAdminUserId: adminLoginUserId
     // adAdminUserSid: adminLoginUserSid
     // adAdminTenantId: adminLoginTenantId
+    userAssignedIdentityId: identity.outputs.managedIdentityPrincipalId
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -110,7 +120,7 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
   }
 }
 
-
+// --------------------------------------------------------------------------------
 module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = {
   name: 'appService${deploymentSuffix}'
   params: {
@@ -124,7 +134,7 @@ module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = {
   }
 }
 
-
+// --------------------------------------------------------------------------------
 module webSiteModule './modules/webapp/website.bicep' = {
   name: 'webSite${deploymentSuffix}'
   params: {
@@ -134,6 +144,7 @@ module webSiteModule './modules/webapp/website.bicep' = {
     environmentCode: environmentCode
     webAppKind: webAppKind
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    userAssignedIdentityId: identity.outputs.managedIdentityPrincipalId
     appServicePlanName: appServicePlanModule.outputs.name
   }
 }
@@ -142,7 +153,6 @@ module webSiteModule './modules/webapp/website.bicep' = {
 // configured in App Service as AppSettings__MyKey for the key name. 
 // In other words, any : should be replaced by __ (double underscore).
 // NOTE: See https://learn.microsoft.com/en-us/azure/app-service/configure-common?tabs=portal  
-var sqlConnectionString = '-${runDateTime}'
 module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
   name: 'webSiteAppSettings${deploymentSuffix}'
   params: {
@@ -157,7 +167,7 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       
       ApiKey: apiKey
 
-      SqlServer__ConnectionString:	'Server=${resourceNames.outputs.sqlServerName};Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true'
+      SqlServer__ConnectionString: 'Server=tcp:${sqlDbModule.outputs.serverName}${environment().suffixes.sqlServerHostname},1433;Initial Catalog=${sqlDbModule.outputs.databaseName};User ID=${identity.outputs.managedIdentityName};Authentication="Active Directory Integrated";MultipleActiveResultSets=False;Encrypt=True;Connection Timeout=30;'
 
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
@@ -176,7 +186,7 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
   }
 }
 
-
+// --------------------------------------------------------------------------------
 output SUBSCRIPTION_ID string = subscription().subscriptionId
 output RESOURCE_GROUP_NAME string = resourceGroupName
 output HOST_NAME string = webSiteModule.outputs.hostName

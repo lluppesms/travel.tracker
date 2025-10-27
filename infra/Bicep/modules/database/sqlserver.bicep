@@ -8,6 +8,7 @@ param sqlDBName string = 'SampleDB'
 param adAdminUserId string = '' // 'somebody@somedomain.com'
 param adAdminUserSid string = '' // '12345678-1234-1234-1234-123456789012'
 param adAdminTenantId string = '' // '12345678-1234-1234-1234-123456789012'
+param userAssignedIdentityId string = ''
 param location string = resourceGroup().location
 param commonTags object = {}
 
@@ -71,9 +72,15 @@ resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = {
     administratorLoginPassword: sqlAdminPassword
     //keyId: 'string' // A CMK URI of the key to use for encryption.
   }
-  identity: {
-    type: 'SystemAssigned'
+  identity:{
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentityId}': {}
+    }
   }
+  // identity: {
+  //   type: 'SystemAssigned'
+  // }
 }
 
 resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {

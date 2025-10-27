@@ -4,6 +4,7 @@
 param webSiteName string = ''
 param location string = resourceGroup().location
 param appInsightsLocation string = resourceGroup().location
+param userAssignedIdentityId string = ''
 param environmentCode string = 'dev'
 param commonTags object = {}
 
@@ -47,9 +48,15 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   name: webSiteName
   location: location
   kind: 'app'
-  identity: {
-    type: 'SystemAssigned'
+  identity:{
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentityId}': {}
+    }
   }
+  // identity: {
+  //   type: 'SystemAssigned'
+  // }
   tags: webSiteTags
   properties: {
     serverFarmId: appServiceResource.id
