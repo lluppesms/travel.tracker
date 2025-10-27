@@ -279,15 +279,56 @@ a:hover {
     border-bottom: 2px solid var(--border-color);
     color: var(--text-primary);
     font-weight: 600;
+    background-color: var(--bg-secondary);
 }
 
 .table tbody td {
     border-bottom: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 .table-hover tbody tr:hover {
     background-color: var(--bg-tertiary);
+}
+
+/* Dark mode table overrides */
+[data-theme="dark"] .table {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .table thead th {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .table tbody td {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .table-hover tbody tr:hover {
+    background-color: var(--bg-tertiary);
+}
+
+/* QuickGrid specific styling */
+.quickgrid {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .quickgrid {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .quickgrid thead th {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .quickgrid tbody td {
+    color: var(--text-primary);
 }
 
 /* Smooth transitions */
