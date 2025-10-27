@@ -46,6 +46,10 @@ param sqlAdminUser string = ''
 @secure()
 param sqlAdminPassword string = ''
 
+param sqlADAdminLoginUserId string = ''
+param sqlADAdminLoginUserSid string = ''
+param sqlADAdminLoginTenantId string = ''
+
 param runDateTime string = utcNow()
 
 // --------------------------------------------------------------------------------
@@ -109,9 +113,9 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
     autopause: 60
     location: location
     commonTags: commonTags
-    // adAdminUserId: adminLoginUserId
-    // adAdminUserSid: adminLoginUserSid
-    // adAdminTenantId: adminLoginTenantId
+    adAdminUserId: sqlADAdminLoginUserId
+    adAdminUserSid: sqlADAdminLoginUserSid
+    adAdminTenantId: sqlADAdminLoginTenantId
     userAssignedIdentityId: identity.outputs.managedIdentityPrincipalId
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword

@@ -32,9 +32,9 @@ param autopause int = 60 // time in minutes
 })
 param workspaceId string = ''
 
-param sqlAdminUser string
+param sqlAdminUser string = ''
 @secure()
-param sqlAdminPassword string
+param sqlAdminPassword string = ''
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~sqlserver.bicep' }

@@ -18,6 +18,10 @@ param adTenantId = '#{LOGIN_TENANTID}#'
 param adClientId = '#{LOGIN_CLIENTID}#'
 //param adClientSecret = '#{LOGIN_CLIENTSECRET}#'
 
+param sqlADAdminLoginUserId = '#{AD_SQL_ADMIN_USERID}#'
+param sqlADAdminLoginUserSid = '#{AD_SQL_ADMIN_SID}#'
+param sqlADAdminLoginTenantId = '#{AD_SQL_ADMIN_TENANTID}#'
+
 param azureMapsSubscriptionKey = '#{AZUREMAPS_SUBSCRIPTIONKEY}#'
 param azureMapsClientId = '#{AZUREMAPS_CLIENTID}#'
 
