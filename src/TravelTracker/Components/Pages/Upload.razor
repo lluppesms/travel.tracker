@@ -4,11 +4,13 @@
 @using System.Text.Json
 @using Microsoft.AspNetCore.Components.Forms
 @inject IDataImportService DataImportService
+@inject IDataExportService DataExportService
 @inject IAuthenticationService AuthenticationService
+@inject IJSRuntime JSRuntime
 
-<PageTitle>Upload Data - Travel Tracker</PageTitle>
+<PageTitle>Data Management - Travel Tracker</PageTitle>
 
-<h1>Upload Travel Data</h1>
+<h1>Data Management</h1>
 
 <div class="container mt-4">
     @if (!string.IsNullOrEmpty(errorMessage))
@@ -26,6 +28,26 @@
             <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
         </div>
     }
+
+    <ul class="nav nav-pills mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(activeTab == "import" ? "active" : "")"
+                    type="button"
+                    @onclick="SelectImportTab">
+                <span class="bi bi-upload"></span> Import Data
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(activeTab == "export" ? "active" : "")"
+                    type="button"
+                    @onclick="SelectExportTab">
+                <span class="bi bi-download"></span> Export Data
+            </button>
+        </li>
+    </ul>
+
+    @if (activeTab == "import")
+    {
 
     <div class="row mt-4">
         <div class="col-md-8">
@@ -175,6 +197,101 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
             </div>
         </div>
     </div>
+    }
+    else
+    {
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(selectedFormat == "json" ? "active" : "")"
+                                    type="button"
+                                    @onclick="SelectJsonFormat"
+                                    disabled="@isExporting">
+                                JSON Export
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(selectedFormat == "csv" ? "active" : "")"
+                                    type="button"
+                                    @onclick="SelectCsvFormat"
+                                    disabled="@isExporting">
+                                CSV Export
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <p>Export all your travel data in @(selectedFormat == "json" ? "JSON" : "CSV") format.</p>
+                    
+                    @if (isExporting)
+                    {
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar"
+                                 style="width: 100%">
+                                Exporting...
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mt-3">
+                        <button class="btn btn-primary" @onclick="ProcessExport" disabled="@isExporting">
+                            @if (isExporting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            <span class="bi bi-download"></span> Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">@(selectedFormat == "json" ? "JSON" : "CSV") Format</h5>
+                </div>
+                <div class="card-body">
+                    @if (selectedFormat == "json")
+                    {
+                        <p class="small">Your data will be exported in this JSON format:</p>
+                        <pre class="small bg-light p-2"><code>{
+  "locations": [
+    {
+      "name": "Yellowstone NP",
+      "tripName": "Summer Vacation 2024",
+      "locationType": "National Park",
+      "address": "WY 82190",
+      "city": "Yellowstone",
+      "state": "WY",
+      "zipCode": "82190",
+      "latitude": 44.427963,
+      "longitude": -110.588455,
+      "startDate": "2024-06-15",
+      "endDate": "2024-06-18",
+      "rating": 5,
+      "comments": "Amazing!",
+      "tags": ["national-park"]
+    }
+  ]
+}</code></pre>
+                    }
+                    else
+                    {
+                        <p class="small">Your data will be exported in this CSV format:</p>
+                        <pre class="small bg-light p-2"><code>Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName
+Yellowstone NP,2024-06-15,2024-06-18,Amazing geysers,"Yellowstone National Park, WY 82190",44.427963,-110.588455,"National Park","Summer Vacation 2024"
+Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36.1069,-112.1129,"National Park","Summer Vacation 2024"</code></pre>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    }
 </div>
 
 @code {
@@ -183,6 +300,7 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
     private bool isUploading = false;
+    private bool isExporting = false;
     private bool canValidate = false;
     private bool canUpload = false;
     private int uploadProgress = 0;
@@ -190,11 +308,24 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
     private UploadSummary? uploadSummary;
     private int currentUserId;
     private string selectedFormat = "csv";
+    private string activeTab = "import";
     private const long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     protected override void OnInitialized()
     {
         currentUserId = AuthenticationService.GetCurrentUserInternalId();
+    }
+
+    private void SelectImportTab()
+    {
+        activeTab = "import";
+        ClearSelection();
+    }
+
+    private void SelectExportTab()
+    {
+        activeTab = "export";
+        ClearSelection();
     }
 
     private void SelectJsonFormat()
@@ -355,6 +486,43 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
 
     private string GetSampleFileUrl() => selectedFormat == "json" ? "/samples/sample-locations.json" : "/samples/sample-locations.csv";
     private string GetSampleFileName() => selectedFormat == "json" ? "sample-locations.json" : "sample-locations.csv";
+
+    private async Task ProcessExport()
+    {
+        try
+        {
+            isExporting = true;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;
+
+            Stream dataStream;
+            string fileName;
+
+            if (selectedFormat == "json")
+            {
+                dataStream = await DataExportService.ExportToJsonAsync(currentUserId);
+                fileName = $"travel-data-{DateTime.Now:yyyy-MM-dd}.json";
+            }
+            else
+            {
+                dataStream = await DataExportService.ExportToCsvAsync(currentUserId);
+                fileName = $"travel-data-{DateTime.Now:yyyy-MM-dd}.csv";
+            }
+
+            using var streamRef = new DotNetStreamReference(stream: dataStream);
+            await JSRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+
+            successMessage = $"Data exported successfully to {fileName}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Export failed: {ex.Message}";
+        }
+        finally
+        {
+            isExporting = false;
+        }
+    }
 
     private class DisplayValidationResult
     {

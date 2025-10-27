@@ -84,6 +84,7 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<INationalParkService, NationalParkService>();
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
     builder.Services.AddScoped<IDataImportService, DataImportService>();
+    builder.Services.AddScoped<IDataExportService, DataExportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
     builder.Services.AddScoped<IChatbotService, ChatbotService>();
 
