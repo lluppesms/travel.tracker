@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace TravelTracker.Data.Repositories;
 
@@ -13,9 +14,9 @@ public class LocationRepository : ILocationRepository
 
     public async Task<Location?> GetByIdAsync(int id, int userId)
     {
-        _ = await Task.FromResult(true);
-        var location = _context.Locations
-            .FirstOrDefault(l => l.Id == id && l.UserId == userId);
+        var location = await _context.Locations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
 
         if (location != null)
         {
@@ -27,12 +28,12 @@ public class LocationRepository : ILocationRepository
 
     public async Task<IEnumerable<Location>> GetAllByUserIdAsync(int userId)
     {
-        _ = await Task.FromResult(true);
         try
         {
-            var locations = _context.Locations
+            var locations = await _context.Locations
+                .AsNoTracking()
                 .Where(l => l.UserId == userId)
-                .ToList();
+                .ToListAsync();
 
             foreach (var location in locations)
             {
@@ -50,10 +51,10 @@ public class LocationRepository : ILocationRepository
 
     public async Task<IEnumerable<Location>> GetByDateRangeAsync(int userId, DateTime startDate, DateTime endDate)
     {
-        _ = await Task.FromResult(true);
-        var locations = _context.Locations
+        var locations = await _context.Locations
+            .AsNoTracking()
             .Where(l => l.UserId == userId && l.StartDate >= startDate && l.StartDate <= endDate)
-            .ToList();
+            .ToListAsync();
 
         foreach (var location in locations)
         {
@@ -65,10 +66,10 @@ public class LocationRepository : ILocationRepository
 
     public async Task<IEnumerable<Location>> GetByStateAsync(int userId, string state)
     {
-        _ = await Task.FromResult(true);
-        var locations = _context.Locations
+        var locations = await _context.Locations
+            .AsNoTracking()
             .Where(l => l.UserId == userId && l.State == state)
-            .ToList();
+            .ToListAsync();
 
         foreach (var location in locations)
         {
@@ -80,23 +81,23 @@ public class LocationRepository : ILocationRepository
 
     public async Task<Location> CreateAsync(Location location)
     {
-        _ = await Task.FromResult(true);
         location.CreatedDate = DateTime.UtcNow;
         location.ModifiedDate = DateTime.UtcNow;
         _context.Locations.Add(location);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return location;
     }
 
     public async Task<Location> UpdateAsync(Location location)
     {
-        _ = await Task.FromResult(true);
         try
         {
             location.ModifiedDate = DateTime.UtcNow;
 
             // Get the existing entity from the database
-            var existingLocation = _context.Locations.FirstOrDefault(l => l.Id == location.Id);
+            var existingLocation = await _context.Locations
+                .FirstOrDefaultAsync(l => l.Id == location.Id);
+            
             if (existingLocation == null)
             {
                 throw new InvalidOperationException($"Location with ID {location.Id} not found.");
@@ -120,7 +121,7 @@ public class LocationRepository : ILocationRepository
             existingLocation.TagsJson = location.TagsJson;
             existingLocation.ModifiedDate = location.ModifiedDate;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return existingLocation;
         }
         catch (Exception ex)
@@ -132,14 +133,13 @@ public class LocationRepository : ILocationRepository
 
     public async Task DeleteAsync(int id, int userId)
     {
-        _ = await Task.FromResult(true);
-        var location = _context.Locations
-            .FirstOrDefault(l => l.Id == id && l.UserId == userId);
+        var location = await _context.Locations
+            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
 
         if (location != null)
         {
             _context.Locations.Remove(location);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
     }
 
