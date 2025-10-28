@@ -41,6 +41,7 @@ jobs:
     name: Scan Source Code
     uses: ./.github/workflows/template-scan-code.yml
     secrets: inherit
+    if: inputs.runSecurityScan
     with:
       runMSDevSecOpsScan: ${{ inputs.runSecurityScan }}
       runGHASScan: ${{ inputs.runSecurityScan }}
@@ -49,7 +50,6 @@ jobs:
   build-app:
     name: Build WebApp
     uses: ./.github/workflows/template-webapp-build.yml
-    needs: scan-code
     secrets: inherit
     with:
       envCode: 'dev'
