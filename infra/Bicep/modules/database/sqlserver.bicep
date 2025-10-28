@@ -49,7 +49,7 @@ var adminDefinition = adAdminUserId == '' ? {} : {
   tenantId: adAdminTenantId
   azureADOnlyAuthentication: adAdminOnly
 } 
-var primaryUser =  adAdminUserId == '' ? '' : adAdminUserId
+var primaryUserIdentity = userAssignedIdentityResourceId
 
 // --------------------------------------------------------------------------------
 // resource storageAccountResource 'Microsoft.Storage/storageAccounts@2021-04-01' existing = { name: storageAccountName }
@@ -64,13 +64,13 @@ resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = {
   tags: tags
   properties: {
     administrators: adminDefinition
-    primaryUserAssignedIdentityId: primaryUser
+    primaryUserAssignedIdentityId: primaryUserIdentity
     minimalTlsVersion: '1.2'
     publicNetworkAccess: 'Enabled'
     restrictOutboundNetworkAccess: 'Enabled'
     version: '12.0'
-    administratorLogin: sqlAdminUser
-    administratorLoginPassword: sqlAdminPassword
+    administratorLogin: sqlAdminUser != '' ? sqlAdminUser : null
+    administratorLoginPassword: sqlAdminPassword != '' ? sqlAdminPassword : null
     //keyId: 'string' // A CMK URI of the key to use for encryption.
   }
   identity:{

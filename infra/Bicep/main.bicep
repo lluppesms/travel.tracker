@@ -149,7 +149,7 @@ module webSiteModule './modules/webapp/website.bicep' = {
     environmentCode: environmentCode
     webAppKind: webAppKind
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
-    userAssignedIdentityId: identity.outputs.managedIdentityPrincipalId
+    userAssignedIdentityId: identity.outputs.managedIdentityId
     appServicePlanName: appServicePlanModule.outputs.name
   }
 }
@@ -172,7 +172,7 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       
       ApiKey: apiKey
 
-      SqlServer__ConnectionString: 'Server=tcp:${sqlDbModule.outputs.serverName}${environment().suffixes.sqlServerHostname},1433;Initial Catalog=${sqlDbModule.outputs.databaseName};User ID=${identity.outputs.managedIdentityName};Authentication="Active Directory Integrated";MultipleActiveResultSets=False;Encrypt=True;Connection Timeout=30;'
+      SqlServer__ConnectionString: 'Server=tcp:${sqlDbModule.outputs.serverName}${environment().suffixes.sqlServerHostname},1433;Initial Catalog=${sqlDbModule.outputs.databaseName};Authentication=Active Directory Default;Encrypt=True;Connection Timeout=30;'
 
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
