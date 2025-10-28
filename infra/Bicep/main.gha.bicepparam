@@ -16,7 +16,7 @@ param adInstance = '#{LOGIN_INSTANCEENDPOINT}#'
 param adDomain = '#{LOGIN_DOMAIN}#'
 param adTenantId = '#{LOGIN_TENANTID}#'
 param adClientId = '#{LOGIN_CLIENTID}#'
-//param adClientSecret = '#{LOGIN_CLIENTSECRET}#'
+param adClientSecret = '#{LOGIN_CLIENTSECRET}#'
 
 param sqlADAdminLoginUserId = '#{AD_SQL_ADMIN_USERID}#'
 param sqlADAdminLoginUserSid = '#{AD_SQL_ADMIN_SID}#'
