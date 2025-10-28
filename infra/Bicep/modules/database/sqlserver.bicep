@@ -195,7 +195,7 @@ resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-0
 // --------------------------------------------------------------------------------
 output serverName string = sqlServerResource.name
 output serverId string = sqlServerResource.id
-output serverPrincipalId string = sqlServerResource.identity.principalId
+//output serverPrincipalId string = sqlServerResource.identity.principalId
 output apiVersion string = sqlServerResource.apiVersion
 output databaseName string = sqlDBResource.name
 output databaseId string = sqlDBResource.id
