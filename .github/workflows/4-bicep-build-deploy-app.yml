@@ -71,7 +71,7 @@ jobs:
     if: inputs.runSecurityScan
     with:
       runMSDevSecOpsScan: ${{ inputs.runSecurityScan }}
-      runGHASScan: ${{ inputs.runSecurityScan }}
+      runGHASScan: false
 
   # ------------------------------------------------------------------------------------------------------------------------
   create-infra:
