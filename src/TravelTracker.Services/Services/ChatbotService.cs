@@ -23,8 +23,10 @@ public class ChatbotService : IChatbotService
     
     // Static field to cache the agent ID across all instances, keyed by endpoint+model
     // This ensures we reuse the same agent across HTTP requests
+    // Note: Cache entries are removed only when agent verification fails. In practice, 
+    // this cache will contain only 1-2 entries per application lifetime (one per endpoint+model combo)
     private static readonly Dictionary<string, string> _cachedAgentIds = new();
-    private static readonly object _agentLock = new();
+    private static readonly SemaphoreSlim _agentSemaphore = new(1, 1);
 
     public ChatbotService(
         ILocationService locationService,
@@ -95,10 +97,10 @@ public class ChatbotService : IChatbotService
             var enhancedSystemPrompt = $"{systemPrompt}\n\nContext data from the database:\n{contextData}";
 
             // Get or create the agent (reuses existing agent)
-            var agentId = GetOrCreateAgent();
+            var agentId = await GetOrCreateAgentAsync();
 
             // Update the agent's instructions with fresh context data
-            _chatClient.Administration.UpdateAgent(
+            await _chatClient.Administration.UpdateAgentAsync(
                 assistantId: agentId,
                 instructions: enhancedSystemPrompt
             );
@@ -152,7 +154,7 @@ public class ChatbotService : IChatbotService
         }
     }
 
-    private string GetOrCreateAgent()
+    private async Task<string> GetOrCreateAgentAsync()
     {
         if (_chatClient == null)
         {
@@ -160,9 +162,11 @@ public class ChatbotService : IChatbotService
         }
 
         // Create a unique key for this endpoint and model combination
-        var cacheKey = $"{_settings.Endpoint}:{_settings.DeploymentName}";
+        // Use pipe separator to avoid conflicts with URL colons
+        var cacheKey = $"{_settings.Endpoint}|{_settings.DeploymentName}";
 
-        lock (_agentLock)
+        await _agentSemaphore.WaitAsync();
+        try
         {
             // Return cached agent ID if available
             if (_cachedAgentIds.TryGetValue(cacheKey, out var cachedAgentId))
@@ -170,7 +174,7 @@ public class ChatbotService : IChatbotService
                 try
                 {
                     // Verify the agent still exists
-                    _chatClient.Administration.GetAgent(cachedAgentId);
+                    await _chatClient.Administration.GetAgentAsync(cachedAgentId);
                     _logger.LogInformation("Reusing existing agent {AgentId}", cachedAgentId);
                     return cachedAgentId;
                 }
@@ -182,7 +186,7 @@ public class ChatbotService : IChatbotService
             }
 
             // Create a new agent with basic instructions (will be updated before each run)
-            var agentResponse = _chatClient.Administration.CreateAgent(
+            var agentResponse = await _chatClient.Administration.CreateAgentAsync(
                 model: _settings.DeploymentName,
                 name: "Travel Tracker Expert",
                 instructions: systemPrompt
@@ -192,6 +196,10 @@ public class ChatbotService : IChatbotService
             _cachedAgentIds[cacheKey] = agentId;
             _logger.LogInformation("Created new agent {AgentId}", agentId);
             return agentId;
+        }
+        finally
+        {
+            _agentSemaphore.Release();
         }
     }
 
