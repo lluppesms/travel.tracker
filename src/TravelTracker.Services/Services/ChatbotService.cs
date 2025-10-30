@@ -20,7 +20,11 @@ public class ChatbotService : IChatbotService
 
     private string previousContextData = string.Empty;
     private string previousUserId = string.Empty;
-    private string? _cachedAgentId = null; // Cache the agent ID to reuse across calls
+    
+    // Static field to cache the agent ID across all instances, keyed by endpoint+model
+    // This ensures we reuse the same agent across HTTP requests
+    private static readonly Dictionary<string, string> _cachedAgentIds = new();
+    private static readonly object _agentLock = new();
 
     public ChatbotService(
         ILocationService locationService,
@@ -155,33 +159,40 @@ public class ChatbotService : IChatbotService
             throw new InvalidOperationException("Chat client is not initialized");
         }
 
-        // Return cached agent ID if available
-        if (!string.IsNullOrEmpty(_cachedAgentId))
+        // Create a unique key for this endpoint and model combination
+        var cacheKey = $"{_settings.Endpoint}:{_settings.DeploymentName}";
+
+        lock (_agentLock)
         {
-            try
+            // Return cached agent ID if available
+            if (_cachedAgentIds.TryGetValue(cacheKey, out var cachedAgentId))
             {
-                // Verify the agent still exists
-                _chatClient.Administration.GetAgent(_cachedAgentId);
-                _logger.LogInformation("Reusing existing agent {AgentId}", _cachedAgentId);
-                return _cachedAgentId;
+                try
+                {
+                    // Verify the agent still exists
+                    _chatClient.Administration.GetAgent(cachedAgentId);
+                    _logger.LogInformation("Reusing existing agent {AgentId}", cachedAgentId);
+                    return cachedAgentId;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Cached agent {AgentId} no longer exists, creating a new one", cachedAgentId);
+                    _cachedAgentIds.Remove(cacheKey);
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Cached agent {AgentId} no longer exists, creating a new one", _cachedAgentId);
-                _cachedAgentId = null;
-            }
+
+            // Create a new agent with basic instructions (will be updated before each run)
+            var agentResponse = _chatClient.Administration.CreateAgent(
+                model: _settings.DeploymentName,
+                name: "Travel Tracker Expert",
+                instructions: systemPrompt
+            );
+
+            var agentId = agentResponse.Value.Id;
+            _cachedAgentIds[cacheKey] = agentId;
+            _logger.LogInformation("Created new agent {AgentId}", agentId);
+            return agentId;
         }
-
-        // Create a new agent with basic instructions (will be updated before each run)
-        var agentResponse = _chatClient.Administration.CreateAgent(
-            model: _settings.DeploymentName,
-            name: "Travel Tracker Expert",
-            instructions: systemPrompt
-        );
-
-        _cachedAgentId = agentResponse.Value.Id;
-        _logger.LogInformation("Created new agent {AgentId}", _cachedAgentId);
-        return _cachedAgentId;
     }
 
     private async Task<string> GatherContextDataAsync(string userMessage, int userId)
