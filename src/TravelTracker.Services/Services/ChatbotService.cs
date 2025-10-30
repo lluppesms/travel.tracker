@@ -205,7 +205,7 @@ public class ChatbotService : IChatbotService
 
             var agentId = agentResponse.Value.Id;
             _cachedAgentIds[cacheKey] = agentId;
-            _logger.LogInformation("Created new agent {AgentId}. To persist this agent across application restarts, add this ID to your configuration: AzureAIFoundry:AgentId = \"{AgentId}\"", agentId, agentId);
+            _logger.LogInformation("Created new agent {AgentId}. To persist this agent across application restarts, add this ID to your configuration: AzureAIFoundry:AgentId = \"{ConfigAgentId}\"", agentId, agentId);
             return agentId;
         }
         finally
