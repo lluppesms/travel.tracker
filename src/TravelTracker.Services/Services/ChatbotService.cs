@@ -20,13 +20,6 @@ public class ChatbotService : IChatbotService
 
     private string previousContextData = string.Empty;
     private string previousUserId = string.Empty;
-    
-    // Static field to cache the agent ID across all instances, keyed by endpoint+model
-    // This ensures we reuse the same agent across HTTP requests
-    // Note: Cache entries are removed only when agent verification fails. In practice, 
-    // this cache will contain only 1-2 entries per application lifetime (one per endpoint+model combo)
-    private static readonly Dictionary<string, string> _cachedAgentIds = new();
-    private static readonly SemaphoreSlim _agentSemaphore = new(1, 1);
 
     public ChatbotService(
         ILocationService locationService,
@@ -96,12 +89,10 @@ public class ChatbotService : IChatbotService
 
             var enhancedSystemPrompt = $"{systemPrompt}\n\nContext data from the database:\n{contextData}";
 
-            // Get or create the agent (reuses existing agent)
-            var agentId = await GetOrCreateAgentAsync();
-
-            // Update the agent's instructions with fresh context data
-            await _chatClient.Administration.UpdateAgentAsync(
-                assistantId: agentId,
+            // Create an agent for this run (could be cached in future for performance)
+            PersistentAgent chatAgent = _chatClient.Administration.CreateAgent(
+                model: _settings.DeploymentName,
+                name: "Travel Tracker Expert",
                 instructions: enhancedSystemPrompt
             );
 
@@ -109,7 +100,7 @@ public class ChatbotService : IChatbotService
             _ = await _chatClient.Messages.CreateMessageAsync(thread.Id, MessageRole.User, userMessage);
 
             // Start run and poll until completion (beta SDK currently requires polling)
-            ThreadRun run = _chatClient.Runs.CreateRun(thread.Id, agentId);
+            ThreadRun run = _chatClient.Runs.CreateRun(thread.Id, chatAgent.Id);
             do
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(500));
@@ -151,55 +142,6 @@ public class ChatbotService : IChatbotService
             _logger.LogError(ex, "Error processing chatbot request");
             var msg = $"I've encountered an error processing your request to {_settings.Endpoint}. Please try again later. {ex.Message}";
             return (msg, lastMessageDate, threadId ?? thread?.Id ?? string.Empty);
-        }
-    }
-
-    private async Task<string> GetOrCreateAgentAsync()
-    {
-        if (_chatClient == null)
-        {
-            throw new InvalidOperationException("Chat client is not initialized");
-        }
-
-        // Create a unique key for this endpoint and model combination
-        // Use pipe separator to avoid conflicts with URL colons
-        var cacheKey = $"{_settings.Endpoint}|{_settings.DeploymentName}";
-
-        await _agentSemaphore.WaitAsync();
-        try
-        {
-            // Return cached agent ID if available
-            if (_cachedAgentIds.TryGetValue(cacheKey, out var cachedAgentId))
-            {
-                try
-                {
-                    // Verify the agent still exists
-                    await _chatClient.Administration.GetAgentAsync(cachedAgentId);
-                    _logger.LogInformation("Reusing existing agent {AgentId}", cachedAgentId);
-                    return cachedAgentId;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Cached agent {AgentId} no longer exists, creating a new one", cachedAgentId);
-                    _cachedAgentIds.Remove(cacheKey);
-                }
-            }
-
-            // Create a new agent with basic instructions (will be updated before each run)
-            var agentResponse = await _chatClient.Administration.CreateAgentAsync(
-                model: _settings.DeploymentName,
-                name: "Travel Tracker Expert",
-                instructions: systemPrompt
-            );
-
-            var agentId = agentResponse.Value.Id;
-            _cachedAgentIds[cacheKey] = agentId;
-            _logger.LogInformation("Created new agent {AgentId}", agentId);
-            return agentId;
-        }
-        finally
-        {
-            _agentSemaphore.Release();
         }
     }
 
