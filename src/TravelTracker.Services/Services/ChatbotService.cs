@@ -20,6 +20,7 @@ public class ChatbotService : IChatbotService
 
     private string previousContextData = string.Empty;
     private string previousUserId = string.Empty;
+    private string? _cachedAgentId = null; // Cache the agent ID to reuse across calls
 
     public ChatbotService(
         ILocationService locationService,
@@ -89,10 +90,12 @@ public class ChatbotService : IChatbotService
 
             var enhancedSystemPrompt = $"{systemPrompt}\n\nContext data from the database:\n{contextData}";
 
-            // Create an agent for this run (could be cached in future for performance)
-            PersistentAgent chatAgent = _chatClient.Administration.CreateAgent(
-                model: _settings.DeploymentName,
-                name: "Travel Tracker Expert",
+            // Get or create the agent (reuses existing agent)
+            var agentId = GetOrCreateAgent();
+
+            // Update the agent's instructions with fresh context data
+            _chatClient.Administration.UpdateAgent(
+                assistantId: agentId,
                 instructions: enhancedSystemPrompt
             );
 
@@ -100,7 +103,7 @@ public class ChatbotService : IChatbotService
             _ = await _chatClient.Messages.CreateMessageAsync(thread.Id, MessageRole.User, userMessage);
 
             // Start run and poll until completion (beta SDK currently requires polling)
-            ThreadRun run = _chatClient.Runs.CreateRun(thread.Id, chatAgent.Id);
+            ThreadRun run = _chatClient.Runs.CreateRun(thread.Id, agentId);
             do
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(500));
@@ -143,6 +146,42 @@ public class ChatbotService : IChatbotService
             var msg = $"I've encountered an error processing your request to {_settings.Endpoint}. Please try again later. {ex.Message}";
             return (msg, lastMessageDate, threadId ?? thread?.Id ?? string.Empty);
         }
+    }
+
+    private string GetOrCreateAgent()
+    {
+        if (_chatClient == null)
+        {
+            throw new InvalidOperationException("Chat client is not initialized");
+        }
+
+        // Return cached agent ID if available
+        if (!string.IsNullOrEmpty(_cachedAgentId))
+        {
+            try
+            {
+                // Verify the agent still exists
+                _chatClient.Administration.GetAgent(_cachedAgentId);
+                _logger.LogInformation("Reusing existing agent {AgentId}", _cachedAgentId);
+                return _cachedAgentId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Cached agent {AgentId} no longer exists, creating a new one", _cachedAgentId);
+                _cachedAgentId = null;
+            }
+        }
+
+        // Create a new agent with basic instructions (will be updated before each run)
+        var agentResponse = _chatClient.Administration.CreateAgent(
+            model: _settings.DeploymentName,
+            name: "Travel Tracker Expert",
+            instructions: systemPrompt
+        );
+
+        _cachedAgentId = agentResponse.Value.Id;
+        _logger.LogInformation("Created new agent {AgentId}", _cachedAgentId);
+        return _cachedAgentId;
     }
 
     private async Task<string> GatherContextDataAsync(string userMessage, int userId)
