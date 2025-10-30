@@ -131,4 +131,73 @@ public class ChatbotServiceTests
         
         Assert.NotNull(service);
     }
+
+    [Fact]
+    public void ChatbotService_Construction_WithAgentId_LogsInitialization()
+    {
+        // Arrange
+        var testAgentId = "test-agent-id-12345";
+        var settingsWithAgentId = Options.Create(new AzureAIFoundrySettings
+        {
+            Endpoint = "https://test.openai.azure.com/",
+            ApiKey = "test-key",
+            DeploymentName = "test-deployment",
+            AgentId = testAgentId
+        });
+
+        // Act
+        var service = new ChatbotService(
+            _mockLocationService.Object,
+            _mockNationalParkService.Object,
+            _mockLocationTypeService.Object,
+            _mockLogger.Object,
+            settingsWithAgentId,
+            _configuration);
+
+        // Assert
+        Assert.NotNull(service);
+        // Verify that logger was called with information about initializing from configuration
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Initialized agent cache") && v.ToString()!.Contains(testAgentId)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void ChatbotService_Construction_WithEmptyAgentId_DoesNotInitializeCache()
+    {
+        // Arrange
+        var settingsWithEmptyAgentId = Options.Create(new AzureAIFoundrySettings
+        {
+            Endpoint = "https://test.openai.azure.com/",
+            ApiKey = "test-key",
+            DeploymentName = "test-deployment",
+            AgentId = ""
+        });
+
+        // Act
+        var service = new ChatbotService(
+            _mockLocationService.Object,
+            _mockNationalParkService.Object,
+            _mockLocationTypeService.Object,
+            _mockLogger.Object,
+            settingsWithEmptyAgentId,
+            _configuration);
+
+        // Assert
+        Assert.NotNull(service);
+        // Verify that logger was NOT called about initializing from configuration
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Initialized agent cache")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
 }

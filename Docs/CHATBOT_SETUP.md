@@ -40,7 +40,8 @@ Update the `appsettings.json` file in the `src/TravelTracker` directory:
   "AzureAIFoundry": {
     "Endpoint": "https://your-project.openai.azure.com/",
     "ApiKey": "your-api-key-here",
-    "DeploymentName": "your-deployment-name"
+    "DeploymentName": "your-deployment-name",
+    "AgentId": ""
   }
 }
 ```
@@ -52,7 +53,32 @@ cd src/TravelTracker
 dotnet user-secrets set "AzureAIFoundry:Endpoint" "https://your-project.openai.azure.com/"
 dotnet user-secrets set "AzureAIFoundry:ApiKey" "your-api-key-here"
 dotnet user-secrets set "AzureAIFoundry:DeploymentName" "your-deployment-name"
+dotnet user-secrets set "AzureAIFoundry:AgentId" ""
 ```
+
+#### Agent ID Configuration (Optional but Recommended)
+
+The `AgentId` setting helps prevent the creation of duplicate agents in Azure AI Foundry across application restarts:
+
+- **First Run:** Leave the `AgentId` empty. The application will create a new agent and log its ID.
+- **After First Run:** Check the application logs for a message like:
+  ```
+  Created new agent asst_abc123xyz. To persist this agent across application restarts, add this ID to your configuration: AzureAIFoundry:AgentId = "asst_abc123xyz"
+  ```
+- **Update Configuration:** Copy the Agent ID from the logs and update your configuration:
+  ```json
+  "AgentId": "asst_abc123xyz"
+  ```
+  Or using user secrets:
+  ```bash
+  dotnet user-secrets set "AzureAIFoundry:AgentId" "asst_abc123xyz"
+  ```
+
+**Benefits of configuring AgentId:**
+- ✅ Prevents creation of orphaned agents in Azure AI Foundry
+- ✅ Maintains consistent agent behavior across restarts
+- ✅ Reduces costs by reusing existing agents
+- ✅ Preserves any manual agent configuration you've done in Azure AI Foundry
 
 ### 3. Run the Application
 
