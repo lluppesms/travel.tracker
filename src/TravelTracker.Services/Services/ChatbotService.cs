@@ -48,6 +48,17 @@ public class ChatbotService : IChatbotService
         {
             var creds = CredentialsHelper.GetCredentials(Configuration);
             _chatClient = new(_settings.Endpoint, creds);
+            
+            // Initialize cache with agent ID from configuration if available
+            if (!string.IsNullOrEmpty(_settings.AgentId))
+            {
+                var cacheKey = $"{_settings.Endpoint}|{_settings.DeploymentName}";
+                if (!_cachedAgentIds.ContainsKey(cacheKey))
+                {
+                    _cachedAgentIds[cacheKey] = _settings.AgentId;
+                    _logger.LogInformation("Initialized agent cache with AgentId from configuration: {AgentId}", _settings.AgentId);
+                }
+            }
         }
     }
 
@@ -194,7 +205,7 @@ public class ChatbotService : IChatbotService
 
             var agentId = agentResponse.Value.Id;
             _cachedAgentIds[cacheKey] = agentId;
-            _logger.LogInformation("Created new agent {AgentId}", agentId);
+            _logger.LogInformation("Created new agent {AgentId}. To persist this agent across application restarts, add this ID to your configuration: AzureAIFoundry:AgentId = \"{ConfigAgentId}\"", agentId, agentId);
             return agentId;
         }
         finally
