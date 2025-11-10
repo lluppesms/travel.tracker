@@ -56,11 +56,12 @@ jobs:
         readonly commitsha=${GITHUB_SHA::6}
         echo "commitsha=$commitsha" >> $GITHUB_OUTPUT
 
-        if [ "${{ inputs.envCode }}" == "PROD" ]; then
+        if [ "${{ inputs.envCode }}" == "prod" ]; then
         readonly generatedAppEnvName="${{ vars.APP_NAME }}"
         else
         readonly generatedAppEnvName="$(echo "${{ vars.APP_NAME }}-${{ inputs.envCode }}")"
         fi
+        echo "generatedAppEnvName=$generatedAppEnvName"
         echo "generatedAppEnvName=$generatedAppEnvName" >> $GITHUB_OUTPUT
 
     - name: Put Build Details in buildinfo.json
