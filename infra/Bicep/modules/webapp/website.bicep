@@ -115,23 +115,23 @@ resource webSiteAppSettings 'Microsoft.Web/sites/config@2024-11-01' = {
 //   dependsOn: [ appInsightsResource] or [ appInsightsResource, webSiteAppSettings ]
 // }
 
-resource webSiteMetricsLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${webSiteResource.name}-metrics'
-  scope: webSiteResource
-  properties: {
-    workspaceId: workspaceId
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-        // retentionPolicy: {
-        //   days: 30
-        //   enabled: true 
-        // }
-      }
-    ]
-  }
-}
+// resource webSiteMetricsLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+//   name: '${webSiteResource.name}-metrics'
+//   scope: webSiteResource
+//   properties: {
+//     workspaceId: workspaceId
+//     metrics: [
+//       {
+//         category: 'AllMetrics'
+//         enabled: true
+//         // retentionPolicy: {
+//         //   days: 30
+//         //   enabled: true 
+//         // }
+//       }
+//     ]
+//   }
+// }
 
 // https://learn.microsoft.com/en-us/azure/app-service/troubleshoot-diagnostic-logs
 resource webSiteAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
