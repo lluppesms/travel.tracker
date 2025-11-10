@@ -26,7 +26,6 @@ jobs:
       name: ${{ inputs.envCode }}
     env:
       artifactName: webapp
-      generatedAppEnvName: ${{ vars.APP_NAME }}-${{ inputs.envCode }}
 
     steps:
     - name: Checkout Code
@@ -46,6 +45,7 @@ jobs:
     - name: Create Runtime Variables
       id: vars
       shell: bash
+      continue-on-error: true
       run: |
         readonly rundatetime=$(date +'%Y-%m-%dT%H:%M:%SZ')
         echo "rundatetime=$rundatetime" >> $GITHUB_OUTPUT
@@ -55,7 +55,13 @@ jobs:
         echo "commitbranch=$commitbranch" >> $GITHUB_OUTPUT
         readonly commitsha=${GITHUB_SHA::6}
         echo "commitsha=$commitsha" >> $GITHUB_OUTPUT
-      continue-on-error: true
+
+        if [ "${{ inputs.envCode }}" == "PROD" ]; then
+        readonly generatedAppEnvName="${{ vars.APP_NAME }}"
+        else
+        readonly generatedAppEnvName="$(echo "${{ vars.APP_NAME }}-${{ inputs.envCode }}")"
+        fi
+        echo "generatedAppEnvName=$generatedAppEnvName" >> $GITHUB_OUTPUT
 
     - name: Put Build Details in buildinfo.json
       shell: bash
@@ -73,7 +79,7 @@ jobs:
     - name: Deploy WebApp Zip
       uses: Azure/webapps-deploy@v2
       with:
-        app-name: ${{ env.generatedAppEnvName }}
+        app-name: ${{ steps.vars.outputs.generatedAppEnvName }}
         package: .
 
     - name: Logout and cleanup
