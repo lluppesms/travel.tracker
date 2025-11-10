@@ -5,6 +5,10 @@
 // --------------------------------------------------------------------------------
 param sqlServerName string = uniqueString('sql', resourceGroup().id)
 param sqlDBName string = 'SampleDB'
+
+param existingSqlServerName string = ''
+param existingSqlServerResourceGroupName string = ''
+
 param adAdminUserId string = '' // 'somebody@somedomain.com'
 param adAdminUserSid string = '' // '12345678-1234-1234-1234-123456789012'
 param adAdminTenantId string = '' // '12345678-1234-1234-1234-123456789012'
@@ -51,6 +55,8 @@ var adminDefinition = adAdminUserId == '' ? {} : {
 } 
 var primaryUserIdentity = userAssignedIdentityResourceId
 
+var deployNewServer = empty(existingSqlServerName)
+
 // --------------------------------------------------------------------------------
 // resource storageAccountResource 'Microsoft.Storage/storageAccounts@2021-04-01' existing = { name: storageAccountName }
 // var storageAccountKey = storageAccountResource.listKeys().keys[0].value
@@ -58,7 +64,16 @@ var primaryUserIdentity = userAssignedIdentityResourceId
 // var storageSubscriptionId = subscription().subscriptionId
 
 // --------------------------------------------------------------------------------
-resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = {
+resource existingSqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' existing = if (!deployNewServer) {
+  name: existingSqlServerName
+  scope: resourceGroup(existingSqlServerResourceGroupName)
+}
+resource existingSqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' existing = if (!deployNewServer) {
+  parent: existingSqlServerResource
+  name: sqlDBName
+}
+
+resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = if (deployNewServer) {
   name: sqlServerName
   location: location
   tags: tags
@@ -84,7 +99,7 @@ resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = {
   // }
 }
 
-resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
+resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = if (deployNewServer) {
   parent: sqlServerResource
   name: sqlDBName
   location: location
@@ -110,7 +125,7 @@ resource sqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
 }
 
 // This rule will allow all Azure services and resources to access this server
-resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2024-11-01-preview' = {
+resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2024-11-01-preview' = if (deployNewServer) {
   name: 'AllowAllWindowsAzureIps'
   parent: sqlServerResource
   properties: {
@@ -120,7 +135,7 @@ resource sqlAllowAllAzureIps 'Microsoft.Sql/servers/firewallRules@2024-11-01-pre
 }
 
 var diagnosticSettingsName = 'SQLSecurityAuditEvents_3d229c42-c7e7-4c97-9a99-ec0d0d8b86c1'
-resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (deployNewServer) {
   scope: sqlDBResource
   name: diagnosticSettingsName
   properties: {
@@ -173,7 +188,7 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
 //     isAzureMonitorTargetEnabled: true
 //   }
 // }
-resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-01-preview' = { // if (isMSDevOpsAuditEnabled) {
+resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-01-preview' = if (deployNewServer) { // if (isMSDevOpsAuditEnabled) {
   parent: sqlServerResource
   name: 'default'
   properties: {
@@ -193,9 +208,9 @@ resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-0
 }
 
 // --------------------------------------------------------------------------------
-output serverName string = sqlServerResource.name
-output serverId string = sqlServerResource.id
+output serverName string = deployNewServer ? sqlServerResource.name : existingSqlServerResource.name
+output serverId string = deployNewServer ? sqlServerResource.id : existingSqlServerResource.id
+output apiVersion string = deployNewServer ? sqlServerResource.apiVersion : existingSqlServerResource.apiVersion
+output databaseName string = deployNewServer ? sqlDBResource.name : existingSqlDBResource.name
+output databaseId string = deployNewServer ? sqlDBResource.id : existingSqlDBResource.id
 //output serverPrincipalId string = sqlServerResource.identity.principalId
-output apiVersion string = sqlServerResource.apiVersion
-output databaseName string = sqlDBResource.name
-output databaseId string = sqlDBResource.id

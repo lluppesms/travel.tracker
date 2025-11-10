@@ -13,6 +13,7 @@ param workspaceId string = ''
 
 @description('The Name of the service plan to deploy into.')
 param appServicePlanName string
+param appServicePlanResourceGroupName string = resourceGroup().name
 param webAppKind string = 'linux'
 
 // --------------------------------------------------------------------------------
@@ -42,6 +43,7 @@ resource appInsightsResource 'Microsoft.Insights/components@2020-02-02' = {
 
 resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = {
   name: appServicePlanName
+  scope: resourceGroup(appServicePlanResourceGroupName)
 }
 
 resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
@@ -158,26 +160,26 @@ resource webSiteAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
   }
 }
 
-resource appServiceMetricLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${appServiceResource.name}-metrics'
-  scope: appServiceResource
-  properties: {
-    workspaceId: workspaceId
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
-    //    this should be right but it's not supported... :(
-    // logs: [
-    //   {
-    //     category: 'AppRequests'
-    //     enabled: true
-    //   }
-    // ]    
-  }
-}
+// resource appServiceMetricLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+//   name: '${appServiceResource.name}-metrics'
+//   scope: appServiceResource
+//   properties: {
+//     workspaceId: workspaceId
+//     metrics: [
+//       {
+//         category: 'AllMetrics'
+//         enabled: true
+//       }
+//     ]
+//     //    this should be right but it's not supported... :(
+//     // logs: [
+//     //   {
+//     //     category: 'AppRequests'
+//     //     enabled: true
+//     //   }
+//     // ]    
+//   }
+// }
 // output principalId string = webSiteResource.identity.principalId
 output name string = webSiteName
 output hostName string = webSiteResource.properties.defaultHostName

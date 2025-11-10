@@ -1,5 +1,5 @@
-USE [TravelTrackerDB]
-GO
+--USE [TravelTrackerDB]
+--GO
 
 CREATE TABLE [dbo].[Locations](
 	[Id] [int] IDENTITY(1,1) NOT NULL,

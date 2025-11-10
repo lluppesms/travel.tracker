@@ -35,7 +35,11 @@ param azureAIFoundryDeploymentName string = ''
 param appDataSource string = 'JSON'
 param appSwaggerEnabled string = 'true'
 param servicePlanName string = ''
+param servicePlanResourceGroupName string = '' // if using an existing service plan in a different resource group
 param webAppKind string = 'linux' // 'linux' or 'windows'
+
+param existingSqlServerName string = ''
+param existingSqlServerResourceGroupName string = ''
 
 param sqlDatabaseName string = 'traveltracker'
 @allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
@@ -106,6 +110,8 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
   params: {
     sqlServerName: resourceNames.outputs.sqlServerName
     sqlDBName: sqlDatabaseName
+    existingSqlServerName: existingSqlServerName
+    existingSqlServerResourceGroupName: existingSqlServerResourceGroupName
     sqlSkuTier: sqlSkuTier
     sqlSkuName: sqlSkuName
     sqlSkuFamily: sqlSkuFamily
@@ -135,6 +141,7 @@ module appServicePlanModule './modules/webapp/websiteserviceplan.bicep' = {
     environmentCode: environmentCode
     appServicePlanName: servicePlanName == '' ? resourceNames.outputs.webSiteAppServicePlanName : servicePlanName
     existingServicePlanName: servicePlanName
+    existingServicePlanResourceGroupName: servicePlanResourceGroupName
     webAppKind: webAppKind
   }
 }
@@ -151,6 +158,7 @@ module webSiteModule './modules/webapp/website.bicep' = {
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     userAssignedIdentityId: identity.outputs.managedIdentityId
     appServicePlanName: appServicePlanModule.outputs.name
+    appServicePlanResourceGroupName: appServicePlanModule.outputs.resourceGroupName
   }
 }
 

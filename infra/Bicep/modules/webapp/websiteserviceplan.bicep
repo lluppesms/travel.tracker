@@ -5,6 +5,8 @@
 param appServicePlanName string = ''
 @description('The name of a pre-existing app service plan')
 param existingServicePlanName string = ''
+@description('The resource group name of a pre-existing app service plan')
+param existingServicePlanResourceGroupName string = ''
 
 param location string = resourceGroup().location
 param environmentCode string = 'dev'
@@ -22,6 +24,7 @@ var tags = union(commonTags, templateTag, azdTag)
 
 resource existingAppServiceResource 'Microsoft.Web/serverfarms@2024-11-01' existing = if (!empty(existingServicePlanName)) {
   name: existingServicePlanName
+  scope: resourceGroup(existingServicePlanResourceGroupName == '' ? resourceGroup().name : existingServicePlanResourceGroupName)
 }
 
 resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' = if (empty(existingServicePlanName)) {
@@ -38,3 +41,4 @@ resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' = if (empty(e
 }
 output name string = empty(existingServicePlanName) ? appServiceResource.name : existingAppServiceResource.name
 output id string = empty(existingServicePlanName) ? appServiceResource.id : existingAppServiceResource.id
+output resourceGroupName string = empty(existingServicePlanName) ? resourceGroup().name : existingServicePlanResourceGroupName
