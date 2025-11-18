@@ -90,7 +90,7 @@ The Travel Tracker application follows a 6-phase development approach:
 
 ### Technology Stack
 - **Frontend:** Blazor (Server + WebAssembly)
-- **Backend:** C# / ASP.NET Core (.NET 8/9)
+- **Backend:** C# / ASP.NET Core (.NET 10)
 - **Database:** Azure Cosmos DB (NoSQL)
 - **Authentication:** Azure AD (Entra ID)
 - **Maps:** Azure Maps

@@ -200,7 +200,7 @@ A personalized, secure, and visually rich way to document and reflect on travel 
 - **Validation:** FluentValidation
 
 #### Backend
-- **Language:** C# (.NET 8 or .NET 9)
+- **Language:** C# (.NET 10)
 - **Framework:** ASP.NET Core
 - **API Pattern:** RESTful Web APIs
 - **Data Access:** Azure Cosmos DB SDK for .NET
@@ -442,7 +442,7 @@ Container: nationalparks
 #### 1. Azure App Service
 - **SKU:** B1 (Basic) for development, S1 (Standard) for production
 - **OS:** Linux or Windows
-- **Runtime:** .NET 8/9
+- **Runtime:** .NET 10
 - **Features:**
   - Auto-scaling (production)
   - Deployment slots (staging, production)

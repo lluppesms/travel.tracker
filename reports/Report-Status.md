@@ -57,7 +57,7 @@ The Travel Tracker application is a new Blazor web application that enables user
 ### Key Decisions Made
 
 #### Technology Stack
-- **Framework:** Blazor Server/WebAssembly hybrid (.NET 8/9)
+- **Framework:** Blazor Server/WebAssembly hybrid (.NET 10)
 - **Database:** Azure Cosmos DB (NoSQL)
 - **Authentication:** Azure Active Directory (Entra ID)
 - **Maps:** Azure Maps
@@ -103,7 +103,7 @@ This phase is designed for migrating existing applications. Since Travel Tracker
 **Started:** October 16, 2025
 
 ### Completed Tasks - Week 1 (Foundation)
-- [x] Set up Blazor project structure (.NET 9)
+- [x] Set up Blazor project structure (.NET 10)
 - [x] Create solution with multiple projects (Web, Data, Services, Tests)
 - [x] Implement data models (User, Location, NationalPark)
 - [x] Create repository pattern with Cosmos DB SDK

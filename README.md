@@ -36,7 +36,7 @@ Foundation development is complete. The application structure, data layer, servi
 ## Technology Stack
 
 - **Frontend:** Blazor (Server + WebAssembly)
-- **Backend:** C# / ASP.NET Core (.NET 9)
+- **Backend:** C# / ASP.NET Core (.NET 10)
 - **Database:** SQL Server (with Entity Framework Core)
 - **Authentication:** Azure AD (Entra ID)
 - **AI/LLM:** Azure AI Foundry
@@ -64,7 +64,7 @@ Foundation development is complete. The application structure, data layer, servi
 ## Getting Started
 
 ### Prerequisites
-- .NET 9 SDK
+- .NET 10 SDK
 - SQL Server (LocalDB, Express, or full SQL Server)
 - Azure subscription (for Azure AD, Azure Maps, and Azure AI Foundry)
 - Visual Studio 2022 or VS Code
