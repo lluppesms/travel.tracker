@@ -23,7 +23,7 @@ var tags = union(commonTags, templateTag)
 var webSiteTags = union(commonTags, templateTag, azdTag)
 
 // --------------------------------------------------------------------------------
-var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|9.0' : '' // 	The runtime stack of web app
+var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|10.0' : '' // 	The runtime stack of web app
 var appInsightsName = toLower('${webSiteName}-insights')
 
 // --------------------------------------------------------------------------------
