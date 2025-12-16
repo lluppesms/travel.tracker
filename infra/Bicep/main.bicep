@@ -189,12 +189,12 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       AzureAD__ClientSecret: adClientSecret
       AzureAD__CallbackPath: adCallbackPath
 
-      AzureMaps_SubscriptionKey: azureMapsSubscriptionKey
-      AzureMaps_ClientId: azureMapsClientId
+      AzureMaps__SubscriptionKey: azureMapsSubscriptionKey
+      AzureMaps__ClientId: azureMapsClientId
 
-      AzureAIFoundry_Endpoint: azureAIFoundryEndpoint
-      AzureAIFoundry_ApiKey: azureAIFoundryApiKey
-      AzureAIFoundry_DeploymentName: azureAIFoundryDeploymentName
+      AzureAIFoundry__Endpoint: azureAIFoundryEndpoint
+      AzureAIFoundry__ApiKey: azureAIFoundryApiKey
+      AzureAIFoundry__DeploymentName: azureAIFoundryDeploymentName
     }
   }
 }
