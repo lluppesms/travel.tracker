@@ -20,7 +20,7 @@ variables:
     value: 'Standard_LRS'
 
   - name: appFolderName
-    value: 'src\web\MathStorm\'
+    value: 'src/web/MathStorm'
   - name: appSolutionName
     value: 'MathStorm.Web'
 

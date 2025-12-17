@@ -45,9 +45,9 @@ gh secret set LOGIN_TENANTID -b "<yourTenantId>"
 
 gh variable set RESOURCEGROUP_LOCATION -b "eastus"
 
-gh variable set APP_PROJECT_FOLDER_NAME -b "src\TravelTracker\TravelTracker.Web"
+gh variable set APP_PROJECT_FOLDER_NAME -b "src/TravelTracker"
 gh variable set APP_PROJECT_NAME -b "TravelTracker.Web"
-gh variable set APP_TEST_FOLDER_NAME -b "src\TravelTracker\TravelTracker.Tests"
+gh variable set APP_TEST_FOLDER_NAME -b "src/tests/TravelTracker.Tests"
 gh variable set APP_TEST_PROJECT_NAME -b "TravelTracker.Tests"
 
 gh secret set AzureMaps_SubscriptionKey -b "subscriptionkey"
