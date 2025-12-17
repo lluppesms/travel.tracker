@@ -1,14 +1,12 @@
 # MCP (Model Context Protocol) JSON-RPC Tests
 # Tests for the MCP server endpoints using JSON-RPC 2.0 protocol
 
-
-# NOTE: These are all failing (because of authentication issues???)
-
 # Variables
-@baseServer =  https://localhost:7134/api/mcp
+@baseServer = https://localhost:7134/api/mcp
 @apiKey = myapikey
 @userId = 1
 @userEmail = lyleluppes@microsoft.com
+
 
 ### 1. List all available MCP tools
 POST {{baseServer}}
@@ -95,12 +93,12 @@ X-User-Email: {{userEmail}}
    "id": 5,
    "method": "tools/call",
    "params": {
-      "name": "GetAllLocations",
+      "name": "get_all_locations",
       "arguments": {}
    }
 }
 
-### 6. GetLocationById - Get a specific location by its ID
+### 6. Call get_all_national_parks Tool - Get list of all locations I've visited
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -110,17 +108,17 @@ X-User-Email: {{userEmail}}
 
 {
    "jsonrpc": "2.0",
-   "id": 6,
+   "id": 3,
    "method": "tools/call",
    "params": {
-      "name": "GetLocationById",
-      "arguments": {
-         "locationId": 1
-      }
+      "name": "get_all_national_parks",
+      "arguments": { }
    }
 }
 
-### 7. GetLocationsByState - Get all locations in Texas
+
+
+### 6. Call Locations Tool - Get list of all locations in one state I've visited
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -130,16 +128,15 @@ X-User-Email: {{userEmail}}
 
 {
    "jsonrpc": "2.0",
-   "id": 7,
+   "id": 3,
    "method": "tools/call",
    "params": {
-      "name": "GetLocationsByState",
+      "name": "get_locations_by_state",
       "arguments": {
          "state": "TX"
       }
    }
 }
-
 ### 8. GetLocationsByDateRange - Get locations visited in 2024
 POST {{baseServer}}
 Content-Type: application/json
@@ -153,10 +150,10 @@ X-User-Email: {{userEmail}}
    "id": 8,
    "method": "tools/call",
    "params": {
-      "name": "GetLocationsByDateRange",
+      "name": "get_locations_by_date_range",
       "arguments": {
-         "startDate": "2024-01-01",
-         "endDate": "2024-12-31"
+         "startDate": "2025-01-01",
+         "endDate": "2025-12-31"
       }
    }
 }
@@ -174,72 +171,12 @@ X-User-Email: {{userEmail}}
    "id": 9,
    "method": "tools/call",
    "params": {
-      "name": "GetLocationCountByState",
+      "name": "get_location_count_by_state",
       "arguments": {}
    }
 }
 
-### 10. CreateLocation - Create a new travel location (RV Park example)
-POST {{baseServer}}
-Content-Type: application/json
-Accept: application/json, text/event-stream
-X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
-
-{
-   "jsonrpc": "2.0",
-   "id": 10,
-   "method": "tools/call",
-   "params": {
-      "name": "CreateLocation",
-      "arguments": {
-         "name": "Sunset RV Park",
-         "locationType": "RV Park",
-         "address": "123 Main Street",
-         "city": "Austin",
-         "state": "TX",
-         "zipCode": "78701",
-         "latitude": 30.2672,
-         "longitude": -97.7431,
-         "startDate": "2024-06-01",
-         "endDate": "2024-06-07",
-         "rating": 4,
-         "comments": "Great park with full hookups and friendly staff"
-      }
-   }
-}
-
-### 11. CreateLocation - Minimal required fields only
-POST {{baseServer}}
-Content-Type: application/json
-Accept: application/json, text/event-stream
-X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
-
-{
-   "jsonrpc": "2.0",
-   "id": 11,
-   "method": "tools/call",
-   "params": {
-      "name": "CreateLocation",
-      "arguments": {
-         "name": "Yellowstone Campground",
-         "locationType": "National Park",
-         "address": "Park Road",
-         "city": "West Yellowstone",
-         "state": "WY",
-         "zipCode": "82190"
-      }
-   }
-}
-
-###############################################################################
-# Error and Edge Case Tests
-###############################################################################
-
-### 12. Invalid method test - Should return error
+### 7. Invalid method test - Should return error
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -247,24 +184,24 @@ X-API-Key: {{apiKey}}
 
 {
    "jsonrpc": "2.0",
-   "id": 12,
+   "id": 7,
    "method": "invalid/method",
    "params": {}
 }
 
-### 13. Missing API key test - Should return 401
+### 8. Missing API key test - Should return 401
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
 
 {
    "jsonrpc": "2.0",
-   "id": 13,
+   "id": 8,
    "method": "tools/list",
    "params": {}
 }
 
-### 14. Invalid API key test - Should return 401
+### 9. Invalid API key test - Should return 401
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -272,12 +209,12 @@ X-API-Key: invalid-key
 
 {
    "jsonrpc": "2.0",
-   "id": 14,
+   "id": 9,
    "method": "tools/list",
    "params": {}
 }
 
-### 15. Call tool with invalid arguments - Should return error
+### 10. Call tool with invalid arguments - Should return error
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -285,7 +222,7 @@ X-API-Key: {{apiKey}}
 
 {
    "jsonrpc": "2.0",
-   "id": 15,
+   "id": 10,
    "method": "tools/call",
    "params": {
       "name": "GetForecast",
@@ -298,7 +235,7 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 16. Call non-existent tool - Should return error
+### 11. Call non-existent tool - Should return error
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -306,7 +243,7 @@ X-API-Key: {{apiKey}}
 
 {
    "jsonrpc": "2.0",
-   "id": 16,
+   "id": 11,
    "method": "tools/call",
    "params": {
       "name": "NonExistentTool",
@@ -314,7 +251,7 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 17. Weather forecast for different location (San Francisco)
+### 12. Weather forecast for different location (San Francisco)
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -322,7 +259,7 @@ X-API-Key: {{apiKey}}
 
 {
    "jsonrpc": "2.0",
-   "id": 17,
+   "id": 12,
    "method": "tools/call",
    "params": {
       "name": "GetForecast",
@@ -335,7 +272,7 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 18. JSON-RPC request without ID (notification) - Should not return response
+### 13. JSON-RPC request without ID (notification) - Should not return response
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -347,7 +284,7 @@ X-API-Key: {{apiKey}}
    "params": {}
 }
 
-### 19. Batch JSON-RPC request - Multiple tools in one request
+### 14. Batch JSON-RPC request - Multiple tools in one request
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -356,13 +293,13 @@ X-API-Key: {{apiKey}}
 [
    {
       "jsonrpc": "2.0",
-      "id": 19,
+      "id": 14,
       "method": "tools/list",
       "params": {}
    },
    {
       "jsonrpc": "2.0",
-      "id": 20,
+      "id": 15,
       "method": "tools/call",
       "params": {
          "name": "GetCurrentTime",
@@ -371,7 +308,7 @@ X-API-Key: {{apiKey}}
    }
 ]
 
-### 20. Test with malformed JSON - Should return parse error
+### 15. Test with malformed JSON - Should return parse error
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -379,44 +316,7 @@ X-API-Key: {{apiKey}}
 
 {
    "jsonrpc": "2.0",
-   "id": 21,
+   "id": 16,
    "method": "tools/list",
    "params": {
-}
-
-### 21. Location tool without user headers - Should return unauthorized
-POST {{baseServer}}
-Content-Type: application/json
-Accept: application/json, text/event-stream
-X-API-Key: {{apiKey}}
-
-{
-   "jsonrpc": "2.0",
-   "id": 22,
-   "method": "tools/call",
-   "params": {
-      "name": "GetAllLocations",
-      "arguments": {}
-   }
-}
-
-### 22. GetLocationsByDateRange - Invalid date range (start after end)
-POST {{baseServer}}
-Content-Type: application/json
-Accept: application/json, text/event-stream
-X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
-
-{
-   "jsonrpc": "2.0",
-   "id": 23,
-   "method": "tools/call",
-   "params": {
-      "name": "GetLocationsByDateRange",
-      "arguments": {
-         "startDate": "2024-12-31",
-         "endDate": "2024-01-01"
-      }
-   }
 }

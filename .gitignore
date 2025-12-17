@@ -416,3 +416,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+src/requests-api-tests-prod.http
+src/requests-mcp-tests-prod.http

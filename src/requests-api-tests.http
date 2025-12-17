@@ -1,3 +1,5 @@
+# API  Tests
+
 # Variables
 @baseServer = https://localhost:7134
 @apiKey = myapikey
@@ -6,6 +8,7 @@
 
 ### Health check (no API key required)
 GET {{baseServer}}/api/healthz
+
 
 ### Get National Parks
 GET {{baseServer}}/api/nationalparks
