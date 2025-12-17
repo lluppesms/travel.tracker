@@ -1,0 +1,66 @@
+@implements IDisposable
+@inject NavigationManager NavigationManager
+
+@if (IsNavigating)
+{
+    <div class="navigation-spinner-overlay">
+        <div class="navigation-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 mb-0">Loading...</p>
+        </div>
+    </div>
+}
+
+@code {
+    private bool IsNavigating { get; set; }
+    private CancellationTokenSource? _cts;
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    public void StartNavigation()
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        IsNavigating = true;
+        StateHasChanged();
+
+        // Auto-hide after a timeout (in case the page loads quickly or something goes wrong)
+        _ = AutoHideAsync(_cts.Token);
+    }
+
+    private async Task AutoHideAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(5000, cancellationToken);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                IsNavigating = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Expected when navigation completes
+        }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _cts?.Cancel();
+        IsNavigating = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}
