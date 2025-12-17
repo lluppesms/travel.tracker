@@ -12,10 +12,7 @@ public class NationalParksController : ControllerBase
     private readonly IAuthenticationService _authenticationService;
     private readonly ILogger<NationalParksController> _logger;
 
-    public NationalParksController(
-        INationalParkService nationalParkService,
-        IAuthenticationService authenticationService,
-        ILogger<NationalParksController> logger)
+    public NationalParksController(INationalParkService nationalParkService, IAuthenticationService authenticationService, ILogger<NationalParksController> logger)
     {
         _nationalParkService = nationalParkService;
         _authenticationService = authenticationService;

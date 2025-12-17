@@ -11,10 +11,7 @@ public class ChatbotController : ControllerBase
     private readonly IAuthenticationService _authenticationService;
     private readonly ILogger<ChatbotController> _logger;
 
-    public ChatbotController(
-        IChatbotService chatbotService,
-        IAuthenticationService authenticationService,
-        ILogger<ChatbotController> logger)
+    public ChatbotController(IChatbotService chatbotService, IAuthenticationService authenticationService, ILogger<ChatbotController> logger)
     {
         _chatbotService = chatbotService;
         _authenticationService = authenticationService;

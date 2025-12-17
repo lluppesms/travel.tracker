@@ -12,10 +12,7 @@ public class LocationsController : ControllerBase
     private readonly IAuthenticationService _authenticationService;
     private readonly ILogger<LocationsController> _logger;
 
-    public LocationsController(
-        ILocationService locationService,
-        IAuthenticationService authenticationService,
-        ILogger<LocationsController> logger)
+    public LocationsController(ILocationService locationService, IAuthenticationService authenticationService, ILogger<LocationsController> logger)
     {
         _locationService = locationService;
         _authenticationService = authenticationService;
@@ -79,9 +76,7 @@ public class LocationsController : ControllerBase
     /// Get locations by date range
     /// </summary>
     [HttpGet("by-date-range")]
-    public async Task<ActionResult<IEnumerable<Location>>> GetLocationsByDateRange(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+    public async Task<ActionResult<IEnumerable<Location>>> GetLocationsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
         var userId = _authenticationService.GetCurrentUserInternalId();
         if (userId == 0)
@@ -114,98 +109,98 @@ public class LocationsController : ControllerBase
         return Ok(stateCounts);
     }
 
-    /// <summary>
-    /// Create a new location
-    /// </summary>
-    [HttpPost]
-    public async Task<ActionResult<Location>> CreateLocation([FromBody] Location location)
-    {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+    ///// <summary>
+    ///// Create a new location
+    ///// </summary>
+    //[HttpPost]
+    //public async Task<ActionResult<Location>> CreateLocation([FromBody] Location location)
+    //{
+    //    var userId = _authenticationService.GetCurrentUserInternalId();
+    //    if (userId == 0)
+    //    {
+    //        return Unauthorized(new { message = "User not authenticated" });
+    //    }
 
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+    //    if (!ModelState.IsValid)
+    //    {
+    //        return BadRequest(ModelState);
+    //    }
 
-        location.UserId = userId;
-        location.CreatedDate = DateTime.UtcNow;
-        location.ModifiedDate = DateTime.UtcNow;
+    //    location.UserId = userId;
+    //    location.CreatedDate = DateTime.UtcNow;
+    //    location.ModifiedDate = DateTime.UtcNow;
 
-        var createdLocation = await _locationService.CreateLocationAsync(location);
-        if (createdLocation == null)
-        {
-            return BadRequest(new { message = "Failed to create location. Please check validation rules." });
-        }
+    //    var createdLocation = await _locationService.CreateLocationAsync(location);
+    //    if (createdLocation == null)
+    //    {
+    //        return BadRequest(new { message = "Failed to create location. Please check validation rules." });
+    //    }
 
-        return CreatedAtAction(nameof(GetLocationById), new { id = createdLocation.Id }, createdLocation);
-    }
+    //    return CreatedAtAction(nameof(GetLocationById), new { id = createdLocation.Id }, createdLocation);
+    //}
 
-    /// <summary>
-    /// Update an existing location
-    /// </summary>
-    [HttpPut("{id}")]
-    public async Task<ActionResult<Location>> UpdateLocation(int id, [FromBody] Location location)
-    {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+    ///// <summary>
+    ///// Update an existing location
+    ///// </summary>
+    //[HttpPut("{id}")]
+    //public async Task<ActionResult<Location>> UpdateLocation(int id, [FromBody] Location location)
+    //{
+    //    var userId = _authenticationService.GetCurrentUserInternalId();
+    //    if (userId == 0)
+    //    {
+    //        return Unauthorized(new { message = "User not authenticated" });
+    //    }
 
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+    //    if (!ModelState.IsValid)
+    //    {
+    //        return BadRequest(ModelState);
+    //    }
 
-        if (id != location.Id)
-        {
-            return BadRequest(new { message = "Location ID mismatch" });
-        }
+    //    if (id != location.Id)
+    //    {
+    //        return BadRequest(new { message = "Location ID mismatch" });
+    //    }
 
-        var existingLocation = await _locationService.GetLocationByIdAsync(id, userId);
-        if (existingLocation == null)
-        {
-            return NotFound(new { message = $"Location with ID {id} not found" });
-        }
+    //    var existingLocation = await _locationService.GetLocationByIdAsync(id, userId);
+    //    if (existingLocation == null)
+    //    {
+    //        return NotFound(new { message = $"Location with ID {id} not found" });
+    //    }
 
-        location.UserId = userId;
-        location.ModifiedDate = DateTime.UtcNow;
+    //    location.UserId = userId;
+    //    location.ModifiedDate = DateTime.UtcNow;
 
-        try
-        {
-            var updatedLocation = await _locationService.UpdateLocationAsync(location);
-            return Ok(updatedLocation);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating location {LocationId}", id);
-            return BadRequest(new { message = $"Failed to update location: {ex.Message}" });
-        }
-    }
+    //    try
+    //    {
+    //        var updatedLocation = await _locationService.UpdateLocationAsync(location);
+    //        return Ok(updatedLocation);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(ex, "Error updating location {LocationId}", id);
+    //        return BadRequest(new { message = $"Failed to update location: {ex.Message}" });
+    //    }
+    //}
 
-    /// <summary>
-    /// Delete a location
-    /// </summary>
-    [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteLocation(int id)
-    {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+    ///// <summary>
+    ///// Delete a location
+    ///// </summary>
+    //[HttpDelete("{id}")]
+    //public async Task<ActionResult> DeleteLocation(int id)
+    //{
+    //    var userId = _authenticationService.GetCurrentUserInternalId();
+    //    if (userId == 0)
+    //    {
+    //        return Unauthorized(new { message = "User not authenticated" });
+    //    }
 
-        var existingLocation = await _locationService.GetLocationByIdAsync(id, userId);
-        if (existingLocation == null)
-        {
-            return NotFound(new { message = $"Location with ID {id} not found" });
-        }
+    //    var existingLocation = await _locationService.GetLocationByIdAsync(id, userId);
+    //    if (existingLocation == null)
+    //    {
+    //        return NotFound(new { message = $"Location with ID {id} not found" });
+    //    }
 
-        await _locationService.DeleteLocationAsync(id, userId);
-        return NoContent();
-    }
+    //    await _locationService.DeleteLocationAsync(id, userId);
+    //    return NoContent();
+    //}
 }

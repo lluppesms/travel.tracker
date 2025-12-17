@@ -20,9 +20,9 @@ public class LocationsControllerTests
         _mockLocationService = new Mock<ILocationService>();
         _mockAuthService = new Mock<IAuthenticationService>();
         _mockLogger = new Mock<ILogger<LocationsController>>();
-        
+
         _mockAuthService.Setup(x => x.GetCurrentUserInternalId()).Returns(TestUserId);
-        
+
         _controller = new LocationsController(
             _mockLocationService.Object,
             _mockAuthService.Object,
@@ -151,146 +151,146 @@ public class LocationsControllerTests
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 
-    [Fact]
-    public async Task CreateLocation_WithValidData_ReturnsCreatedAtAction()
-    {
-        // Arrange
-        var location = new Location
-        {
-            Name = "New Location",
-            LocationType = "RV Park",
-            State = "CA",
-            Rating = 5
-        };
-        var createdLocation = new Location
-        {
-            Id = 1,
-            Name = "New Location",
-            LocationType = "RV Park",
-            State = "CA",
-            Rating = 5,
-            UserId = TestUserId
-        };
-        _mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
-            .ReturnsAsync((Location?)createdLocation);
+    //[Fact]
+    //public async Task CreateLocation_WithValidData_ReturnsCreatedAtAction()
+    //{
+    //    // Arrange
+    //    var location = new Location
+    //    {
+    //        Name = "New Location",
+    //        LocationType = "RV Park",
+    //        State = "CA",
+    //        Rating = 5
+    //    };
+    //    var createdLocation = new Location
+    //    {
+    //        Id = 1,
+    //        Name = "New Location",
+    //        LocationType = "RV Park",
+    //        State = "CA",
+    //        Rating = 5,
+    //        UserId = TestUserId
+    //    };
+    //    _mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
+    //        .ReturnsAsync((Location?)createdLocation);
 
-        // Act
-        var result = await _controller.CreateLocation(location);
+    //    // Act
+    //    var result = await _controller.CreateLocation(location);
 
-        // Assert
-        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-        var returnedLocation = Assert.IsType<Location>(createdResult.Value);
-        Assert.Equal("New Location", returnedLocation.Name);
-        Assert.Equal(TestUserId, returnedLocation.UserId);
-    }
+    //    // Assert
+    //    var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+    //    var returnedLocation = Assert.IsType<Location>(createdResult.Value);
+    //    Assert.Equal("New Location", returnedLocation.Name);
+    //    Assert.Equal(TestUserId, returnedLocation.UserId);
+    //}
 
-    [Fact]
-    public async Task CreateLocation_WithInvalidData_ReturnsBadRequest()
-    {
-        // Arrange
-        var location = new Location
-        {
-            Name = "Invalid Location",
-            LocationType = "InvalidType",
-            State = "CA"
-        };
-        _mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
-            .ReturnsAsync((Location?)null);
+    //[Fact]
+    //public async Task CreateLocation_WithInvalidData_ReturnsBadRequest()
+    //{
+    //    // Arrange
+    //    var location = new Location
+    //    {
+    //        Name = "Invalid Location",
+    //        LocationType = "InvalidType",
+    //        State = "CA"
+    //    };
+    //    _mockLocationService.Setup(s => s.CreateLocationAsync(It.IsAny<Location>()))
+    //        .ReturnsAsync((Location?)null);
 
-        // Act
-        var result = await _controller.CreateLocation(location);
+    //    // Act
+    //    var result = await _controller.CreateLocation(location);
 
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
+    //    // Assert
+    //    Assert.IsType<BadRequestObjectResult>(result.Result);
+    //}
 
-    [Fact]
-    public async Task UpdateLocation_WithValidData_ReturnsOk()
-    {
-        // Arrange
-        var locationId = 1;
-        var location = new Location
-        {
-            Id = locationId,
-            Name = "Updated Location",
-            LocationType = "RV Park",
-            State = "CA",
-            Rating = 4
-        };
-        _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
-            .ReturnsAsync((Location?)location);
-        _mockLocationService.Setup(s => s.UpdateLocationAsync(It.IsAny<Location>()))
-            .ReturnsAsync((Location?)location);
+    //[Fact]
+    //public async Task UpdateLocation_WithValidData_ReturnsOk()
+    //{
+    //    // Arrange
+    //    var locationId = 1;
+    //    var location = new Location
+    //    {
+    //        Id = locationId,
+    //        Name = "Updated Location",
+    //        LocationType = "RV Park",
+    //        State = "CA",
+    //        Rating = 4
+    //    };
+    //    _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
+    //        .ReturnsAsync((Location?)location);
+    //    _mockLocationService.Setup(s => s.UpdateLocationAsync(It.IsAny<Location>()))
+    //        .ReturnsAsync((Location?)location);
 
-        // Act
-        var result = await _controller.UpdateLocation(locationId, location);
+    //    // Act
+    //    var result = await _controller.UpdateLocation(locationId, location);
 
-        // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedLocation = Assert.IsType<Location>(okResult.Value);
-        Assert.Equal("Updated Location", returnedLocation.Name);
-    }
+    //    // Assert
+    //    var okResult = Assert.IsType<OkObjectResult>(result.Result);
+    //    var returnedLocation = Assert.IsType<Location>(okResult.Value);
+    //    Assert.Equal("Updated Location", returnedLocation.Name);
+    //}
 
-    [Fact]
-    public async Task UpdateLocation_WithMismatchedId_ReturnsBadRequest()
-    {
-        // Arrange
-        var location = new Location { Id = 1, Name = "Test" };
+    //[Fact]
+    //public async Task UpdateLocation_WithMismatchedId_ReturnsBadRequest()
+    //{
+    //    // Arrange
+    //    var location = new Location { Id = 1, Name = "Test" };
 
-        // Act
-        var result = await _controller.UpdateLocation(2, location);
+    //    // Act
+    //    var result = await _controller.UpdateLocation(2, location);
 
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
+    //    // Assert
+    //    Assert.IsType<BadRequestObjectResult>(result.Result);
+    //}
 
-    [Fact]
-    public async Task UpdateLocation_WithNonExistentLocation_ReturnsNotFound()
-    {
-        // Arrange
-        var locationId = 999;
-        var location = new Location { Id = locationId, Name = "Test" };
-        _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
-            .ReturnsAsync((Location?)null);
+    //[Fact]
+    //public async Task UpdateLocation_WithNonExistentLocation_ReturnsNotFound()
+    //{
+    //    // Arrange
+    //    var locationId = 999;
+    //    var location = new Location { Id = locationId, Name = "Test" };
+    //    _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
+    //        .ReturnsAsync((Location?)null);
 
-        // Act
-        var result = await _controller.UpdateLocation(locationId, location);
+    //    // Act
+    //    var result = await _controller.UpdateLocation(locationId, location);
 
-        // Assert
-        Assert.IsType<NotFoundObjectResult>(result.Result);
-    }
+    //    // Assert
+    //    Assert.IsType<NotFoundObjectResult>(result.Result);
+    //}
 
-    [Fact]
-    public async Task DeleteLocation_WithValidId_ReturnsNoContent()
-    {
-        // Arrange
-        var locationId = 1;
-        var location = new Location { Id = locationId, UserId = TestUserId };
-        _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
-            .ReturnsAsync((Location?)location);
+    //[Fact]
+    //public async Task DeleteLocation_WithValidId_ReturnsNoContent()
+    //{
+    //    // Arrange
+    //    var locationId = 1;
+    //    var location = new Location { Id = locationId, UserId = TestUserId };
+    //    _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
+    //        .ReturnsAsync((Location?)location);
 
-        // Act
-        var result = await _controller.DeleteLocation(locationId);
+    //    // Act
+    //    var result = await _controller.DeleteLocation(locationId);
 
-        // Assert
-        Assert.IsType<NoContentResult>(result);
-        _mockLocationService.Verify(s => s.DeleteLocationAsync(locationId, TestUserId), Times.Once);
-    }
+    //    // Assert
+    //    Assert.IsType<NoContentResult>(result);
+    //    _mockLocationService.Verify(s => s.DeleteLocationAsync(locationId, TestUserId), Times.Once);
+    //}
 
-    [Fact]
-    public async Task DeleteLocation_WithNonExistentLocation_ReturnsNotFound()
-    {
-        // Arrange
-        var locationId = 999;
-        _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
-            .ReturnsAsync((Location?)null);
+    //[Fact]
+    //public async Task DeleteLocation_WithNonExistentLocation_ReturnsNotFound()
+    //{
+    //    // Arrange
+    //    var locationId = 999;
+    //    _mockLocationService.Setup(s => s.GetLocationByIdAsync(locationId, TestUserId))
+    //        .ReturnsAsync((Location?)null);
 
-        // Act
-        var result = await _controller.DeleteLocation(locationId);
+    //    // Act
+    //    var result = await _controller.DeleteLocation(locationId);
 
-        // Assert
-        Assert.IsType<NotFoundObjectResult>(result);
-    }
+    //    // Assert
+    //    Assert.IsType<NotFoundObjectResult>(result);
+    //}
 
     [Fact]
     public async Task GetLocationsByStateCount_ReturnsOkWithCounts()

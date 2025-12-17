@@ -10,9 +10,7 @@ public class LocationTypesController : ControllerBase
     private readonly ILocationTypeService _locationTypeService;
     private readonly ILogger<LocationTypesController> _logger;
 
-    public LocationTypesController(
-        ILocationTypeService locationTypeService,
-        ILogger<LocationTypesController> logger)
+    public LocationTypesController(ILocationTypeService locationTypeService, ILogger<LocationTypesController> logger)
     {
         _locationTypeService = locationTypeService;
         _logger = logger;

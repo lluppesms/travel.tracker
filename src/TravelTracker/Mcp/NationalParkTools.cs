@@ -10,9 +10,7 @@ public class NationalParkTools
     private readonly INationalParkService _nationalParkService;
     private readonly IAuthenticationService _authenticationService;
 
-    public NationalParkTools(
-        INationalParkService nationalParkService,
-        IAuthenticationService authenticationService)
+    public NationalParkTools(INationalParkService nationalParkService, IAuthenticationService authenticationService)
     {
         _nationalParkService = nationalParkService;
         _authenticationService = authenticationService;
@@ -34,8 +32,8 @@ public class NationalParkTools
     [McpServerTool]
     [Description("Get details of a specific national park by its ID and state code.")]
     public async Task<NationalPark?> GetNationalParkById(
-        [Description("The unique identifier of the national park")] int parkId,
-        [Description("Two-letter US state code where the park is located")] string state)
+    [Description("The unique identifier of the national park")] int parkId,
+    [Description("Two-letter US state code where the park is located")] string state)
     {
         if (string.IsNullOrWhiteSpace(state))
         {
@@ -51,7 +49,7 @@ public class NationalParkTools
     [McpServerTool]
     [Description("Get all national parks in a specific US state.")]
     public async Task<IEnumerable<NationalPark>> GetNationalParksByState(
-        [Description("Two-letter US state code (e.g., 'CA', 'WY', 'UT')")] string state)
+    [Description("Two-letter US state code (e.g., 'CA', 'WY', 'UT')")] string state)
     {
         return await _nationalParkService.GetParksByStateAsync(state);
     }
