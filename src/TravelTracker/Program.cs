@@ -1,4 +1,5 @@
 
+using System;
 using TravelTracker.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -235,10 +236,17 @@ app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+
+
+//When Azure AD is configured and FallbackPolicy = DefaultPolicy - all endpoints without an explicit authorization policy require authentication by default
+//The [AllowAnonymous] attribute on LocationTools is a class-level attribute, but the MCP endpoint is mapped via app.MapMcp("/api/mcp"),
+// which doesn't inherit that attribute.When Azure AD is configured, you're setting FallbackPolicy = DefaultPolicy.
+// This means all endpoints without an explicit authorization policy require authentication by default — and [AllowAnonymous] on MCP tool classes doesn't automatically apply to the MCP endpoint mapping.
+// Add the ".AllowAnonymous()" method to make it apply to all...
 // Map MCP endpoint
 if (!string.IsNullOrEmpty(builder.Configuration["SqlServer:ConnectionString"]))
 {
-    app.MapMcp("/api/mcp");
+    app.MapMcp("/api/mcp").AllowAnonymous();
     Console.WriteLine("MCP server endpoint configured at /api/mcp");
 }
 
