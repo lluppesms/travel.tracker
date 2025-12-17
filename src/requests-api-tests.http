@@ -10,6 +10,10 @@
 GET {{baseServer}}/api/healthz
 
 
+### Swagger file
+GET {{baseServer}}/api/swagger/swagger.json
+
+
 ### Get National Parks
 GET {{baseServer}}/api/nationalparks
 Accept: application/json
