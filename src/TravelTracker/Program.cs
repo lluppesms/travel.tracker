@@ -1,4 +1,6 @@
 
+using TravelTracker.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add configuration
@@ -92,6 +94,9 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<LocationTools>();
     builder.Services.AddScoped<NationalParkTools>();
     builder.Services.AddScoped<ChatbotTools>();
+
+    // Add build info service
+    builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 }
 else
 {

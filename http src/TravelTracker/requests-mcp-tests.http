@@ -1,0 +1,422 @@
+# MCP (Model Context Protocol) JSON-RPC Tests
+# Tests for the MCP server endpoints using JSON-RPC 2.0 protocol
+
+
+# NOTE: These are all failing (because of authentication issues???)
+
+# Variables
+@baseServer =  https://localhost:7134/api/mcp
+@apiKey = myapikey
+@userId = 1
+@userEmail = lyleluppes@microsoft.com
+
+### 1. List all available MCP tools
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 1,
+   "method": "tools/list",
+   "params": {}
+}
+
+### 2. Call Time Tool - Get current time (UTC and local)
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 2,
+   "method": "tools/call",
+   "params": {
+      "name": "GetCurrentTime",
+      "arguments": {}
+   }
+}
+
+### 3. Call Weather Tool - Get forecast for Washington DC coordinates
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 3,
+   "method": "tools/call",
+   "params": {
+      "name": "GetForecast",
+      "arguments": {
+         "locationPoint": {
+            "latitude": 38.8894,
+            "longitude": -77.0352
+         }
+      }
+   }
+}
+
+### 4. Call GetAllNationalParks Tool - Get list of all national parks
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 4,
+   "method": "tools/call",
+   "params": {
+      "name": "GetAllNationalParks",
+      "arguments": {}
+   }
+}
+
+###############################################################################
+# Location Tools - Requires User Authentication Headers
+###############################################################################
+
+### 5. GetAllLocations - Get all locations for the authenticated user
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 5,
+   "method": "tools/call",
+   "params": {
+      "name": "GetAllLocations",
+      "arguments": {}
+   }
+}
+
+### 6. GetLocationById - Get a specific location by its ID
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 6,
+   "method": "tools/call",
+   "params": {
+      "name": "GetLocationById",
+      "arguments": {
+         "locationId": 1
+      }
+   }
+}
+
+### 7. GetLocationsByState - Get all locations in Texas
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 7,
+   "method": "tools/call",
+   "params": {
+      "name": "GetLocationsByState",
+      "arguments": {
+         "state": "TX"
+      }
+   }
+}
+
+### 8. GetLocationsByDateRange - Get locations visited in 2024
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 8,
+   "method": "tools/call",
+   "params": {
+      "name": "GetLocationsByDateRange",
+      "arguments": {
+         "startDate": "2024-01-01",
+         "endDate": "2024-12-31"
+      }
+   }
+}
+
+### 9. GetLocationCountByState - Get count of locations grouped by state
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 9,
+   "method": "tools/call",
+   "params": {
+      "name": "GetLocationCountByState",
+      "arguments": {}
+   }
+}
+
+### 10. CreateLocation - Create a new travel location (RV Park example)
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 10,
+   "method": "tools/call",
+   "params": {
+      "name": "CreateLocation",
+      "arguments": {
+         "name": "Sunset RV Park",
+         "locationType": "RV Park",
+         "address": "123 Main Street",
+         "city": "Austin",
+         "state": "TX",
+         "zipCode": "78701",
+         "latitude": 30.2672,
+         "longitude": -97.7431,
+         "startDate": "2024-06-01",
+         "endDate": "2024-06-07",
+         "rating": 4,
+         "comments": "Great park with full hookups and friendly staff"
+      }
+   }
+}
+
+### 11. CreateLocation - Minimal required fields only
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 11,
+   "method": "tools/call",
+   "params": {
+      "name": "CreateLocation",
+      "arguments": {
+         "name": "Yellowstone Campground",
+         "locationType": "National Park",
+         "address": "Park Road",
+         "city": "West Yellowstone",
+         "state": "WY",
+         "zipCode": "82190"
+      }
+   }
+}
+
+###############################################################################
+# Error and Edge Case Tests
+###############################################################################
+
+### 12. Invalid method test - Should return error
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 12,
+   "method": "invalid/method",
+   "params": {}
+}
+
+### 13. Missing API key test - Should return 401
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{
+   "jsonrpc": "2.0",
+   "id": 13,
+   "method": "tools/list",
+   "params": {}
+}
+
+### 14. Invalid API key test - Should return 401
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json
+X-API-Key: invalid-key
+
+{
+   "jsonrpc": "2.0",
+   "id": 14,
+   "method": "tools/list",
+   "params": {}
+}
+
+### 15. Call tool with invalid arguments - Should return error
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 15,
+   "method": "tools/call",
+   "params": {
+      "name": "GetForecast",
+      "arguments": {
+         "locationPoint": {
+            "latitude": "invalid",
+            "longitude": "invalid"
+         }
+      }
+   }
+}
+
+### 16. Call non-existent tool - Should return error
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 16,
+   "method": "tools/call",
+   "params": {
+      "name": "NonExistentTool",
+      "arguments": {}
+   }
+}
+
+### 17. Weather forecast for different location (San Francisco)
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 17,
+   "method": "tools/call",
+   "params": {
+      "name": "GetForecast",
+      "arguments": {
+         "locationPoint": {
+            "latitude": 37.7749,
+            "longitude": -122.4194
+         }
+      }
+   }
+}
+
+### 18. JSON-RPC request without ID (notification) - Should not return response
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "method": "tools/list",
+   "params": {}
+}
+
+### 19. Batch JSON-RPC request - Multiple tools in one request
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+[
+   {
+      "jsonrpc": "2.0",
+      "id": 19,
+      "method": "tools/list",
+      "params": {}
+   },
+   {
+      "jsonrpc": "2.0",
+      "id": 20,
+      "method": "tools/call",
+      "params": {
+         "name": "GetCurrentTime",
+         "arguments": {}
+      }
+   }
+]
+
+### 20. Test with malformed JSON - Should return parse error
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 21,
+   "method": "tools/list",
+   "params": {
+}
+
+### 21. Location tool without user headers - Should return unauthorized
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 22,
+   "method": "tools/call",
+   "params": {
+      "name": "GetAllLocations",
+      "arguments": {}
+   }
+}
+
+### 22. GetLocationsByDateRange - Invalid date range (start after end)
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+X-User-Id: {{userId}}
+X-User-Email: {{userEmail}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 23,
+   "method": "tools/call",
+   "params": {
+      "name": "GetLocationsByDateRange",
+      "arguments": {
+         "startDate": "2024-12-31",
+         "endDate": "2024-01-01"
+      }
+   }
+}

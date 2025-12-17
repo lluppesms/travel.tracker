@@ -25,7 +25,32 @@ main {
 .footer p {
     font-size: 0.875rem;
 }
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+}
+.footer .text-muted {
+    color: #6c757d !important;
+}
 
+.build-info {
+    text-align: right;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+.build-number {
+    color: #f8f9fa;
+    font-weight: 300;
+    cursor: default;
+}
+
+.build-date {
+    color: #6c757d;
+    font-weight: 300;
+}
 [data-theme="dark"] .footer {
     background: var(--bg-tertiary);
     border-top: 1px solid rgba(255, 255, 255, 0.1);

@@ -1,4 +1,6 @@
-﻿@inherits LayoutComponentBase
+﻿@using TravelTracker.Services
+@inherits LayoutComponentBase
+@inject IBuildInfoService BuildInfoService
 
 <NavigationSpinner @ref="navigationSpinner" />
 
@@ -13,7 +15,15 @@
 
     <footer class="footer">
         <div class="container-fluid">
-            <p class="mb-0">Copyright © @DateTime.Now.Year Luppes Consulting, Inc. All rights reserved.</p>
+            <div class="footer-content">
+                <span class="text-muted">Copyright @DateTime.Now.Year Luppes Consulting, Inc.</span>
+                @if (buildInfo is not null)
+                {
+                    <div class="build-info">
+                        <span class="build-number" title="@FormatBuildDate(buildInfo.BuildDate)">@buildInfo.BuildNumber</span>
+                    </div>
+                }
+            </div>
         </div>
     </footer>
 </div>
@@ -26,7 +36,21 @@
 
 @code {
     private NavigationSpinner? navigationSpinner;
+    private BuildInfo? buildInfo;
 
+    protected override async Task OnInitializedAsync()
+    {
+        buildInfo = await BuildInfoService.GetBuildInfoAsync();
+    }
+
+    private string FormatBuildDate(string buildDate)
+    {
+        if (DateTime.TryParse(buildDate, out var date))
+        {
+            return $"Compiled {date.ToString("yyyy-MM-dd HH:mm:ss")}";
+        }
+        return buildDate;
+    }
     private void HandleNavigating()
     {
         navigationSpinner?.StartNavigation();

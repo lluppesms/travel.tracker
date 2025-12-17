@@ -40,7 +40,7 @@ public class LocationTools
     [McpServerTool]
     [Description("Get details of a specific location by its ID. Requires authentication and user must own the location.")]
     public async Task<Location?> GetLocationById(
-        [Description("The unique identifier of the location")] int locationId)
+    [Description("The unique identifier of the location")] int locationId)
     {
         var userId = _authenticationService.GetCurrentUserInternalId();
         if (userId == 0)
@@ -57,7 +57,7 @@ public class LocationTools
     [McpServerTool]
     [Description("Get all locations in a specific US state. Useful for viewing travel history in a particular state.")]
     public async Task<IEnumerable<Location>> GetLocationsByState(
-        [Description("Two-letter US state code (e.g., 'CA', 'NY', 'WY')")] string state)
+    [Description("Two-letter US state code (e.g., 'CA', 'NY', 'WY')")] string state)
     {
         var userId = _authenticationService.GetCurrentUserInternalId();
         if (userId == 0)

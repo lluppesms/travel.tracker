@@ -60,6 +60,9 @@ jobs:
       pull-requests: read
 
     steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
     - name: Display Variables
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -68,10 +71,25 @@ jobs:
         echo "inputs.rootDirectory=${{ inputs.rootDirectory }}"
         echo "GITHUB_CONTEXT=$GITHUB_CONTEXT"
         echo "JOB_CONTEXT=$JOB_CONTEXT"
+
+        echo "---------------------------------"
+        echo "##[group]All Variables:"
+        echo '${{ toJSON(env) }}'
+        echo '${{ toJSON(vars) }}'
+        echo "##[endgroup]"
+        echo "---------------------------------"
+        echo "##[group]Directory of ${{ github.workspace  }}"
+        tree -R ${{ github.workspace  }}
+        echo "##[endgroup]"
       continue-on-error: true
 
-    - name: Checkout Code
-      uses: actions/checkout@v4
+    - name: Put Build Details in buildinfo.json
+      shell: bash
+      continue-on-error: true
+      run: |
+        echo -e -n "{\"buildDate\":\"${{ steps.vars.outputs.rundatetime }}\",\"buildNumber\":\"${{ steps.vars.outputs.rundate }}.${{ github.run_number }}\",\"buildId\":\"${{ github.run_id }}.${{ github.run_attempt }}\",\"run_id\":\"${{ github.run_id }}\",\"run_attempt\":\"${{ github.run_attempt }}\",\"run_number\":\"${{ github.run_number }}\",\"branchName\":\"${{ steps.vars.outputs.commitbranch }}\",\"commitHash\":\"${{ steps.vars.outputs.commitsha }}\"}" > ${{ inputs.rootDirectory }}/wwwroot/buildinfo.json
+        echo "Contents of buildinfo.json:"
+        cat ${{ inputs.rootDirectory }}/wwwroot/buildinfo.json
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
@@ -106,7 +124,9 @@ jobs:
         name: ${{ env.artifactName }}
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
-    - name: List All Files
+    - name: List All Files After (PowerShell)
       if: inputs.listFilesAfterBuild == true
-      run: 
-        tree ${{ github.action_path }}
+      shell: pwsh
+      run: |
+        Write-Host "Listing file details (recursive) under: src"
+        Get-ChildItem -Path src -Recurse -Force -File
