@@ -23,15 +23,15 @@ public class LocationsController : ControllerBase
     /// Get all locations for the authenticated user
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Location>>> GetAllLocations()
+    public async Task<ActionResult<IEnumerable<Location>>> GetAllLocations(int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
+        var signedInUserId = _authenticationService.GetCurrentUserInternalId();
+        if (signedInUserId == 0 || signedInUserId != userId)
         {
-            return Unauthorized(new { message = "User not authenticated" });
+            return Unauthorized(new { message = signedInUserId == 0 ? HttpMessages.Unauthenticated : HttpMessages.UnauthorizedUser });
         }
 
-        var locations = await _locationService.GetAllLocationsAsync(userId);
+        var locations = await _locationService.GetAllLocationsAsync(signedInUserId);
         return Ok(locations);
     }
 

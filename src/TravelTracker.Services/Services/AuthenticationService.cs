@@ -4,64 +4,59 @@ using System.Security.Claims;
 
 namespace TravelTracker.Services.Services;
 
-public class AuthenticationService : IAuthenticationService
+public class AuthenticationService(IHttpContextAccessor httpContextAccessor, IUserService userService, IConfiguration configuration) : IAuthenticationService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IUserService _userService;
-    private readonly string? _apiKey;
-    private readonly string? _apiKeyUserId;
-    private readonly string? _apiKeyEmailAddress;
-
-    public AuthenticationService(IHttpContextAccessor httpContextAccessor, IUserService userService, IConfiguration configuration)
-    {
-        _httpContextAccessor = httpContextAccessor;
-        _userService = userService;
-        _apiKey = configuration["ApiKey"];
-        _apiKeyUserId = configuration["ApiKey_UserID"];
-        _apiKeyEmailAddress = configuration["ApiKey_EmailAddress"];
-    }
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IUserService _userService = userService;
+    private readonly string? _configurationApiKey = configuration["ApiKey"];
+    private readonly string? _configurationApiKeyUserId = configuration["ApiKey_UserID"];
+    private readonly string? _configurationApiKeyEmailAddress = configuration["ApiKey_EmailAddress"];
 
     public int GetCurrentUserInternalId()
     {
         // check to see if the user is already logged in via Entra ID
         var entraId = GetCurrentUserEntraId();
-
-        if (string.IsNullOrEmpty(entraId))
+        if (!string.IsNullOrEmpty(entraId))
         {
-            // check for valid apikey header
-            var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext != null && httpContext.Request.Headers.TryGetValue("X-API-Key", out var suppliedApiKey))
+            var displayName = GetCurrentUserDisplayName();
+            var email = GetCurrentUserEmail();
+            var user = _userService.GetOrCreateUserAsync(entraId, displayName, email).GetAwaiter().GetResult();
+            if (user != null)
             {
-                // First, check if the API key matches the config-based API key
-                if (!string.IsNullOrEmpty(_apiKey) && suppliedApiKey == _apiKey)
+                return user.Id;
+            }
+        }
+
+        // if not entra authenticated, check for valid apikey header
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext != null && httpContext.Request.Headers.TryGetValue("X-API-Key", out var suppliedApiKey))
+        {
+            // First, check if the API key matches the config-based API key
+            if (!string.IsNullOrEmpty(_configurationApiKey) && suppliedApiKey == _configurationApiKey)
+            {
+                // Use config-based user credentials
+                if (!string.IsNullOrEmpty(_configurationApiKeyUserId) && int.TryParse(_configurationApiKeyUserId, out var configUserId))
                 {
-                    // Use config-based user credentials
-                    if (!string.IsNullOrEmpty(_apiKeyUserId) && int.TryParse(_apiKeyUserId, out var configUserId))
+                    // Get the user specified in the configuration for the default key
+                    var configUser = _userService.GetUserByIdAsync(configUserId).GetAwaiter().GetResult();
+                    // Check to make sure the email matches the config email address if specified
+                    if (configUser != null && (string.IsNullOrEmpty(_configurationApiKeyEmailAddress) || configUser.Email == _configurationApiKeyEmailAddress))
                     {
-                        var configUser = _userService.GetUserByIdAsync(configUserId).GetAwaiter().GetResult();
-                        if (configUser != null && (string.IsNullOrEmpty(_apiKeyEmailAddress) || configUser.Email == _apiKeyEmailAddress))
-                        {
-                            return configUserId;
-                        }
-                    }
-                }
-                else
-                {
-                    // Check if the API key matches a user record in the database
-                    var userByApiKey = _userService.GetUserByApiKeyAsync(suppliedApiKey.ToString()).GetAwaiter().GetResult();
-                    if (userByApiKey != null)
-                    {
-                        return userByApiKey.Id;
+                        return configUserId;
                     }
                 }
             }
-            return 0;
+            else
+            {
+                // Check if the API key matches a specific user record ApiKey in the database
+                var userByApiKey = _userService.GetUserByApiKeyAsync(suppliedApiKey.ToString()).GetAwaiter().GetResult();
+                if (userByApiKey != null)
+                {
+                    return userByApiKey.Id;
+                }
+            }
         }
-
-        var displayName = GetCurrentUserDisplayName();
-        var email = GetCurrentUserEmail();
-        var user = _userService.GetOrCreateUserAsync(entraId, displayName, email).GetAwaiter().GetResult();
-        return user.Id;
+        return 0;
     }
 
     // Legacy external id (Entra ID or test) kept for compatibility with existing code paths still using string ids.
