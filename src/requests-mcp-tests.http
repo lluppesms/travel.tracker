@@ -4,6 +4,11 @@
 # Variables
 @baseServer = https://localhost:7134/api/mcp
 @apiKey = myapikey
+@userId = 1
+@sampleLocationId = 84
+@sampleParkId = 1
+@sampleStateCode = TX
+@sampleStateName = Texas
 
 ### 1. List all available MCP tools
 POST {{baseServer}}
@@ -50,7 +55,9 @@ X-API-Key: {{apiKey}}
    "method": "tools/call",
    "params": {
       "name": "get_all_locations",
-      "arguments": {}
+      "arguments": {
+         "userId": "{{userId}}"
+      }
    }
 }
 
@@ -67,7 +74,8 @@ X-API-Key: {{apiKey}}
    "params": {
       "name": "get_locations_by_state",
       "arguments": {
-         "state": "TX"
+         "userId": "{{userId}}",
+         "state": "{{sampleStateCode}}"
       }
    }
 }
@@ -85,6 +93,7 @@ X-API-Key: {{apiKey}}
    "params": {
       "name": "get_locations_by_date_range",
       "arguments": {
+         "userId": "{{userId}}",
          "startDate": "2025-01-01",
          "endDate": "2025-12-31"
       }
@@ -103,7 +112,9 @@ X-API-Key: {{apiKey}}
    "method": "tools/call",
    "params": {
       "name": "get_location_count_by_state",
-      "arguments": {}
+      "arguments": {
+         "userId": "{{userId}}"
+      }
    }
 }
 
@@ -199,7 +210,7 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 13. Call Weather Tool - Get forecast for Washington DC coordinates
+### 13. Call Weather Tool - Get forecast for Hastings MN coordinates
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -210,11 +221,11 @@ X-API-Key: {{apiKey}}
    "id": 13,
    "method": "tools/call",
    "params": {
-      "name": "get_forecast",
+      "name": "get_weather_forecast",
       "arguments": {
          "locationPoint": {
-            "latitude": 38.8894,
-            "longitude": -77.0352
+            "latitude": 44.7433,
+            "longitude": -92.8524
          }
       }
    }
@@ -231,7 +242,7 @@ X-API-Key: {{apiKey}}
    "id": 14,
    "method": "tools/call",
    "params": {
-      "name": "get_forecast",
+      "name": "get_weather_forecast",
       "arguments": {
          "locationPoint": {
             "latitude": 37.7749,
@@ -256,22 +267,25 @@ X-API-Key: {{apiKey}}
 ### 16. Batch JSON-RPC request - Multiple tools in one request
 POST {{baseServer}}
 Content-Type: application/json
-Accept: application/json
+Accept: application/json, text/event-stream
 X-API-Key: {{apiKey}}
 
 [
    {
       "jsonrpc": "2.0",
       "id": 16,
-      "method": "tools/list",
-      "params": {}
+      "method": "tools/call",
+      "params": {
+         "name": "get_current_time",
+         "arguments": {}
+      }
    },
    {
       "jsonrpc": "2.0",
       "id": 17,
       "method": "tools/call",
       "params": {
-         "name": "GetCurrentTime",
+         "name": "get_weather_forecast",
          "arguments": {}
       }
    }

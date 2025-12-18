@@ -12,6 +12,33 @@ public class AuthenticationService(IHttpContextAccessor httpContextAccessor, IUs
     private readonly string? _configurationApiKeyUserId = configuration["ApiKey_UserID"];
     private readonly string? _configurationApiKeyEmailAddress = configuration["ApiKey_EmailAddress"];
 
+    public (int UserId, string? ErrorMessage) ValidateUserAccess(int requestedUserId)
+    {
+        var signedInUserId = GetCurrentUserInternalId();
+        if (signedInUserId == 0)
+        {
+            return (0, HttpMessages.UnauthenticatedUser);
+        }
+
+        var isGlobalApiKey = IsGlobalApiKeyUser();
+        if (!isGlobalApiKey && signedInUserId != requestedUserId)
+        {
+            return (0, HttpMessages.UnauthorizedUser);
+        }
+
+        return (requestedUserId, HttpMessages.UnknownUser);
+    }
+
+    public bool IsGlobalApiKeyUser()
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext != null && httpContext.Request.Headers.TryGetValue("X-API-Key", out var suppliedApiKey))
+        {
+            return !string.IsNullOrEmpty(_configurationApiKey) && suppliedApiKey == _configurationApiKey;
+        }
+        return false;
+    }
+
     public int GetCurrentUserInternalId()
     {
         // check to see if the user is already logged in via Entra ID

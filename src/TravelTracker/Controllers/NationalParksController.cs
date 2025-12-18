@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TravelTracker.Data.Models;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace TravelTracker.Controllers;
@@ -30,20 +31,15 @@ public class NationalParksController : ControllerBase
     }
 
     /// <summary>
-    /// Get a specific national park by ID and state
+    /// Get a specific national park by ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<NationalPark>> GetParkById(int id, [FromQuery] string state)
+    public async Task<ActionResult<NationalPark>> GetParkById(int id)
     {
-        if (string.IsNullOrWhiteSpace(state))
-        {
-            return BadRequest(new { message = "State parameter is required" });
-        }
-
-        var park = await _nationalParkService.GetParkByIdAsync(id, state);
+        var park = await _nationalParkService.GetParkByIdAsync(id);
         if (park == null)
         {
-            return NotFound(new { message = $"National park with ID {id} in state {state} not found" });
+            return NotFound(new { message = $"National park with ID {id} not found" });
         }
 
         return Ok(park);
@@ -62,16 +58,13 @@ public class NationalParksController : ControllerBase
     /// <summary>
     /// Get national parks visited by the authenticated user
     /// </summary>
-    [HttpGet("visited")]
-    public async Task<ActionResult<IEnumerable<NationalPark>>> GetVisitedParks()
+    [HttpGet("visited/{userId}")]
+    public async Task<ActionResult<IEnumerable<NationalPark>>> GetVisitedParks(int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { return Unauthorized(new { message = errorMessage }); }
 
-        var visitedParks = await _nationalParkService.GetVisitedParksAsync(userId);
+        var visitedParks = await _nationalParkService.GetVisitedParksAsync(validatedUserId);
         return Ok(visitedParks);
     }
 }

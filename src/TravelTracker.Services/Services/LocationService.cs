@@ -1,20 +1,10 @@
 namespace TravelTracker.Services.Services;
 
-public class LocationService : ILocationService
+public class LocationService(ILocationRepository locationRepository, ILocationTypeRepository locationTypeRepository, INationalParkRepository nationalParkRepository) : ILocationService
 {
-    private readonly ILocationRepository _locationRepository;
-    private readonly ILocationTypeRepository _locationTypeRepository;
-    private readonly INationalParkRepository _nationalParkRepository;
-
-    public LocationService(
-        ILocationRepository locationRepository,
-        ILocationTypeRepository locationTypeRepository,
-        INationalParkRepository nationalParkRepository)
-    {
-        _locationRepository = locationRepository;
-        _locationTypeRepository = locationTypeRepository;
-        _nationalParkRepository = nationalParkRepository;
-    }
+    private readonly ILocationRepository _locationRepository = locationRepository;
+    private readonly ILocationTypeRepository _locationTypeRepository = locationTypeRepository;
+    private readonly INationalParkRepository _nationalParkRepository = nationalParkRepository;
 
     public async Task<Location?> GetLocationByIdAsync(int id, int userId)
     {

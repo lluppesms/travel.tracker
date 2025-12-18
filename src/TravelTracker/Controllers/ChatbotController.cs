@@ -22,13 +22,10 @@ public class ChatbotController : ControllerBase
     /// Send a message to the chatbot and get a response
     /// </summary>
     [HttpPost("message")]
-    public async Task<ActionResult<ChatResponse>> SendMessage([FromBody] ChatRequest request)
+    public async Task<ActionResult<ChatResponse>> SendMessage([FromBody] ChatRequest request, [FromQuery] int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { return Unauthorized(new { message = errorMessage }); }
 
         if (string.IsNullOrWhiteSpace(request.Message))
         {
@@ -37,7 +34,7 @@ public class ChatbotController : ControllerBase
 
         try
         {
-            var (message, latestMessageDate, threadId) = await _chatbotService.GetChatResponseAsync(request.Message, userId, request.ThreadId, request.LastMessageDate);
+            var (message, latestMessageDate, threadId) = await _chatbotService.GetChatResponseAsync(request.Message, validatedUserId, request.ThreadId, request.LastMessageDate);
             return Ok(new ChatResponse
             {
                 Message = message,

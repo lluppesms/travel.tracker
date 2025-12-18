@@ -16,9 +16,9 @@ public class NationalParkService : INationalParkService
         return await _nationalParkRepository.GetAllAsync();
     }
 
-    public async Task<NationalPark?> GetParkByIdAsync(int id, string state)
+    public async Task<NationalPark?> GetParkByIdAsync(int id)
     {
-        return await _nationalParkRepository.GetByIdAsync(id, state);
+        return await _nationalParkRepository.GetByIdAsync(id);
     }
 
     public async Task<IEnumerable<NationalPark>> GetParksByStateAsync(string state)

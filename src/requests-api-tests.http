@@ -3,33 +3,73 @@
 # Variables
 @baseServer = https://localhost:7134
 @apiKey = myapikey
+@userId = 1
+@sampleLocationId = 84
+@sampleParkId = 1
+@sampleStateCode = TX
+@sampleStateName = Texas
 
 ### Health check (no API key required)
-GET {{baseServer}}/api/healthz
+# GET {{baseServer}}/api/healthz
 
 ### Swagger file
-GET {{baseServer}}/api/swagger/swagger.json
+# GET {{baseServer}}/api/swagger/swagger.json
 
-### Get National Parks
+### Get National Parks (anonymous)
 GET {{baseServer}}/api/nationalparks
 Accept: application/json
 X-API-Key: {{apiKey}}
 
-###  Get locations
-GET {{baseServer}}/api/locations
+###  Get locations for one user
+GET {{baseServer}}/api/locations/{{userId}}
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+###  Get one location for one user
+GET {{baseServer}}/api/locations/{{userId}}/{{sampleLocationId}}
 Accept: application/json
 X-API-Key: {{apiKey}}
 
 ###  Get locations visited in Texas
-GET {{baseServer}}/api/locations/by-state/TX
+GET {{baseServer}}/api/locations/by-state/{{userId}}/{{sampleStateCode}}
 Accept: application/json
 X-API-Key: {{apiKey}}
 
 ###  Get count of locations visited in each state
-GET {{baseServer}}/api/locations/count-by-state
+GET {{baseServer}}/api/locations/count-by-state/{{userId}}
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+###  Get locations visited in 2025
+GET {{baseServer}}/api/locations/by-date-range/{{userId}}?startDate=2025-01-01&endDate=2025-12-31
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+###  Get one specific national park
+GET {{baseServer}}/api/nationalparks/{{sampleParkId}}
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+###  Get visited national parks
+GET {{baseServer}}/api/nationalparks/visited/{{userId}}
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+###  Get national parks in one state (anonymous)
+GET {{baseServer}}/api/nationalparks/by-state/{{sampleStateName}}
+Accept: application/json
+X-API-Key: {{apiKey}}
+
+###  Get location types (anonymous) (ERROR 200 page!)
+GET {{baseServer}}/api/LocationTypes
 Accept: application/json
 X-API-Key: {{apiKey}}
 
 ### Negative test - Missing API key should return 401
 GET {{baseServer}}/api/nationalparks
 Accept: application/json
+
+###  Get locations with no user specified should fail
+GET {{baseServer}}/api/locations/0
+Accept: application/json
+X-API-Key: {{apiKey}}

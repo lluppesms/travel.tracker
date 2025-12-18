@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TravelTracker.Controllers;
+using TravelTracker.Data.Models;
 using TravelTracker.Services.Interfaces;
 
 namespace TravelTracker.Tests.Controllers;
@@ -20,7 +21,7 @@ public class ChatbotControllerTests
         _mockAuthService = new Mock<IAuthenticationService>();
         _mockLogger = new Mock<ILogger<ChatbotController>>();
 
-        _mockAuthService.Setup(x => x.GetCurrentUserInternalId()).Returns(TestUserId);
+        _mockAuthService.Setup(x => x.ValidateUserAccess(TestUserId)).Returns((TestUserId, (string?)null));
 
         _controller = new ChatbotController(
             _mockChatbotService.Object,
@@ -38,7 +39,7 @@ public class ChatbotControllerTests
             .ReturnsAsync((expectedResponse, DateTimeOffset.UtcNow, "thread-123"));
 
         // Act
-        var result = await _controller.SendMessage(request);
+        var result = await _controller.SendMessage(request, TestUserId);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -55,7 +56,7 @@ public class ChatbotControllerTests
         var request = new ChatRequest { Message = "" };
 
         // Act
-        var result = await _controller.SendMessage(request);
+        var result = await _controller.SendMessage(request, TestUserId);
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -69,7 +70,7 @@ public class ChatbotControllerTests
         var request = new ChatRequest { Message = "   " };
 
         // Act
-        var result = await _controller.SendMessage(request);
+        var result = await _controller.SendMessage(request, TestUserId);
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -80,11 +81,11 @@ public class ChatbotControllerTests
     public async Task SendMessage_WhenNotAuthenticated_ReturnsUnauthorized()
     {
         // Arrange
-        _mockAuthService.Setup(x => x.GetCurrentUserInternalId()).Returns(0);
+        _mockAuthService.Setup(x => x.ValidateUserAccess(TestUserId)).Returns((0, "User not authenticated"));
         var request = new ChatRequest { Message = "Test message" };
 
         // Act
-        var result = await _controller.SendMessage(request);
+        var result = await _controller.SendMessage(request, TestUserId);
 
         // Assert
         var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result.Result);
@@ -100,7 +101,7 @@ public class ChatbotControllerTests
             .ThrowsAsync(new Exception("Test exception"));
 
         // Act
-        var result = await _controller.SendMessage(request);
+        var result = await _controller.SendMessage(request, TestUserId);
 
         // Assert
         var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);

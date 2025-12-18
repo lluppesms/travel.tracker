@@ -16,11 +16,10 @@ public class NationalParkRepository : INationalParkRepository
         return parks;
     }
 
-    public async Task<NationalPark?> GetByIdAsync(int id, string state)
+    public async Task<NationalPark?> GetByIdAsync(int id)
     {
         _ = await Task.FromResult(true);
-        var park = _context.NationalParks
-            .FirstOrDefault(np => np.Id == id && np.State == state);
+        var park = _context.NationalParks.FirstOrDefault(np => np.Id == id);
         return park;
     }
 

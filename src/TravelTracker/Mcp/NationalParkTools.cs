@@ -32,15 +32,9 @@ public class NationalParkTools
     [McpServerTool(Name = "get_national_park_by_id")]
     [Description("Get details of a specific national park by its ID and state code.")]
     public async Task<NationalPark?> GetNationalParkById(
-    [Description("The unique identifier of the national park")] int parkId,
-    [Description("Two-letter US state code where the park is located")] string state)
+    [Description("The unique identifier of the national park")] int parkId)
     {
-        if (string.IsNullOrWhiteSpace(state))
-        {
-            throw new ArgumentException("State parameter is required");
-        }
-
-        return await _nationalParkService.GetParkByIdAsync(parkId, state);
+        return await _nationalParkService.GetParkByIdAsync(parkId);
     }
 
     /// <summary>
@@ -59,14 +53,12 @@ public class NationalParkTools
     /// </summary>
     [McpServerTool(Name = "get_visited_national_parks")]
     [Description("Get all national parks that the authenticated user has visited. Requires authentication.")]
-    public async Task<IEnumerable<NationalPark>> GetVisitedNationalParks()
+    public async Task<IEnumerable<NationalPark>> GetVisitedNationalParks(
+    [Description("The unique identifier of the user being queried")] int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { throw new UnauthorizedAccessException(errorMessage); }
 
-        return await _nationalParkService.GetVisitedParksAsync(userId);
+        return await _nationalParkService.GetVisitedParksAsync(validatedUserId);
     }
 }

@@ -20,9 +20,9 @@ public class NationalParksControllerTests
         _mockNationalParkService = new Mock<INationalParkService>();
         _mockAuthService = new Mock<IAuthenticationService>();
         _mockLogger = new Mock<ILogger<NationalParksController>>();
-        
+
         _mockAuthService.Setup(x => x.GetCurrentUserInternalId()).Returns(TestUserId);
-        
+
         _controller = new NationalParksController(
             _mockNationalParkService.Object,
             _mockAuthService.Object,
@@ -55,11 +55,11 @@ public class NationalParksControllerTests
     {
         // Arrange
         var park = new NationalPark { Id = 1, Name = "Yellowstone", State = "WY" };
-        _mockNationalParkService.Setup(s => s.GetParkByIdAsync(1, "WY"))
+        _mockNationalParkService.Setup(s => s.GetParkByIdAsync(1))
             .ReturnsAsync(park);
 
         // Act
-        var result = await _controller.GetParkById(1, "WY");
+        var result = await _controller.GetParkById(1);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -68,24 +68,14 @@ public class NationalParksControllerTests
     }
 
     [Fact]
-    public async Task GetParkById_WithoutState_ReturnsBadRequest()
-    {
-        // Act
-        var result = await _controller.GetParkById(1, "");
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
-
-    [Fact]
     public async Task GetParkById_WithInvalidId_ReturnsNotFound()
     {
         // Arrange
-        _mockNationalParkService.Setup(s => s.GetParkByIdAsync(999, "WY"))
+        _mockNationalParkService.Setup(s => s.GetParkByIdAsync(999))
             .ReturnsAsync((NationalPark?)null);
 
         // Act
-        var result = await _controller.GetParkById(999, "WY");
+        var result = await _controller.GetParkById(999);
 
         // Assert
         Assert.IsType<NotFoundObjectResult>(result.Result);
@@ -124,7 +114,7 @@ public class NationalParksControllerTests
             .ReturnsAsync(visitedParks);
 
         // Act
-        var result = await _controller.GetVisitedParks();
+        var result = await _controller.GetVisitedParks(TestUserId);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -139,7 +129,7 @@ public class NationalParksControllerTests
         _mockAuthService.Setup(x => x.GetCurrentUserInternalId()).Returns(0);
 
         // Act
-        var result = await _controller.GetVisitedParks();
+        var result = await _controller.GetVisitedParks(TestUserId);
 
         // Assert
         Assert.IsType<UnauthorizedObjectResult>(result.Result);

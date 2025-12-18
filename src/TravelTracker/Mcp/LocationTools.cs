@@ -21,15 +21,13 @@ public class LocationTools
     /// </summary>
     [McpServerTool(Name = "get_all_locations")]
     [Description("Get all travel locations for the authenticated user. Returns a list of all visited locations including RV parks, national parks, and other travel destinations.")]
-    public async Task<IEnumerable<Location>> GetAllLocations()
+    public async Task<IEnumerable<Location>> GetAllLocations(
+    [Description("The unique identifier of the user being queried")] int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { throw new UnauthorizedAccessException(errorMessage); }
 
-        return await _locationService.GetAllLocationsAsync(userId);
+        return await _locationService.GetAllLocationsAsync(validatedUserId);
     }
 
     /// <summary>
@@ -38,15 +36,13 @@ public class LocationTools
     [McpServerTool(Name = "get_location_by_id")]
     [Description("Get details of a specific location by its ID. Requires authentication and user must own the location.")]
     public async Task<Location?> GetLocationById(
+    [Description("The unique identifier of the user being queried")] int userId,
     [Description("The unique identifier of the location")] int locationId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { throw new UnauthorizedAccessException(errorMessage); }
 
-        return await _locationService.GetLocationByIdAsync(locationId, userId);
+        return await _locationService.GetLocationByIdAsync(locationId, validatedUserId);
     }
 
     /// <summary>
@@ -55,15 +51,13 @@ public class LocationTools
     [McpServerTool(Name = "get_locations_by_state")]
     [Description("Get all locations in a specific US state. Useful for viewing travel history in a particular state.")]
     public async Task<IEnumerable<Location>> GetLocationsByState(
+    [Description("The unique identifier of the user being queried")] int userId,
     [Description("Two-letter US state code (e.g., 'CA', 'NY', 'WY')")] string state)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { throw new UnauthorizedAccessException(errorMessage); }
 
-        return await _locationService.GetLocationsByStateAsync(userId, state);
+        return await _locationService.GetLocationsByStateAsync(validatedUserId, state);
     }
 
     /// <summary>
@@ -72,21 +66,19 @@ public class LocationTools
     [McpServerTool(Name = "get_locations_by_date_range")]
     [Description("Get all locations visited within a specific date range. Useful for reviewing trips during a particular time period.")]
     public async Task<IEnumerable<Location>> GetLocationsByDateRange(
-        [Description("Start date in ISO 8601 format (e.g., '2024-01-01')")] DateTime startDate,
-        [Description("End date in ISO 8601 format (e.g., '2024-12-31')")] DateTime endDate)
+    [Description("The unique identifier of the user being queried")] int userId,
+    [Description("Start date in ISO 8601 format (e.g., '2024-01-01')")] DateTime startDate,
+    [Description("End date in ISO 8601 format (e.g., '2024-12-31')")] DateTime endDate)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { throw new UnauthorizedAccessException(errorMessage); }
 
         if (startDate > endDate)
         {
             throw new ArgumentException("Start date must be before end date");
         }
 
-        return await _locationService.GetLocationsByDateRangeAsync(userId, startDate, endDate);
+        return await _locationService.GetLocationsByDateRangeAsync(validatedUserId, startDate, endDate);
     }
 
     /// <summary>
@@ -94,15 +86,13 @@ public class LocationTools
     /// </summary>
     [McpServerTool(Name = "get_location_count_by_state")]
     [Description("Get a count of locations grouped by US state. Shows how many places have been visited in each state.")]
-    public async Task<Dictionary<string, int>> GetLocationCountByState()
+    public async Task<Dictionary<string, int>> GetLocationCountByState(
+    [Description("The unique identifier of the user being queried")] int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            throw new UnauthorizedAccessException("User not authenticated");
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { throw new UnauthorizedAccessException(errorMessage); }
 
-        return await _locationService.GetLocationsByStateCountAsync(userId);
+        return await _locationService.GetLocationsByStateCountAsync(validatedUserId);
     }
 
     ///// <summary>

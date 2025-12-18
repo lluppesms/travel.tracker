@@ -6,48 +6,35 @@ namespace TravelTracker.Controllers;
 [AllowAnonymous]
 [ApiController]
 [Route("api/[controller]")]
-public class LocationsController : ControllerBase
+public class LocationsController(ILocationService locationService, IAuthenticationService authenticationService, ILogger<LocationsController> logger) : ControllerBase
 {
-    private readonly ILocationService _locationService;
-    private readonly IAuthenticationService _authenticationService;
-    private readonly ILogger<LocationsController> _logger;
-
-    public LocationsController(ILocationService locationService, IAuthenticationService authenticationService, ILogger<LocationsController> logger)
-    {
-        _locationService = locationService;
-        _authenticationService = authenticationService;
-        _logger = logger;
-    }
+    private readonly ILocationService _locationService = locationService;
+    private readonly IAuthenticationService _authenticationService = authenticationService;
+    private readonly ILogger<LocationsController> _logger = logger;
 
     /// <summary>
     /// Get all locations for the authenticated user
     /// </summary>
-    [HttpGet]
+    [HttpGet("{userid}")]
     public async Task<ActionResult<IEnumerable<Location>>> GetAllLocations(int userId)
     {
-        var signedInUserId = _authenticationService.GetCurrentUserInternalId();
-        if (signedInUserId == 0 || signedInUserId != userId)
-        {
-            return Unauthorized(new { message = signedInUserId == 0 ? HttpMessages.Unauthenticated : HttpMessages.UnauthorizedUser });
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { return Unauthorized(new { message = errorMessage }); }
 
-        var locations = await _locationService.GetAllLocationsAsync(signedInUserId);
+        var locations = await _locationService.GetAllLocationsAsync(validatedUserId);
         return Ok(locations);
     }
 
     /// <summary>
     /// Get a specific location by ID
     /// </summary>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Location>> GetLocationById(int id)
+    [HttpGet("{userid}/{id}")]
+    public async Task<ActionResult<Location>> GetLocationById(int id, int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { return Unauthorized(new { message = errorMessage }); }
 
-        var location = await _locationService.GetLocationByIdAsync(id, userId);
+        var location = await _locationService.GetLocationByIdAsync(id, validatedUserId);
         if (location == null)
         {
             return NotFound(new { message = $"Location with ID {id} not found" });
@@ -59,53 +46,44 @@ public class LocationsController : ControllerBase
     /// <summary>
     /// Get locations by state
     /// </summary>
-    [HttpGet("by-state/{state}")]
-    public async Task<ActionResult<IEnumerable<Location>>> GetLocationsByState(string state)
+    [HttpGet("by-state/{userid}/{state}")]
+    public async Task<ActionResult<IEnumerable<Location>>> GetLocationsByState(string state, int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { return Unauthorized(new { message = errorMessage }); }
 
-        var locations = await _locationService.GetLocationsByStateAsync(userId, state);
+        var locations = await _locationService.GetLocationsByStateAsync(validatedUserId, state);
         return Ok(locations);
     }
 
     /// <summary>
     /// Get locations by date range
     /// </summary>
-    [HttpGet("by-date-range")]
-    public async Task<ActionResult<IEnumerable<Location>>> GetLocationsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    [HttpGet("by-date-range/{userid}")]
+    public async Task<ActionResult<IEnumerable<Location>>> GetLocationsByDateRange(int userId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { return Unauthorized(new { message = errorMessage }); }
 
         if (startDate > endDate)
         {
             return BadRequest(new { message = "Start date must be before end date" });
         }
 
-        var locations = await _locationService.GetLocationsByDateRangeAsync(userId, startDate, endDate);
+        var locations = await _locationService.GetLocationsByDateRangeAsync(validatedUserId, startDate, endDate);
         return Ok(locations);
     }
 
     /// <summary>
     /// Get location count by state
     /// </summary>
-    [HttpGet("count-by-state")]
-    public async Task<ActionResult<Dictionary<string, int>>> GetLocationsByStateCount()
+    [HttpGet("count-by-state/{userid}")]
+    public async Task<ActionResult<Dictionary<string, int>>> GetLocationsByStateCount(int userId)
     {
-        var userId = _authenticationService.GetCurrentUserInternalId();
-        if (userId == 0)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
+        var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
+        if (validatedUserId == 0) { return Unauthorized(new { message = errorMessage }); }
 
-        var stateCounts = await _locationService.GetLocationsByStateCountAsync(userId);
+        var stateCounts = await _locationService.GetLocationsByStateCountAsync(validatedUserId);
         return Ok(stateCounts);
     }
 

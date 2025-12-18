@@ -1,6 +1,3 @@
-using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-
 namespace TravelTracker.Data.Repositories;
 
 public class LocationRepository : ILocationRepository
@@ -97,7 +94,7 @@ public class LocationRepository : ILocationRepository
             // Get the existing entity from the database
             var existingLocation = await _context.Locations
                 .FirstOrDefaultAsync(l => l.Id == location.Id);
-            
+
             if (existingLocation == null)
             {
                 throw new InvalidOperationException($"Location with ID {location.Id} not found.");

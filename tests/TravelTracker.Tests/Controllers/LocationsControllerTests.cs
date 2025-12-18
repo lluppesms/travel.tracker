@@ -21,7 +21,7 @@ public class LocationsControllerTests
         _mockAuthService = new Mock<IAuthenticationService>();
         _mockLogger = new Mock<ILogger<LocationsController>>();
 
-        _mockAuthService.Setup(x => x.GetCurrentUserInternalId()).Returns(TestUserId);
+        _mockAuthService.Setup(x => x.ValidateUserAccess(TestUserId)).Returns((TestUserId, (string?)null));
 
         _controller = new LocationsController(
             _mockLocationService.Object,
@@ -42,7 +42,7 @@ public class LocationsControllerTests
             .ReturnsAsync(locations);
 
         // Act
-        var result = await _controller.GetAllLocations();
+        var result = await _controller.GetAllLocations(TestUserId);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -54,10 +54,10 @@ public class LocationsControllerTests
     public async Task GetAllLocations_WithUnauthenticatedUser_ReturnsUnauthorized()
     {
         // Arrange
-        _mockAuthService.Setup(x => x.GetCurrentUserInternalId()).Returns(0);
+        _mockAuthService.Setup(x => x.ValidateUserAccess(TestUserId)).Returns((0, "User not authenticated"));
 
         // Act
-        var result = await _controller.GetAllLocations();
+        var result = await _controller.GetAllLocations(TestUserId);
 
         // Assert
         Assert.IsType<UnauthorizedObjectResult>(result.Result);
@@ -72,7 +72,7 @@ public class LocationsControllerTests
             .ReturnsAsync((Location?)location);
 
         // Act
-        var result = await _controller.GetLocationById(1);
+        var result = await _controller.GetLocationById(1, TestUserId);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -88,7 +88,7 @@ public class LocationsControllerTests
             .ReturnsAsync((Location?)null);
 
         // Act
-        var result = await _controller.GetLocationById(999);
+        var result = await _controller.GetLocationById(999, TestUserId);
 
         // Assert
         Assert.IsType<NotFoundObjectResult>(result.Result);
@@ -107,7 +107,7 @@ public class LocationsControllerTests
             .ReturnsAsync(locations);
 
         // Act
-        var result = await _controller.GetLocationsByState("CA");
+        var result = await _controller.GetLocationsByState("CA", TestUserId);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -129,7 +129,7 @@ public class LocationsControllerTests
             .ReturnsAsync(locations);
 
         // Act
-        var result = await _controller.GetLocationsByDateRange(startDate, endDate);
+        var result = await _controller.GetLocationsByDateRange(TestUserId, startDate, endDate);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -145,7 +145,7 @@ public class LocationsControllerTests
         var endDate = new DateTime(2024, 1, 1);
 
         // Act
-        var result = await _controller.GetLocationsByDateRange(startDate, endDate);
+        var result = await _controller.GetLocationsByDateRange(TestUserId, startDate, endDate);
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -305,7 +305,7 @@ public class LocationsControllerTests
             .ReturnsAsync(stateCounts);
 
         // Act
-        var result = await _controller.GetLocationsByStateCount();
+        var result = await _controller.GetLocationsByStateCount(TestUserId);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
