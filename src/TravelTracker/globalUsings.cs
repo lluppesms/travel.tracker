@@ -6,7 +6,7 @@ global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Identity.Web;
 global using Microsoft.Identity.Web.UI;
 global using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-global using Microsoft.OpenApi.Models;
+global using Microsoft.OpenApi;
 global using ModelContextProtocol.Server;
 global using System.ComponentModel;
 global using System.Net.Http.Headers;

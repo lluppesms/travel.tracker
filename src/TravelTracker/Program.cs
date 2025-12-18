@@ -131,12 +131,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
     {
         Title = "Travel Tracker API",
         Version = "v1",
         Description = "API for managing travel locations, national parks, and location types. Designed for MCP protocol integration and Agent Framework usage.",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        Contact = new Microsoft.OpenApi.OpenApiContact
         {
             Name = "Travel Tracker",
             Url = new Uri("https://github.com/lluppesms/travel.tracker")
@@ -158,18 +158,17 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.ApiKey,
         In = ParameterLocation.Header,
         Description = "API Key required for secured endpoints",
-        Reference = new OpenApiReference
-        {
-            Type = ReferenceType.SecurityScheme,
-            Id = "ApiKeyAuth"
-        }
+        //Reference = new OpenApiReference
+        //{
+        //    Type = ReferenceType.SecurityScheme,
+        //    Id = "ApiKeyAuth"
+        //}
     };
     options.AddSecurityDefinition("ApiKeyAuth", securityScheme);
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            { securityScheme, Array.Empty<string>() }
-        });
-
+    //options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    //    {
+    //        { securityScheme, Array.Empty<string>() }
+    //    });
 });
 
 // Add HTTP context accessor for getting authenticated user
