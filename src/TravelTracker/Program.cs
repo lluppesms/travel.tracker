@@ -172,24 +172,26 @@ builder.Services.AddSwaggerGen(options =>
 
 });
 
-// Add Model Context Protocol (MCP) Server
-if (!string.IsNullOrEmpty(sqlConnectionString))
-{
-    Console.WriteLine("Configuring MCP server...");
-    builder.Services.AddMcpServer(options =>
-    {
-        options.ServerInfo = new()
-        {
-            Name = "Travel Tracker MCP Server",
-            Version = "1.0.0"
-        };
-    }).WithHttpTransport()
-      .WithToolsFromAssembly();
-}
-
 // Add HTTP context accessor for getting authenticated user
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
+
+// Add Model Context Protocol (MCP) Server
+Console.WriteLine("Configuring MCP server...");
+builder.Services.AddMcpServer(options =>
+{
+    options.ServerInfo = new()
+    {
+        Name = "Travel Tracker MCP Server",
+        Version = "1.0.0"
+    };
+}).WithHttpTransport( options =>
+{
+    // See: https://deepwiki.com/donaldmucci/mcp-csharp-sdk/5.1-http-endpoint-configuration
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.MaxIdleSessionCount = 500;
+})
+.WithToolsFromAssembly();
 
 // Add Weather Tool for MCP Servers
 builder.Services.AddHttpClient("WeatherAPI", client =>
@@ -240,11 +242,22 @@ app.MapRazorComponents<App>()
 // it doesn't inherit that attribute, and the [AllowAnonymous] on MCP tool classes don't automatically apply to the MCP endpoint mappings.
 // Adding the ".AllowAnonymous()" option to make it apply to all MCP servers...
 // The internal mechanism in the tools will check the user access by API Key as it's called
+
+// Ask the agent:
+// is there an issue having this in an API? can we initiate SSE connection?
+// give the agent the SDK URL and use that, add in DeepWiki and Context7 for context
+// use plan mode first with claude sonnet, then use GPT Codex to do a critical review of the planned code
+
 // Map MCP endpoints
-if (!string.IsNullOrEmpty(builder.Configuration["SqlServer:ConnectionString"]))
-{
-    app.MapMcp("/api/mcp").AllowAnonymous();
-    Console.WriteLine("MCP server endpoint configured at /api/mcp");
-}
+app.MapMcp("/api/mcp").AllowAnonymous();
+//app.MapMcp("/api/mcp", mcp =>
+//{
+//    mcp.WithHttpTransport(options =>
+//    {
+//        options.SessionTimeout = TimeSpan.FromHours(1); // Auto-close idle sessions
+//        options.MaxSessions = 10000;                    // Limit concurrent sessions
+//    })
+//    .AllowAnonymous();
+Console.WriteLine("MCP server endpoint configured at /api/mcp");
 
 app.Run();

@@ -10,6 +10,7 @@ global using Microsoft.OpenApi.Models;
 global using ModelContextProtocol.Server;
 global using System.ComponentModel;
 global using System.Net.Http.Headers;
+global using System.Text.Json;
 
 global using TravelTracker.Components;
 global using TravelTracker.Data;

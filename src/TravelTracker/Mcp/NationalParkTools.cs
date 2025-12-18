@@ -19,7 +19,7 @@ public class NationalParkTools
     /// <summary>
     /// Get all national parks
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_all_national_parks")]
     [Description("Get a list of all US national parks in the database. No authentication required.")]
     public async Task<IEnumerable<NationalPark>> GetAllNationalParks()
     {
@@ -29,7 +29,7 @@ public class NationalParkTools
     /// <summary>
     /// Get a national park by ID and state
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_national_park_by_id")]
     [Description("Get details of a specific national park by its ID and state code.")]
     public async Task<NationalPark?> GetNationalParkById(
     [Description("The unique identifier of the national park")] int parkId,
@@ -46,7 +46,7 @@ public class NationalParkTools
     /// <summary>
     /// Get national parks by state
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_national_parks_by_state")]
     [Description("Get all national parks in a specific US state.")]
     public async Task<IEnumerable<NationalPark>> GetNationalParksByState(
     [Description("Two-letter US state code (e.g., 'CA', 'WY', 'UT')")] string state)
@@ -57,7 +57,7 @@ public class NationalParkTools
     /// <summary>
     /// Get visited national parks
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_visited_national_parks")]
     [Description("Get all national parks that the authenticated user has visited. Requires authentication.")]
     public async Task<IEnumerable<NationalPark>> GetVisitedNationalParks()
     {

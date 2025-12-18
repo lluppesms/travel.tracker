@@ -10,9 +10,7 @@ public class ChatbotTools
     private readonly IChatbotService _chatbotService;
     private readonly IAuthenticationService _authenticationService;
 
-    public ChatbotTools(
-        IChatbotService chatbotService,
-        IAuthenticationService authenticationService)
+    public ChatbotTools(IChatbotService chatbotService, IAuthenticationService authenticationService)
     {
         _chatbotService = chatbotService;
         _authenticationService = authenticationService;
@@ -21,7 +19,7 @@ public class ChatbotTools
     /// <summary>
     /// Send a message to the travel chatbot
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "send_message_to_chatbot")]
     [Description("Send a message to the AI travel assistant and get a response. The chatbot can answer questions about your travel history, locations visited, and provide travel recommendations. Requires authentication.")]
     public async Task<ChatbotResponse> SendMessageToChatbot(
         [Description("The message or question to send to the chatbot")] string message,

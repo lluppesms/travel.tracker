@@ -10,9 +10,7 @@ public class LocationTools
     private readonly ILocationService _locationService;
     private readonly IAuthenticationService _authenticationService;
 
-    public LocationTools(
-        ILocationService locationService,
-        IAuthenticationService authenticationService)
+    public LocationTools(ILocationService locationService, IAuthenticationService authenticationService)
     {
         _locationService = locationService;
         _authenticationService = authenticationService;
@@ -21,7 +19,7 @@ public class LocationTools
     /// <summary>
     /// Get all locations for the authenticated user
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_all_locations")]
     [Description("Get all travel locations for the authenticated user. Returns a list of all visited locations including RV parks, national parks, and other travel destinations.")]
     public async Task<IEnumerable<Location>> GetAllLocations()
     {
@@ -37,7 +35,7 @@ public class LocationTools
     /// <summary>
     /// Get a specific location by ID
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_location_by_id")]
     [Description("Get details of a specific location by its ID. Requires authentication and user must own the location.")]
     public async Task<Location?> GetLocationById(
     [Description("The unique identifier of the location")] int locationId)
@@ -54,7 +52,7 @@ public class LocationTools
     /// <summary>
     /// Get locations by state
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_locations_by_state")]
     [Description("Get all locations in a specific US state. Useful for viewing travel history in a particular state.")]
     public async Task<IEnumerable<Location>> GetLocationsByState(
     [Description("Two-letter US state code (e.g., 'CA', 'NY', 'WY')")] string state)
@@ -71,7 +69,7 @@ public class LocationTools
     /// <summary>
     /// Get locations by date range
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_locations_by_date_range")]
     [Description("Get all locations visited within a specific date range. Useful for reviewing trips during a particular time period.")]
     public async Task<IEnumerable<Location>> GetLocationsByDateRange(
         [Description("Start date in ISO 8601 format (e.g., '2024-01-01')")] DateTime startDate,
@@ -94,7 +92,7 @@ public class LocationTools
     /// <summary>
     /// Get location count by state
     /// </summary>
-    [McpServerTool]
+    [McpServerTool(Name = "get_location_count_by_state")]
     [Description("Get a count of locations grouped by US state. Shows how many places have been visited in each state.")]
     public async Task<Dictionary<string, int>> GetLocationCountByState()
     {

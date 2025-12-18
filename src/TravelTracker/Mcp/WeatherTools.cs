@@ -1,10 +1,9 @@
-using System.Text.Json;
-
 namespace TravelTracker.Mcp;
 
 public record LocationPoint(
     [property: Description("Latitude in decimal degrees")] double Latitude,
-    [property: Description("Longitude in decimal degrees")] double Longitude);
+    [property: Description("Longitude in decimal degrees")] double Longitude
+);
 
 [AllowAnonymous]
 [McpServerToolType]
@@ -17,7 +16,7 @@ public class WeatherTools
         _httpClientFactory = httpClientFactory;
     }
 
-    [McpServerTool, Description("Get weather forecast for a specified location point")]
+    [McpServerTool(Name = "get_weather_forecast"), Description("Get weather forecast for a specified location point")]
     public async Task<string> GetForecast([Description("Location coordinates")] LocationPoint locationPoint)
     {
         if (locationPoint is null)
