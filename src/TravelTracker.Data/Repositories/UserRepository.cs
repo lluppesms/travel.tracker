@@ -23,6 +23,13 @@ public class UserRepository : IUserRepository
         return user;
     }
 
+    public async Task<Models.User?> GetByApiKeyAsync(string apiKey)
+    {
+        _ = await Task.FromResult(true);
+        var user = _context.Users.FirstOrDefault(u => u.ApiKey == apiKey);
+        return user;
+    }
+
     public async Task<Models.User> CreateAsync(Models.User user)
     {
         _ = await Task.FromResult(true);

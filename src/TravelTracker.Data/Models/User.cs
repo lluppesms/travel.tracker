@@ -1,6 +1,7 @@
 namespace TravelTracker.Data.Models;
 
 [Table("Users")]
+//[Index(nameof(ApiKey), IsUnique = true)]
 public class User
 {
     [Key]
@@ -21,6 +22,9 @@ public class User
     [Required]
     [MaxLength(50)]
     public string EntraIdUserId { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? ApiKey { get; set; }
 
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 

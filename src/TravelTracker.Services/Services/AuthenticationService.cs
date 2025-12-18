@@ -9,46 +9,56 @@ public class AuthenticationService : IAuthenticationService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
     private readonly string? _apiKey;
+    private readonly string? _apiKeyUserId;
+    private readonly string? _apiKeyEmailAddress;
 
     public AuthenticationService(IHttpContextAccessor httpContextAccessor, IUserService userService, IConfiguration configuration)
     {
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
         _apiKey = configuration["ApiKey"];
+        _apiKeyUserId = configuration["ApiKey_UserID"];
+        _apiKeyEmailAddress = configuration["ApiKey_EmailAddress"];
     }
 
     public int GetCurrentUserInternalId()
     {
+        // check to see if the user is already logged in via Entra ID
         var entraId = GetCurrentUserEntraId();
+
         if (string.IsNullOrEmpty(entraId))
         {
-            // check for valid apikey and userid header
+            // check for valid apikey header
             var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext != null
-                && httpContext.Request.Headers.TryGetValue("X-API-Key", out var suppliedApiKey)
-                && httpContext.Request.Headers.TryGetValue("X-User-Id", out var userIdHeader)
-                && httpContext.Request.Headers.TryGetValue("X-User-Email", out var userEmailHeader))
+            if (httpContext != null && httpContext.Request.Headers.TryGetValue("X-API-Key", out var suppliedApiKey))
             {
-                if (suppliedApiKey == _apiKey)
+                // First, check if the API key matches the config-based API key
+                if (!string.IsNullOrEmpty(_apiKey) && suppliedApiKey == _apiKey)
                 {
-                    if (int.TryParse(userIdHeader, out var userId))
+                    // Use config-based user credentials
+                    if (!string.IsNullOrEmpty(_apiKeyUserId) && int.TryParse(_apiKeyUserId, out var configUserId))
                     {
-                        var _requestedUser = _userService.GetUserByIdAsync(userId).GetAwaiter().GetResult();
-                        if (_requestedUser != null && _requestedUser.Email == userEmailHeader)
+                        var configUser = _userService.GetUserByIdAsync(configUserId).GetAwaiter().GetResult();
+                        if (configUser != null &&
+                            (string.IsNullOrEmpty(_apiKeyEmailAddress) || configUser.Email == _apiKeyEmailAddress))
                         {
-                            return userId;
+                            return configUserId;
                         }
+                    }
+                }
+                else
+                {
+                    // Check if the API key matches a user record in the database
+                    var userByApiKey = _userService.GetUserByApiKeyAsync(suppliedApiKey.ToString()).GetAwaiter().GetResult();
+                    if (userByApiKey != null)
+                    {
+                        return userByApiKey.Id;
                     }
                 }
             }
             return 0;
         }
-        //if (string.IsNullOrEmpty(entraId))
-        //{
-        //    // fallback test id
-        //    var testUser = _userService.GetOrCreateUserAsync("TEST_USER_ENTRA", "Test User", "test@example.com").GetAwaiter().GetResult();
-        //    return testUser.Id;
-        //}
+
         var displayName = GetCurrentUserDisplayName();
         var email = GetCurrentUserEmail();
         var user = _userService.GetOrCreateUserAsync(entraId, displayName, email).GetAwaiter().GetResult();

@@ -73,7 +73,13 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
 {
     Console.WriteLine("Connecting to SQL Server database...");
     builder.Services.AddDbContext<TravelTrackerDbContext>(options =>
-        options.UseSqlServer(sqlConnectionString));
+        options.UseSqlServer(sqlConnectionString)
+               //.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+               //.EnableSensitiveDataLogging()
+               //.EnableDetailedErrors()
+               );
+
+    Console.WriteLine($"SQL Connection String: {sqlConnectionString}");
 
     // Add repositories
     builder.Services.AddScoped<ILocationRepository, LocationRepository>();
@@ -236,14 +242,12 @@ app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-
-
-//When Azure AD is configured and FallbackPolicy = DefaultPolicy - all endpoints without an explicit authorization policy require authentication by default
-//The [AllowAnonymous] attribute on LocationTools is a class-level attribute, but the MCP endpoint is mapped via app.MapMcp("/api/mcp"),
-// which doesn't inherit that attribute.When Azure AD is configured, you're setting FallbackPolicy = DefaultPolicy.
-// This means all endpoints without an explicit authorization policy require authentication by default — and [AllowAnonymous] on MCP tool classes doesn't automatically apply to the MCP endpoint mapping.
-// Add the ".AllowAnonymous()" method to make it apply to all...
-// Map MCP endpoint
+// Note: When Azure AD is configured and FallbackPolicy = DefaultPolicy - all endpoints without an explicit authorization policy require authentication by default
+// The [AllowAnonymous] attribute on LocationTools is a class-level attribute, but since the MCP endpoint is mapped via app.MapMcp("/api/mcp"),
+// it doesn't inherit that attribute, and the [AllowAnonymous] on MCP tool classes don't automatically apply to the MCP endpoint mappings.
+// Adding the ".AllowAnonymous()" option to make it apply to all MCP servers...
+// The internal mechanism in the tools will check the user access by API Key as it's called
+// Map MCP endpoints
 if (!string.IsNullOrEmpty(builder.Configuration["SqlServer:ConnectionString"]))
 {
     app.MapMcp("/api/mcp").AllowAnonymous();

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<DataComparison>
+  <Version>10</Version>
+  <ConnectionProperties1>
+    <ConnectionString>Server=tcp:llltravels-sql-dev.database.windows.net,1433;Initial Catalog=traveltracker;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication='Active Directory Default';</ConnectionString>
+    <FullDisplayName>lll-azure-sql-dev.database.windows.net.TravelTrackerDB</FullDisplayName>
+  </ConnectionProperties1>
+  <ConnectionProperties2>
+    <ConnectionString>Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true</ConnectionString>
+    <FullDisplayName>..TravelTrackerDB (REDMOND\lyleluppes)</FullDisplayName>
+  </ConnectionProperties2>
+  <SessionSettings>Default</SessionSettings>
+</DataComparison>

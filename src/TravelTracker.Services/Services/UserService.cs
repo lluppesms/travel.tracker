@@ -19,6 +19,11 @@ public class UserService : IUserService
         return await _userRepository.GetByEntraIdAsync(entraIdUserId);
     }
 
+    public async Task<User?> GetUserByApiKeyAsync(string apiKey)
+    {
+        return await _userRepository.GetByApiKeyAsync(apiKey);
+    }
+
     public async Task<User> GetOrCreateUserAsync(string entraIdUserId, string username, string email)
     {
         var user = await _userRepository.GetByEntraIdAsync(entraIdUserId);

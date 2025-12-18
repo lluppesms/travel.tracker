@@ -6,6 +6,7 @@ public interface IUserService
 {
     Task<User?> GetUserByIdAsync(int id);
     Task<User?> GetUserByEntraIdAsync(string entraIdUserId);
+    Task<User?> GetUserByApiKeyAsync(string apiKey);
     Task<User> GetOrCreateUserAsync(string entraIdUserId, string username, string email);
     Task UpdateLastLoginAsync(int userId);
 }

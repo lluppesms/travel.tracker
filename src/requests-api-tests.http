@@ -3,36 +3,27 @@
 # Variables
 @baseServer = https://localhost:7134
 @apiKey = myapikey
-@userId = 1
-@userEmail = lyleluppes@microsoft.com
 
 ### Health check (no API key required)
 GET {{baseServer}}/api/healthz
 
-
 ### Swagger file
 GET {{baseServer}}/api/swagger/swagger.json
-
 
 ### Get National Parks
 GET {{baseServer}}/api/nationalparks
 Accept: application/json
 X-API-Key: {{apiKey}}
 
-
 ###  Get locations
 GET {{baseServer}}/api/locations
 Accept: application/json
 X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
 
 ###  Get locations for Texas
 GET {{baseServer}}/api/locations/by-state/TX
 Accept: application/json
 X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
 
 
 ### Negative test - Missing API key should return 401

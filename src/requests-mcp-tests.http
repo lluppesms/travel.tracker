@@ -4,17 +4,12 @@
 # Variables
 @baseServer = https://localhost:7134/api/mcp
 @apiKey = myapikey
-@userId = 1
-@userEmail = lyleluppes@microsoft.com
-
 
 ### 1. List all available MCP tools
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
 X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
 
 {
    "jsonrpc": "2.0",
@@ -23,7 +18,7 @@ X-User-Email: {{userEmail}}
    "params": {}
 }
 
-### 2. Call Time Tool - Get current time (UTC and local)
+### 2. Call GetAllNationalParks Tool - Get list of all national parks
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -34,12 +29,16 @@ X-API-Key: {{apiKey}}
    "id": 2,
    "method": "tools/call",
    "params": {
-      "name": "GetCurrentTime",
+      "name": "get_all_national_parks",
       "arguments": {}
    }
 }
 
-### 3. Call Weather Tool - Get forecast for Washington DC coordinates
+###############################################################################
+# Location Tools - Requires User Authentication Headers
+###############################################################################
+
+### 3. GetAllLocations - Get all locations for the authenticated user
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -50,17 +49,12 @@ X-API-Key: {{apiKey}}
    "id": 3,
    "method": "tools/call",
    "params": {
-      "name": "GetForecast",
-      "arguments": {
-         "locationPoint": {
-            "latitude": 38.8894,
-            "longitude": -77.0352
-         }
-      }
+      "name": "get_all_locations",
+      "arguments": {}
    }
 }
 
-### 4. Call GetAllNationalParks Tool - Get list of all national parks
+### 4. Call Locations Tool - Get list of all locations in one state I've visited
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -71,83 +65,22 @@ X-API-Key: {{apiKey}}
    "id": 4,
    "method": "tools/call",
    "params": {
-      "name": "GetAllNationalParks",
-      "arguments": {}
-   }
-}
-
-###############################################################################
-# Location Tools - Requires User Authentication Headers
-###############################################################################
-
-### 5. GetAllLocations - Get all locations for the authenticated user
-POST {{baseServer}}
-Content-Type: application/json
-Accept: application/json, text/event-stream
-X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
-
-{
-   "jsonrpc": "2.0",
-   "id": 5,
-   "method": "tools/call",
-   "params": {
-      "name": "get_all_locations",
-      "arguments": {}
-   }
-}
-
-### 6. Call get_all_national_parks Tool - Get list of all locations I've visited
-POST {{baseServer}}
-Content-Type: application/json
-Accept: application/json, text/event-stream
-X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
-
-{
-   "jsonrpc": "2.0",
-   "id": 3,
-   "method": "tools/call",
-   "params": {
-      "name": "get_all_national_parks",
-      "arguments": { }
-   }
-}
-
-
-
-### 6. Call Locations Tool - Get list of all locations in one state I've visited
-POST {{baseServer}}
-Content-Type: application/json
-Accept: application/json, text/event-stream
-X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
-
-{
-   "jsonrpc": "2.0",
-   "id": 3,
-   "method": "tools/call",
-   "params": {
       "name": "get_locations_by_state",
       "arguments": {
          "state": "TX"
       }
    }
 }
-### 8. GetLocationsByDateRange - Get locations visited in 2024
+
+### 5. GetLocationsByDateRange - Get locations visited in 2024
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
 X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
 
 {
    "jsonrpc": "2.0",
-   "id": 8,
+   "id": 5,
    "method": "tools/call",
    "params": {
       "name": "get_locations_by_date_range",
@@ -158,17 +91,15 @@ X-User-Email: {{userEmail}}
    }
 }
 
-### 9. GetLocationCountByState - Get count of locations grouped by state
+### 6. GetLocationCountByState - Get count of locations grouped by state
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
 X-API-Key: {{apiKey}}
-X-User-Id: {{userId}}
-X-User-Email: {{userEmail}}
 
 {
    "jsonrpc": "2.0",
-   "id": 9,
+   "id": 6,
    "method": "tools/call",
    "params": {
       "name": "get_location_count_by_state",
@@ -251,10 +182,11 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 12. Weather forecast for different location (San Francisco)
+
+### 12. Call Time Tool - Get current time (UTC and local)
 POST {{baseServer}}
 Content-Type: application/json
-Accept: application/json
+Accept: application/json, text/event-stream
 X-API-Key: {{apiKey}}
 
 {
@@ -262,7 +194,44 @@ X-API-Key: {{apiKey}}
    "id": 12,
    "method": "tools/call",
    "params": {
-      "name": "GetForecast",
+      "name": "get_current_time",
+      "arguments": {}
+   }
+}
+
+### 13. Call Weather Tool - Get forecast for Washington DC coordinates
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 13,
+   "method": "tools/call",
+   "params": {
+      "name": "get_forecast",
+      "arguments": {
+         "locationPoint": {
+            "latitude": 38.8894,
+            "longitude": -77.0352
+         }
+      }
+   }
+}
+
+### 14. Weather forecast for different location (San Francisco)
+POST {{baseServer}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+X-API-Key: {{apiKey}}
+
+{
+   "jsonrpc": "2.0",
+   "id": 14,
+   "method": "tools/call",
+   "params": {
+      "name": "get_forecast",
       "arguments": {
          "locationPoint": {
             "latitude": 37.7749,
@@ -272,7 +241,7 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 13. JSON-RPC request without ID (notification) - Should not return response
+### 15. JSON-RPC request without ID (notification) - Should not return response
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -284,7 +253,7 @@ X-API-Key: {{apiKey}}
    "params": {}
 }
 
-### 14. Batch JSON-RPC request - Multiple tools in one request
+### 16. Batch JSON-RPC request - Multiple tools in one request
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -293,13 +262,13 @@ X-API-Key: {{apiKey}}
 [
    {
       "jsonrpc": "2.0",
-      "id": 14,
+      "id": 16,
       "method": "tools/list",
       "params": {}
    },
    {
       "jsonrpc": "2.0",
-      "id": 15,
+      "id": 17,
       "method": "tools/call",
       "params": {
          "name": "GetCurrentTime",
@@ -308,7 +277,7 @@ X-API-Key: {{apiKey}}
    }
 ]
 
-### 15. Test with malformed JSON - Should return parse error
+### 18. Test with malformed JSON - Should return parse error
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json
@@ -316,7 +285,7 @@ X-API-Key: {{apiKey}}
 
 {
    "jsonrpc": "2.0",
-   "id": 16,
+   "id": 18,
    "method": "tools/list",
    "params": {
 }
