@@ -20,11 +20,15 @@ GET {{baseServer}}/api/locations
 Accept: application/json
 X-API-Key: {{apiKey}}
 
-###  Get locations for Texas
+###  Get locations visited in Texas
 GET {{baseServer}}/api/locations/by-state/TX
 Accept: application/json
 X-API-Key: {{apiKey}}
 
+###  Get count of locations visited in each state
+GET {{baseServer}}/api/locations/count-by-state
+Accept: application/json
+X-API-Key: {{apiKey}}
 
 ### Negative test - Missing API key should return 401
 GET {{baseServer}}/api/nationalparks

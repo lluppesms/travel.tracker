@@ -38,7 +38,7 @@ X-API-Key: {{apiKey}}
 # Location Tools - Requires User Authentication Headers
 ###############################################################################
 
-### 3. GetAllLocations - Get all locations for the authenticated user
+### 3. Get all locations the authenticated user has visited
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -54,7 +54,7 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 4. Call Locations Tool - Get list of all locations in one state I've visited
+### 4. Get list of all locations in one state that have been visited
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -72,7 +72,7 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 5. GetLocationsByDateRange - Get locations visited in 2024
+### 5. Get locations visited in 2025
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
@@ -91,7 +91,7 @@ X-API-Key: {{apiKey}}
    }
 }
 
-### 6. GetLocationCountByState - Get count of locations grouped by state
+### 6. Get number of locations visited for each state
 POST {{baseServer}}
 Content-Type: application/json
 Accept: application/json, text/event-stream

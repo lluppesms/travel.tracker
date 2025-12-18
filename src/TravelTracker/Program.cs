@@ -72,14 +72,7 @@ var sqlConnectionString = builder.Configuration["SqlServer:ConnectionString"];
 if (!string.IsNullOrEmpty(sqlConnectionString))
 {
     Console.WriteLine("Connecting to SQL Server database...");
-    builder.Services.AddDbContext<TravelTrackerDbContext>(options =>
-        options.UseSqlServer(sqlConnectionString)
-               //.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
-               //.EnableSensitiveDataLogging()
-               //.EnableDetailedErrors()
-               );
-
-    Console.WriteLine($"SQL Connection String: {sqlConnectionString}");
+    builder.Services.AddDbContext<TravelTrackerDbContext>(options => options.UseSqlServer(sqlConnectionString));
 
     // Add repositories
     builder.Services.AddScoped<ILocationRepository, LocationRepository>();

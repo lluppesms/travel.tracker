@@ -39,8 +39,7 @@ public class AuthenticationService : IAuthenticationService
                     if (!string.IsNullOrEmpty(_apiKeyUserId) && int.TryParse(_apiKeyUserId, out var configUserId))
                     {
                         var configUser = _userService.GetUserByIdAsync(configUserId).GetAwaiter().GetResult();
-                        if (configUser != null &&
-                            (string.IsNullOrEmpty(_apiKeyEmailAddress) || configUser.Email == _apiKeyEmailAddress))
+                        if (configUser != null && (string.IsNullOrEmpty(_apiKeyEmailAddress) || configUser.Email == _apiKeyEmailAddress))
                         {
                             return configUserId;
                         }
