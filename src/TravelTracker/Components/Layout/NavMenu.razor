@@ -28,7 +28,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @GetActiveClass(RouteBucketList)" href="bucketlist" @onclick="NavigateToBucketList" @onclick:preventDefault>
-                        <span class="bi bi-list-check" aria-hidden="true"></span> Bucket List
+                        <span class="bi bi-geo-alt-fill" aria-hidden="true"></span> Bucket List
                     </a>
                 </li>
                 <li class="nav-item">
@@ -116,13 +116,13 @@
     private async Task NavigateWithSpinner(string path)
     {
         var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        
+
         // Only show spinner if navigating to a different page
         if (!string.Equals(currentPath, path, StringComparison.OrdinalIgnoreCase))
         {
             await OnNavigating.InvokeAsync();
         }
-        
+
         collapseNavMenu = true;
         NavigationManager.NavigateTo(path);
     }

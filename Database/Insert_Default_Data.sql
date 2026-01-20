@@ -166,7 +166,7 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 (3, 'Gerald R. Ford Presidential Museum', 'Michigan', 42.9664, -85.6741, 'Located in Grand Rapids, Michigan. Dedicated to America''s 38th President.'),
 (3, 'Jimmy Carter Presidential Library and Museum', 'Georgia', 33.7677, -84.3486, 'Located in Atlanta, Georgia. Dedicated to America''s 39th President.'),
 (3, 'Ronald Reagan Presidential Library and Museum', 'California', 34.2596, -118.8196, 'Located in Simi Valley, California. Dedicated to America''s 40th President.'),
-(3, 'George Bush Presidential Library and Museum', 'Texas', 30.6154, -96.3141, 'Located in College Station, Texas. Dedicated to America''s 41st President.'),
+(3, 'George H. W. Bush Presidential Library and Museum', 'Texas', 30.6154, -96.3141, 'Located in College Station, Texas. Dedicated to America''s 41st President.'),
 (3, 'William J. Clinton Presidential Library and Museum', 'Arkansas', 34.7466, -92.2635, 'Located in Little Rock, Arkansas. Dedicated to America''s 42nd President.'),
 (3, 'George W. Bush Presidential Library and Museum', 'Texas', 32.8407, -96.7784, 'Located in Dallas, Texas. Dedicated to America''s 43rd President.')
 
