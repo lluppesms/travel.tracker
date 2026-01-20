@@ -33,8 +33,8 @@ DECLARE @types TABLE (
 )
 IF @UserName IS NULL SET @UserName = 'lyleluppes@microsoft.com'
 
-select @UserId = Id from Users Where Username = @UserName or Email = @UserName
-Select 'UserDefinition' as TableName, @UserId, u.Username, u.Email FROM Users U where Id = @UserId
+SELECT @UserId = Id FROM Users WHERE Username = @UserName OR Email = @UserName
+SELECT 'UserDefinition' as TableName, @UserId, u.Username, u.Email FROM Users U WHERE Id = @UserId
 
 INSERT INTO @places
 SELECT l.Name, l.TripName, l.LocationType, l.Address, l.City, l.State, l.Latitude, l.Longitude, l.StartDate, l.EndDate, l.Rating, l.Comments

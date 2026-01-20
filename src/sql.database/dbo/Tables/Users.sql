@@ -22,6 +22,7 @@ GO
 -- Indexes
 CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_ApiKey] ON [dbo].[Users]
 ([ApiKey] ASC)
+WHERE [ApiKey] IS NOT NULL
 GO
 
 CREATE NONCLUSTERED INDEX [IX_Users_Email] ON [dbo].[Users]
