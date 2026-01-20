@@ -51,9 +51,12 @@ param sqlAdminUser string = ''
 @secure()
 param sqlAdminPassword string = ''
 
-param sqlADAdminLoginUserId string = ''
-param sqlADAdminLoginUserSid string = ''
-param sqlADAdminLoginTenantId string = ''
+// param sqlADAdminLoginUserId string = ''
+// param sqlADAdminLoginUserSid string = ''
+// param sqlADAdminLoginTenantId string = ''
+param sqlAdminLoginUserId string = ''
+param sqlAdminLoginUserSid string = ''
+param sqlAdminLoginTenantId string = ''
 
 param runDateTime string = utcNow()
 
@@ -121,15 +124,13 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
     autopause: 60
     location: location
     commonTags: commonTags
-    adAdminUserId: sqlADAdminLoginUserId
-    adAdminUserSid: sqlADAdminLoginUserSid
-    adAdminTenantId: sqlADAdminLoginTenantId
-    //userAssignedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    adAdminUserId: sqlAdminLoginUserId
+    adAdminUserSid: sqlAdminLoginUserSid
+    adAdminTenantId: sqlAdminLoginTenantId
     userAssignedIdentityResourceId: identity.outputs.managedIdentityId
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
-    // storageAccountName: resourceNames.outputs.storageAccountName
   }
 }
 

@@ -22,9 +22,9 @@ param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME
 param existingSqlServerName = '#{EXISTING_SQLSERVER_NAME}#'
 param existingSqlServerResourceGroupName = '#{EXISTING_SQLSERVER_RESOURCE_GROUP_NAME}#'
 
-param sqlADAdminLoginUserId = '#{AD_SQL_ADMIN_USERID}#'
-param sqlADAdminLoginUserSid = '#{AD_SQL_ADMIN_SID}#'
-param sqlADAdminLoginTenantId = '#{AD_SQL_ADMIN_TENANTID}#'
+param sqlAdminLoginUserId = '#{SQLADMIN_LOGIN_USERID}#'
+param sqlAdminLoginUserSid = '#{SQLADMIN_LOGIN_USERSID}#'
+param sqlAdminLoginTenantId = '#{SQLADMIN_LOGIN_TENANTID}#'
 
 param azureMapsSubscriptionKey = '#{AZUREMAPS_SUBSCRIPTIONKEY}#'
 param azureMapsClientId = '#{AZUREMAPS_CLIENTID}#'

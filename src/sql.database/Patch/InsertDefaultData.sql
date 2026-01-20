@@ -9,13 +9,13 @@ delete from DestinationTypes
 GO
 delete from locationTypes
 GO
-delete from locations
-GO
+-- delete from locations
+-- GO
 
 DBCC CHECKIDENT ('Destinations', RESEED, 0)
 DBCC CHECKIDENT ('DestinationTypes', RESEED, 0)
 DBCC CHECKIDENT ('LocationTypes', RESEED, 0)
-DBCC CHECKIDENT ('Locations', RESEED, 0)
+-- DBCC CHECKIDENT ('Locations', RESEED, 0)
 
 Print 'Inserting LocationTypes'
 INSERT INTO LocationTypes (Name, Description) VALUES
