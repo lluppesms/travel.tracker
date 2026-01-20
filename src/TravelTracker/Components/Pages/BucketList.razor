@@ -163,6 +163,7 @@
     private Dictionary<int, string> destinationTypeNames = new();
     private bool isLoading = false;
     private bool isMapInitialized = false;
+    private bool afterRenderCalled = false;
     private string errorMessage = string.Empty;
     private int currentUserId;
     private string? azureMapsKey;
@@ -188,6 +189,12 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!afterRenderCalled)
+        {
+            afterRenderCalled = true;
+            Logger.LogInformation("BucketList.OnAfterRenderAsync invoked. firstRender={FirstRender}", firstRender);
+        }
+
         if (firstRender && !string.IsNullOrEmpty(azureMapsKey) && !isMapInitialized)
         {
             if (!isLoading)
@@ -307,7 +314,9 @@
         finally
         {
             isLoading = false;
-            if (!isMapInitialized && !string.IsNullOrEmpty(azureMapsKey))
+            // Only initialize map if we're past prerendering (afterRenderCalled)
+            // JS interop is not available during prerendering
+            if (afterRenderCalled && !isMapInitialized && !string.IsNullOrEmpty(azureMapsKey))
             {
                 await InitializeMap();
             }

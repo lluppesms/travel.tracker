@@ -382,7 +382,9 @@
         {
             isLoading = false;
             // Initialize map now if it was deferred
-            if (!isMapInitialized && !string.IsNullOrEmpty(azureMapsKey))
+            // Only initialize map if we're past prerendering (afterRenderCalled)
+            // JS interop is not available during prerendering
+            if (afterRenderCalled && !isMapInitialized && !string.IsNullOrEmpty(azureMapsKey))
             {
                 await InitializeMap();
             }
