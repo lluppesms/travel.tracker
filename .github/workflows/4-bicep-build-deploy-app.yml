@@ -4,7 +4,7 @@
 # FYI: You need to set up some secrets before running this workflows - see CreateGitHubSecrets.md for details.
 # ------------------------------------------------------------------------------------------------------------------------
 name: 4.bicep.build.deploy.app
-run-name: '4 - Deploy Bicep/Build & Deploy App: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} by @${{ github.actor }}'
+run-name: '4 - Deploy Bicep/Build & Deploy App: ${{ inputs.bicepDeploymentMode }} using ENV ${{ inputs.deployEnvironment }} ${{vars.INSTANCE_NUMBER}} by @${{ github.actor }}'
 
 on: 
   workflow_dispatch:
@@ -31,7 +31,7 @@ on:
       createResourceGroup:
         description: Create Resource Group?
         type: boolean
-        default: false
+        default: true
       runBuildDeploy:
         description: Build and Deploy App
         default: true

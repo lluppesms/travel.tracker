@@ -1,13 +1,12 @@
 // ----------------------------------------------------------------------------------------------------
 // Bicep Parameter File
 // ----------------------------------------------------------------------------------------------------
-
 using './main.bicep'
 
 param appName = '#{APP_NAME}#'
 param environmentCode = '#{envCode}#'
-
-param location = '#{RESOURCEGROUP_LOCATION}#'
+param location = '#{RESOURCE_GROUP_LOCATION}#'
+param instanceNumber = '#{INSTANCE_NUMBER}#'
 
 param apiKey = '#{API_KEY}#'
 
@@ -18,10 +17,10 @@ param adClientId = '#{LOGIN_CLIENTID}#'
 param adClientSecret = '#{LOGIN_CLIENTSECRET}#'
 
 param servicePlanName = '#{EXISTING_SERVICEPLAN_NAME}#'
-param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCEGROUP_NAME}#'
+param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME}#'
 
 param existingSqlServerName = '#{EXISTING_SQLSERVER_NAME}#'
-param existingSqlServerResourceGroupName = '#{EXISTING_SQLSERVER_RESOURCEGROUP_NAME}#'
+param existingSqlServerResourceGroupName = '#{EXISTING_SQLSERVER_RESOURCE_GROUP_NAME}#'
 
 param sqlADAdminLoginUserId = '#{AD_SQL_ADMIN_USERID}#'
 param sqlADAdminLoginUserSid = '#{AD_SQL_ADMIN_SID}#'

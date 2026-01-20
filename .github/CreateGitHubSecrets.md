@@ -33,8 +33,8 @@ Secret Values:
 gh auth login
 
 gh variable set APP_NAME -b "xxx-traveltracker"
-gh variable set RESOURCEGROUP_LOCATION -b "eastus"
-gh variable set RESOURCEGROUP_PREFIX -b "rg_traveltracker_webg" 
+gh variable set RESOURCE_GROUP_LOCATION -b "eastus"
+gh variable set RESOURCE_GROUP_PREFIX -b "rg_traveltracker_webg" 
 gh secret set API_KEY -b "somesecretstring"
 
 gh secret set LOGIN_CLIENTID -b "<yourADClientId>"
@@ -43,7 +43,7 @@ gh secret set LOGIN_DOMAIN -b "<yourdomain>.onmicrosoft.com"
 gh secret set LOGIN_INSTANCEENDPOINT -b "https://login.microsoftonline.com/"
 gh secret set LOGIN_TENANTID -b "<yourTenantId>"
 
-gh variable set RESOURCEGROUP_LOCATION -b "eastus"
+gh variable set RESOURCE_GROUP_LOCATION -b "eastus"
 
 gh variable set APP_PROJECT_FOLDER_NAME -b "src/TravelTracker"
 gh variable set APP_PROJECT_NAME -b "TravelTracker.Web"
