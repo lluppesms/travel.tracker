@@ -38,6 +38,13 @@
                             </label>
                         </div>
                         <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterStateHighPoints"
+                                   @bind="filterStateHighPoints" @bind:after="ApplyFilters">
+                            <label class="form-check-label" for="filterStateHighPoints">
+                                State High Points
+                            </label>
+                        </div>
+                        <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="filterHarvestHosts"
                                    @bind="filterHarvestHosts" @bind:after="ApplyFilters">
                             <label class="form-check-label" for="filterHarvestHosts">
@@ -220,6 +227,7 @@
 
     // New checkbox filters
     private bool filterNationalParks = false;
+    private bool filterStateHighPoints = false;
     private bool filterHarvestHosts = false;
     private bool filterPresidentialLibraries = false;
     private bool filterRVParks = false;
@@ -386,7 +394,7 @@
         filteredLocations = allLocations;
 
         // Apply location type filters
-        if (filterNationalParks || filterHarvestHosts || filterPresidentialLibraries ||
+        if (filterNationalParks || filterStateHighPoints || filterHarvestHosts || filterPresidentialLibraries ||
             filterRVParks || filterFamily || filterBoondocking)
         {
             filteredLocations = filteredLocations.Where(l =>
@@ -394,6 +402,8 @@
                 var locType = l.LocationType?.ToLower() ?? "";
 
                 if (filterNationalParks && (locType.Contains("national park") || locType.Contains("national monument")))
+                    return true;
+                if (filterStateHighPoints && locType.Contains("state high point"))
                     return true;
                 if (filterHarvestHosts && locType.Contains("harvest host"))
                     return true;
@@ -437,6 +447,7 @@
     private Task ClearFilters()
     {
         filterNationalParks = false;
+        filterStateHighPoints = false;
         filterHarvestHosts = false;
         filterPresidentialLibraries = false;
         filterRVParks = false;

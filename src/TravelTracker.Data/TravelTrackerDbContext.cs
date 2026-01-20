@@ -14,6 +14,7 @@ public class TravelTrackerDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Location> Locations { get; set; }
     public DbSet<NationalPark> NationalParks { get; set; }
+    public DbSet<HighPoint> HighPoints { get; set; }
     public DbSet<LocationType> LocationTypes { get; set; }
 
     //protected override void OnModelCreating(ModelBuilder modelBuilder)

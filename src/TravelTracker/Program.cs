@@ -78,12 +78,14 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<ILocationRepository, LocationRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<INationalParkRepository, NationalParkRepository>();
+    builder.Services.AddScoped<IHighPointRepository, HighPointRepository>();
     builder.Services.AddScoped<ILocationTypeRepository, LocationTypeRepository>();
 
     // Add services
     builder.Services.AddScoped<ILocationService, LocationService>();
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<INationalParkService, NationalParkService>();
+    builder.Services.AddScoped<IHighPointService, HighPointService>();
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
     builder.Services.AddScoped<IDataImportService, DataImportService>();
     builder.Services.AddScoped<IDataExportService, DataExportService>();

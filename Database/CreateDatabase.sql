@@ -46,6 +46,18 @@ CREATE TABLE [dbo].[NationalParks](
 )
 GO
 
+CREATE TABLE [dbo].[HighPoints](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Type] [nvarchar](50) NOT NULL,
+	[Name] [nvarchar](200) NOT NULL,
+	[State] [nvarchar](50) NOT NULL,
+	[Latitude] [float] NOT NULL,
+	[Longitude] [float] NOT NULL,
+	[Description] [nvarchar](max) NOT NULL,
+ CONSTRAINT [PK_HighPoints] PRIMARY KEY CLUSTERED ([Id] ASC)
+)
+GO
+
 CREATE TABLE [dbo].[Users](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Type] [nvarchar](50) NOT NULL,
@@ -77,6 +89,12 @@ CREATE NONCLUSTERED INDEX [IX_NationalParks_Name] ON [dbo].[NationalParks]
 ([Name] ASC)
 GO
 CREATE NONCLUSTERED INDEX [IX_NationalParks_State] ON [dbo].[NationalParks]
+([State] ASC)
+GO
+CREATE NONCLUSTERED INDEX [IX_HighPoints_Name] ON [dbo].[HighPoints]
+([Name] ASC)
+GO
+CREATE NONCLUSTERED INDEX [IX_HighPoints_State] ON [dbo].[HighPoints]
 ([State] ASC)
 GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_ApiKey] ON [dbo].[Users]

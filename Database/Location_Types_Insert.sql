@@ -22,6 +22,7 @@ INSERT INTO LocationTypes (Name, Description) VALUES
 ('Presidential Library', 'Presidential Library'),
 ('Boondocking', 'Boondocking'),
 ('Home', 'Home'),
+('State High Point', 'State High Point'),
 ('Other', 'Other location type')
 
 SELECT * FROM LocationTypes
