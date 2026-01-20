@@ -1,0 +1,70 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Workflow to run a SQL script against an Azure SQL Database
+# ------------------------------------------------------------------------------------------------------------------------
+# You need to set up secrets in the GitHub Secrets Repository before running these workflows.
+#   AZURE_CREDENTIALS - Service principal credentials for Azure login
+#   SQL_ADMIN_USER - (Optional) SQL admin username for local SQL authentication
+#   SQL_ADMIN_PASSWORD - (Optional) SQL admin password for local SQL authentication
+# ------------------------------------------------------------------------------------------------------------------------
+name: 9.run.sql.script
+run-name: '9. Run SQL Script using ENV ${{ inputs.deployEnvironment }} ${{vars.INSTANCE_NUMBER}} by @${{ github.actor }}'
+on:
+  workflow_dispatch:
+    inputs:
+      deployEnvironment:
+        description: Environment
+        required: true
+        default: 'dev'
+        type: environment
+      loginAccountType:
+        description: 'Login Account Type'
+        required: true
+        default: 'SVC_PRINCIPAL'
+        type: choice
+        options:
+          - 'SVC_PRINCIPAL'
+          - 'LOCAL_SQL'
+      scriptName:
+        description: 'SQL Script to Run'
+        required: true
+        default: 'InsertDefaultData.sql'
+        type: choice
+        options:
+          - 'InsertDefaultData.sql'
+          - 'DBCOPY'
+      databaseName:
+        description: 'Database Name'
+        required: true
+        default: 'TravelTrackerDB'
+        type: string
+      databaseCopyName:
+        description: 'Database Copy Name (for DBCOPY action)'
+        required: false
+        default: 'TravelTrackerDB_Copy'
+        type: string
+      resourceGroupName:
+        description: 'Resource Group Name (for DBCOPY action)'
+        required: false
+        default: 'rg-traveltracker-dev'
+        type: string
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  # ----------------------------------------------------------------------------------------------------
+  # Run SQL Script
+  # ----------------------------------------------------------------------------------------------------
+  run-sql:
+    name: Run SQL
+    uses: ./.github/workflows/template-run-sql.yml
+    permissions:
+      id-token: write  
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      sqlFolderName: 'src/sql.database/Patch'
+      sqlFileName: ${{ inputs.scriptName }}
+      runInDatabase: ${{ inputs.databaseName }}
+      sqlServerName: '${{ vars.SQL_SERVER_NAME_PREFIX }}${{vars.INSTANCE_NUMBER}}sql${{ inputs.deployEnvironment }}'
+      loginAccountType: ${{ inputs.loginAccountType }}
+      resourceGroupName: ${{ inputs.resourceGroupName }}
+      databaseCopyName: ${{ inputs.databaseCopyName }}
+    secrets: inherit

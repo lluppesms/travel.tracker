@@ -1,0 +1,102 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Called Workflow to deploy a SQL DACPAC file to Azure SQL Database
+# ------------------------------------------------------------------------------------------------------------------------
+# You need to set up secrets in the GitHub Secrets Repository before running these workflows.
+#   See readme.md for details
+# ------------------------------------------------------------------------------------------------------------------------
+# Prerequisites:
+# Unless you are using a local user/password, you must find the service principal name that is running
+# your pipeline and execute these commands in the Azure SQL Database to grant access:
+#   CREATE USER yourSP FROM EXTERNAL PROVIDER
+#   ALTER ROLE db_owner ADD MEMBER yourSP
+# See also https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-aad-configure
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_dacpac_deploy
+run-name: Deploy DACPAC
+on:
+  workflow_call:
+    inputs:
+      envCode:
+        required: true
+        type: string
+      artifactName:
+        required: false
+        type: string
+        default: 'dacpac'
+      appProjectName:
+        required: true
+        type: string
+      sqlServerName:
+        required: true
+        type: string
+      sqlDatabaseName:
+        required: true
+        type: string
+      loginAccountType:
+        required: false
+        type: string
+        default: 'SVC_PRINCIPAL'
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  deploy:
+    name: Deploy DACPAC
+    runs-on: windows-latest
+    environment:
+      name: ${{ inputs.envCode }}
+    env:
+      fqdnServerName: ${{ inputs.sqlServerName }}.database.windows.net
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download DACPAC Artifact
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: ${{ inputs.artifactName }}
+          path: ./dacpac
+
+      - name: Display Downloaded Files and Variables
+        run: |
+          Write-Host "Downloaded DACPAC files:"
+          Get-ChildItem -Path "./dacpac" -Recurse
+          echo ""
+          echo "Deployment Variables:"
+          echo "vars.INSTANCE_NUMBER=${{ vars.INSTANCE_NUMBER }}"
+          echo "inputs.sqlServerName=${{ inputs.sqlServerName }}"
+          echo "env.fqdnServerName=${{ env.fqdnServerName }}"
+          echo "Database: inputs.sqlDatabaseName=${{ inputs.sqlDatabaseName }}"
+          echo "Project: inputs.appProjectName=${{ inputs.appProjectName }}"
+
+      - name: Azure Login (Reusable Action)
+        uses: ./.github/actions/login-action
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Deploy using Service Principal (Entra ID authentication)
+      # For details on how to authenticate, see: https://github.com/Azure/sql-action/blob/master/CONNECTION.md#azure-active-directory-managed-identity-authentication
+      - name: Deploy DACPAC - Service Principal
+        if: inputs.loginAccountType == 'SVC_PRINCIPAL'
+        uses: azure/sql-action@v2.3
+        with:
+          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};Authentication=Active Directory Default; Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+          # connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};Authentication=Active Directory Service Principal;'
+          path: './dacpac/${{ inputs.appProjectName }}.dacpac'
+          action: 'publish'
+
+      # Deploy using SQL Local User (SQL Authentication)
+      - name: Deploy DACPAC - Local SQL User
+        if: inputs.loginAccountType == 'LOCAL_SQL'
+        uses: azure/sql-action@v2.3
+        with:
+          connection-string: 'Server=${{ env.fqdnServerName }};Database=${{ inputs.sqlDatabaseName }};User Id=${{ secrets.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};'
+          path: './dacpac/${{ inputs.appProjectName }}.dacpac'
+          action: 'publish'
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
