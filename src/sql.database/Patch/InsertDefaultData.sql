@@ -7,15 +7,15 @@ delete from Destinations
 GO
 delete from DestinationTypes
 GO
+delete from locations
+GO
 delete from locationTypes
 GO
--- delete from locations
--- GO
 
 DBCC CHECKIDENT ('Destinations', RESEED, 0)
 DBCC CHECKIDENT ('DestinationTypes', RESEED, 0)
 DBCC CHECKIDENT ('LocationTypes', RESEED, 0)
--- DBCC CHECKIDENT ('Locations', RESEED, 0)
+DBCC CHECKIDENT ('Locations', RESEED, 0)
 
 Print 'Inserting LocationTypes'
 INSERT INTO LocationTypes (Name, Description) VALUES
@@ -100,10 +100,10 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 (1, 'Voyageurs National Park', 'Minnesota', 48.450000, -92.850000, 'Water-based park of interconnected lakes, boreal forests, and historic trade routes.'),
 (1, 'White Sands National Park', 'New Mexico', 32.779720, -106.171669, 'World''s largest gypsum dune field with otherworldly white sand dunes.'),
 (1, 'Wind Cave National Park', 'South Dakota', 43.587800, -103.450300, 'Home to one of the world''s longest boxwork cave systems and mixed-grass prairie.'),
-(1, 'Wrangell-St. Elias National Park', 'Alaska', 61.710445, 142.985687, 'The largest national park in the United States, spanning approximately 13.2 million acres of towering volcanic and glaciated mountain ranges-including Mount St. Elias-and vast wilderness from sea level to 18,008 ft peaks.'),
-(1, 'Yellowstone National Park', 'Wyoming', 44.427895, 110.588379, 'The world''s first national park, famed for hydrothermal features like Old Faithful and abundant megafauna.'),
-(1, 'Yosemite National Park', 'California', 37.865101, 119.538330, 'Iconic granite cliffs, giant sequoias, waterfalls, and deep valleys define this legendary park'),
-(1, 'Zion National Park', 'Utah', 37.297817, 113.028770, 'Known for its towering red sandstone cliffs, narrow canyons, and the Virgin River''s carved landscapes')
+(1, 'Wrangell-St. Elias National Park', 'Alaska', 61.710445, -142.985687, 'The largest national park in the United States, spanning approximately 13.2 million acres of towering volcanic and glaciated mountain ranges-including Mount St. Elias-and vast wilderness from sea level to 18,008 ft peaks.'),
+(1, 'Yellowstone National Park', 'Wyoming', 44.427895, -110.588379, 'The world''s first national park, famed for hydrothermal features like Old Faithful and abundant megafauna.'),
+(1, 'Yosemite National Park', 'California', 37.865101, -119.538330, 'Iconic granite cliffs, giant sequoias, waterfalls, and deep valleys define this legendary park'),
+(1, 'Zion National Park', 'Utah', 37.297817, -113.028770, 'Known for its towering red sandstone cliffs, narrow canyons, and the Virgin River''s carved landscapes')
 
 Print 'Inserting State High Points'
 INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description) VALUES
