@@ -80,6 +80,8 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<INationalParkRepository, NationalParkRepository>();
     builder.Services.AddScoped<IHighPointRepository, HighPointRepository>();
     builder.Services.AddScoped<ILocationTypeRepository, LocationTypeRepository>();
+    builder.Services.AddScoped<IDestinationRepository, DestinationRepository>();
+    builder.Services.AddScoped<IDestinationTypeRepository, DestinationTypeRepository>();
 
     // Add services
     builder.Services.AddScoped<ILocationService, LocationService>();
@@ -91,6 +93,7 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<IDataExportService, DataExportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
     builder.Services.AddScoped<IChatbotService, ChatbotService>();
+    builder.Services.AddScoped<IDestinationService, DestinationService>();
 
     // Add MCP tools
     builder.Services.AddScoped<LocationTools>();

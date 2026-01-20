@@ -34,6 +34,26 @@ CREATE TABLE [dbo].[LocationTypes](
 )
 GO
 
+CREATE TABLE [dbo].[DestinationTypes](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[Description] [nvarchar](500) NOT NULL,
+ CONSTRAINT [PK_DestinationTypes] PRIMARY KEY CLUSTERED ([Id] ASC)
+)
+GO
+
+CREATE TABLE [dbo].[Destinations](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[DestinationTypeId] [int] NOT NULL,
+	[Name] [nvarchar](200) NOT NULL,
+	[State] [nvarchar](50) NOT NULL,
+	[Latitude] [float] NOT NULL,
+	[Longitude] [float] NOT NULL,
+	[Description] [nvarchar](max) NOT NULL,
+ CONSTRAINT [PK_Destinations] PRIMARY KEY CLUSTERED ([Id] ASC)
+)
+GO
+
 CREATE TABLE [dbo].[NationalParks](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Type] [nvarchar](50) NOT NULL,
@@ -43,18 +63,6 @@ CREATE TABLE [dbo].[NationalParks](
 	[Longitude] [float] NOT NULL,
 	[Description] [nvarchar](max) NOT NULL,
  CONSTRAINT [PK_NationalParks] PRIMARY KEY CLUSTERED ([Id] ASC)
-)
-GO
-
-CREATE TABLE [dbo].[HighPoints](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Type] [nvarchar](50) NOT NULL,
-	[Name] [nvarchar](200) NOT NULL,
-	[State] [nvarchar](50) NOT NULL,
-	[Latitude] [float] NOT NULL,
-	[Longitude] [float] NOT NULL,
-	[Description] [nvarchar](max) NOT NULL,
- CONSTRAINT [PK_HighPoints] PRIMARY KEY CLUSTERED ([Id] ASC)
 )
 GO
 
@@ -85,16 +93,22 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_LocationTypes_Name] ON [dbo].[LocationTypes]
 ([Name] ASC)
 GO
+CREATE UNIQUE NONCLUSTERED INDEX [IX_DestinationTypes_Name] ON [dbo].[DestinationTypes]
+([Name] ASC)
+GO
+CREATE NONCLUSTERED INDEX [IX_Destinations_Name] ON [dbo].[Destinations]
+([Name] ASC)
+GO
+CREATE NONCLUSTERED INDEX [IX_Destinations_State] ON [dbo].[Destinations]
+([State] ASC)
+GO
+CREATE NONCLUSTERED INDEX [IX_Destinations_DestinationTypeId] ON [dbo].[Destinations]
+([DestinationTypeId] ASC)
+GO
 CREATE NONCLUSTERED INDEX [IX_NationalParks_Name] ON [dbo].[NationalParks]
 ([Name] ASC)
 GO
 CREATE NONCLUSTERED INDEX [IX_NationalParks_State] ON [dbo].[NationalParks]
-([State] ASC)
-GO
-CREATE NONCLUSTERED INDEX [IX_HighPoints_Name] ON [dbo].[HighPoints]
-([Name] ASC)
-GO
-CREATE NONCLUSTERED INDEX [IX_HighPoints_State] ON [dbo].[HighPoints]
 ([State] ASC)
 GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_ApiKey] ON [dbo].[Users]
@@ -115,6 +129,11 @@ ALTER TABLE [dbo].[Locations]  WITH CHECK ADD  CONSTRAINT [FK_Locations_Location
 REFERENCES [dbo].[LocationTypes] ([Id])
 GO
 ALTER TABLE [dbo].[Locations] CHECK CONSTRAINT [FK_Locations_LocationTypes_LocationTypeId]
+GO
+ALTER TABLE [dbo].[Destinations]  WITH CHECK ADD  CONSTRAINT [FK_Destinations_DestinationTypes_DestinationTypeId] FOREIGN KEY([DestinationTypeId])
+REFERENCES [dbo].[DestinationTypes] ([Id])
+GO
+ALTER TABLE [dbo].[Destinations] CHECK CONSTRAINT [FK_Destinations_DestinationTypes_DestinationTypeId]
 GO
 
 CREATE PROCEDURE [dbo].[usp_LocationSummary] (
