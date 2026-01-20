@@ -19,6 +19,7 @@ param adClientSecret = '#{LOGIN_CLIENTSECRET}#'
 param servicePlanName = '#{EXISTING_SERVICEPLAN_NAME}#'
 param servicePlanResourceGroupName = '#{EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME}#'
 
+param sqlDatabaseName = '#{SQL_DATABASE_NAME}#'
 param existingSqlServerName = '#{EXISTING_SQLSERVER_NAME}#'
 param existingSqlServerResourceGroupName = '#{EXISTING_SQLSERVER_RESOURCE_GROUP_NAME}#'
 
