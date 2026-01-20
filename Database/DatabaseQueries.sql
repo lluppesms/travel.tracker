@@ -1,25 +1,12 @@
 /*
-truncate table nationalParks
-go
-
-truncate table locations
-go
-
-truncate table users
-go
-
-drop table nationalParks
-go
-
-drop table locations
-go
-
-drop table users
-go
-
-drop table dbo._EFMIgrationsHistory
-go
-
+delete from Destinations
+GO
+delete from DestinationTypes
+GO
+delete from locationTypes
+GO
+delete from locations
+GO
 */
 
 select 'Users' as Table_Name, Count(*) as Row_Count from Users
