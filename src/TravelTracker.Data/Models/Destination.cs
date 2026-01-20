@@ -1,14 +1,14 @@
 namespace TravelTracker.Data.Models;
 
-[Table("NationalParks")]
-public class NationalPark
+[Table("Destinations")]
+public class Destination
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    [MaxLength(50)]
-    public string Type { get; set; } = "nationalpark";
+    [Required]
+    public int DestinationTypeId { get; set; }
 
     [Required]
     [MaxLength(200)]
@@ -23,4 +23,7 @@ public class NationalPark
     public double Longitude { get; set; }
 
     public string Description { get; set; } = string.Empty;
+
+    // Navigation property
+    public DestinationType? DestinationType { get; set; }
 }

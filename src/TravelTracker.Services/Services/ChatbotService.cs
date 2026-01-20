@@ -5,7 +5,7 @@ namespace TravelTracker.Services.Services;
 public class ChatbotService : IChatbotService
 {
     private readonly ILocationService _locationService;
-    private readonly INationalParkService _nationalParkService;
+    private readonly IDestinationService _destinationService;
     private readonly ILocationTypeService _locationTypeService;
     private readonly ILogger<ChatbotService> _logger;
     private readonly AzureAIFoundrySettings _settings;
@@ -14,7 +14,7 @@ public class ChatbotService : IChatbotService
 
     private readonly string systemPrompt =
         "You are a helpful travel assistant for the Travel Tracker application. " +
-        "You help users find information about their travel locations, national parks, and location types. " +
+        "You help users find information about their travel locations, destinations (national parks, state high points, presidential libraries), and location types. " +
         "Be conversational, helpful, and use the provided context data to answer questions accurately. " +
         "If the context data is empty or doesn't contain the information needed, politely let the user know.";
 
@@ -30,14 +30,14 @@ public class ChatbotService : IChatbotService
 
     public ChatbotService(
         ILocationService locationService,
-        INationalParkService nationalParkService,
+        IDestinationService destinationService,
         ILocationTypeService locationTypeService,
         ILogger<ChatbotService> logger,
         IOptions<AzureAIFoundrySettings> settings,
         IConfiguration configuration)
     {
         _locationService = locationService;
-        _nationalParkService = nationalParkService;
+        _destinationService = destinationService;
         _locationTypeService = locationTypeService;
         _logger = logger;
         _settings = settings.Value;
@@ -246,12 +246,12 @@ public class ChatbotService : IChatbotService
                 contextParts.Add($"Top states: {string.Join(", ", topStates.Select(kvp => $"{kvp.Key} ({kvp.Value})"))}");
             }
 
-            // Check if asking about national parks
-            var parks = await _nationalParkService.GetAllParksAsync();
-            if (parks.Any())
+            // Check if asking about destinations (national parks, state high points, presidential libraries)
+            var destinations = await _destinationService.GetAllDestinationsAsync();
+            if (destinations.Any())
             {
-                var summary = parks.Select(p => $"- {p.Name} in {p.State}");
-                contextParts.Add($"National Parks in database:\n{string.Join("\n", summary)}");
+                var summary = destinations.Select(d => $"- {d.Name} in {d.State}");
+                contextParts.Add($"Destinations in database:\n{string.Join("\n", summary)}");
             }
 
             if (locations.Any())

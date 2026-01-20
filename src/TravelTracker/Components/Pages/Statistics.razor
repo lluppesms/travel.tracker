@@ -2,7 +2,7 @@
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
 @inject ILocationService LocationService
-@inject INationalParkService NationalParkService
+@inject IDestinationService DestinationService
 @inject IAuthenticationService AuthenticationService
 
 <PageTitle>Statistics - Travel Tracker</PageTitle>
@@ -263,8 +263,8 @@
 
             try
             {
-                var visitedParks = await NationalParkService.GetVisitedParksAsync(currentUserId);
-                nationalParksVisited = visitedParks.Count();
+                var visitedDestinations = await DestinationService.GetVisitedDestinationsAsync(currentUserId, 1); // 1 = National Parks
+                nationalParksVisited = visitedDestinations.Count();
                 parkProgressPercent = nationalParksVisited > 0 ? (nationalParksVisited / 63.0 * 100) : 0;
             }
             catch

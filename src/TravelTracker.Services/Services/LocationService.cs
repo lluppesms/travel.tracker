@@ -1,10 +1,9 @@
 namespace TravelTracker.Services.Services;
 
-public class LocationService(ILocationRepository locationRepository, ILocationTypeRepository locationTypeRepository, INationalParkRepository nationalParkRepository) : ILocationService
+public class LocationService(ILocationRepository locationRepository, ILocationTypeRepository locationTypeRepository) : ILocationService
 {
     private readonly ILocationRepository _locationRepository = locationRepository;
     private readonly ILocationTypeRepository _locationTypeRepository = locationTypeRepository;
-    private readonly INationalParkRepository _nationalParkRepository = nationalParkRepository;
 
     public async Task<Location?> GetLocationByIdAsync(int id, int userId)
     {
@@ -79,20 +78,5 @@ public class LocationService(ILocationRepository locationRepository, ILocationTy
 
         // Set the LocationTypeId for the foreign key relationship
         location.LocationTypeId = locationType.Id;
-
-        // Special validation for National Park type
-        if (location.LocationType.Equals("National Park", StringComparison.OrdinalIgnoreCase))
-        {
-            var allParks = await _nationalParkRepository.GetAllAsync();
-            var matchingPark = allParks.FirstOrDefault(park =>
-                park.Name.Equals(location.Name, StringComparison.OrdinalIgnoreCase) ||
-                park.Name.Contains(location.Name, StringComparison.OrdinalIgnoreCase) ||
-                location.Name.Contains(park.Name, StringComparison.OrdinalIgnoreCase));
-
-            if (matchingPark == null)
-            {
-                throw new ArgumentException($"National Park '{location.Name}' is not found in the National Parks database. Please verify the park name.");
-            }
-        }
     }
 }

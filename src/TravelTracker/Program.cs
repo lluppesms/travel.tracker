@@ -77,22 +77,22 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     // Add repositories
     builder.Services.AddScoped<ILocationRepository, LocationRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
-    builder.Services.AddScoped<INationalParkRepository, NationalParkRepository>();
     builder.Services.AddScoped<ILocationTypeRepository, LocationTypeRepository>();
+    builder.Services.AddScoped<IDestinationRepository, DestinationRepository>();
+    builder.Services.AddScoped<IDestinationTypeRepository, DestinationTypeRepository>();
 
     // Add services
     builder.Services.AddScoped<ILocationService, LocationService>();
     builder.Services.AddScoped<IUserService, UserService>();
-    builder.Services.AddScoped<INationalParkService, NationalParkService>();
     builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
     builder.Services.AddScoped<IDataImportService, DataImportService>();
     builder.Services.AddScoped<IDataExportService, DataExportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
     builder.Services.AddScoped<IChatbotService, ChatbotService>();
+    builder.Services.AddScoped<IDestinationService, DestinationService>();
 
     // Add MCP tools
     builder.Services.AddScoped<LocationTools>();
-    builder.Services.AddScoped<NationalParkTools>();
     builder.Services.AddScoped<ChatbotTools>();
 
     // Add build info service

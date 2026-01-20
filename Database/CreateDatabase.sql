@@ -1,5 +1,5 @@
---USE [TravelTrackerDB]
---GO
+-- USE [TravelTrackerDB]
+-- GO
 
 CREATE TABLE [dbo].[Locations](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
@@ -34,15 +34,23 @@ CREATE TABLE [dbo].[LocationTypes](
 )
 GO
 
-CREATE TABLE [dbo].[NationalParks](
+CREATE TABLE [dbo].[DestinationTypes](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Type] [nvarchar](50) NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[Description] [nvarchar](500) NOT NULL,
+ CONSTRAINT [PK_DestinationTypes] PRIMARY KEY CLUSTERED ([Id] ASC)
+)
+GO
+
+CREATE TABLE [dbo].[Destinations](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[DestinationTypeId] [int] NOT NULL,
 	[Name] [nvarchar](200) NOT NULL,
 	[State] [nvarchar](50) NOT NULL,
 	[Latitude] [float] NOT NULL,
 	[Longitude] [float] NOT NULL,
 	[Description] [nvarchar](max) NOT NULL,
- CONSTRAINT [PK_NationalParks] PRIMARY KEY CLUSTERED ([Id] ASC)
+ CONSTRAINT [PK_Destinations] PRIMARY KEY CLUSTERED ([Id] ASC)
 )
 GO
 
@@ -52,6 +60,7 @@ CREATE TABLE [dbo].[Users](
 	[Username] [nvarchar](200) NOT NULL,
 	[Email] [nvarchar](200) NOT NULL,
 	[EntraIdUserId] [nvarchar](50) NOT NULL,
+	[ApiKey] [nvarchar](200) NULL,
 	[CreatedDate] [datetime2](7) NOT NULL,
 	[LastLoginDate] [datetime2](7) NULL,
  CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED ([Id] ASC)
@@ -73,11 +82,17 @@ GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_LocationTypes_Name] ON [dbo].[LocationTypes]
 ([Name] ASC)
 GO
-CREATE NONCLUSTERED INDEX [IX_NationalParks_Name] ON [dbo].[NationalParks]
+CREATE UNIQUE NONCLUSTERED INDEX [IX_DestinationTypes_Name] ON [dbo].[DestinationTypes]
 ([Name] ASC)
 GO
-CREATE NONCLUSTERED INDEX [IX_NationalParks_State] ON [dbo].[NationalParks]
+CREATE NONCLUSTERED INDEX [IX_Destinations_Name] ON [dbo].[Destinations]
+([Name] ASC)
+GO
+CREATE NONCLUSTERED INDEX [IX_Destinations_State] ON [dbo].[Destinations]
 ([State] ASC)
+GO
+CREATE NONCLUSTERED INDEX [IX_Destinations_DestinationTypeId] ON [dbo].[Destinations]
+([DestinationTypeId] ASC)
 GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_ApiKey] ON [dbo].[Users]
 ([ApiKey] ASC)
@@ -98,6 +113,11 @@ REFERENCES [dbo].[LocationTypes] ([Id])
 GO
 ALTER TABLE [dbo].[Locations] CHECK CONSTRAINT [FK_Locations_LocationTypes_LocationTypeId]
 GO
+ALTER TABLE [dbo].[Destinations]  WITH CHECK ADD  CONSTRAINT [FK_Destinations_DestinationTypes_DestinationTypeId] FOREIGN KEY([DestinationTypeId])
+REFERENCES [dbo].[DestinationTypes] ([Id])
+GO
+ALTER TABLE [dbo].[Destinations] CHECK CONSTRAINT [FK_Destinations_DestinationTypes_DestinationTypeId]
+GO
 
 CREATE PROCEDURE [dbo].[usp_LocationSummary] (
   @UserName    nvarchar(128) = null
@@ -107,11 +127,9 @@ AS
 EXEC usp_LocationSummary
 EXEC usp_LocationSummary @UserName = 'lyleluppes@microsoft.com'
 */
-
 BEGIN
 
-Declare @UserId int
-
+DECLARE @UserId int
 DECLARE @places TABLE (
 	[Name] [nvarchar](200),
 	[TripName] [nvarchar](200) NULL,
@@ -137,7 +155,7 @@ Select 'UserDefinition' as TableName@UserId, u.UserName, u.Email FROM Users U wh
 INSERT INTO @places
 SELECT l.Name, l.TripName, l.LocationType, l.Address, l.City, l.State, l.Latitude, l.Longitude, l.StartDate, l.EndDate, l.Rating, l.Comments
 FROM Locations l 
-INNER JOIN Users u on l.UserId = u.Id 
+INNER JOIN Users u ON l.UserId = u.Id 
 WHERE l.UserId = @UserId
 ORDER BY l.Longitude, u.UserName, l.StartDate
 
@@ -148,13 +166,29 @@ SELECT 'Locations_Visited' as TableName,* From @places
 INSERT INTO @types
 SELECT DISTINCT LocationType From @places
 
-SELECT 'Location_Types_Visited' as TableName, p.LocationType, COUNT(*) FROM 
-@places p INNER JOIN @types t on p.LocationType = t.LocationType
+SELECT 'Location_Types_Visited' as TableName, p.LocationType, COUNT(*) 
+FROM @places p INNER JOIN @types t ON p.LocationType = t.LocationType
 GROUP BY p.LocationType
 
 SELECT 'States_Visited' as TableName, MAX(State) as RowType, Count(*) as Counter FROM @places WHERE ISNULL(STATE,'') <> '' GROUP BY State ORDER BY State
 
-SELECT 'All_National_Parks_List' as TableName, Name, State from NationalParks Order by Name
+SELECT 'National_Parks_List' as TableName, d.Name, d.State, dt.Name as DestinationType, CASE WHEN l.StartDate IS NULL THEN 'Not Visited' ELSE FORMAT(l.StartDate, 'MMM dd, yyyy') END as DateVisited
+FROM Destinations d INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id 
+LEFT OUTER JOIN @places l ON l.Name = d.Name 
+WHERE dt.Name = 'National Park'
+ORDER BY d.Name
+
+SELECT 'State_High_Points_List' as TableName, d.Name, d.State, dt.Name as DestinationType, CASE WHEN l.StartDate IS NULL THEN 'Not Visited' ELSE FORMAT(l.StartDate, 'MMM dd, yyyy') END as DateVisited
+FROM Destinations d INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id 
+LEFT OUTER JOIN @places l ON l.Name = d.Name 
+WHERE dt.Name = 'State High Point'
+ORDER BY d.Name
+
+SELECT 'Presidential_Libraries_List' as TableName, d.Name, d.State, dt.Name as DestinationType, CASE WHEN l.StartDate IS NULL THEN 'Not Visited' ELSE FORMAT(l.StartDate, 'MMM dd, yyyy') END as DateVisited
+FROM Destinations d INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id 
+LEFT OUTER JOIN @places l ON l.Name = d.Name 
+WHERE dt.Name = 'Presidential Library'
+ORDER BY d.Name
 
 END
 GO

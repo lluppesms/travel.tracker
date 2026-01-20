@@ -27,6 +27,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link @GetActiveClass(RouteBucketList)" href="bucketlist" @onclick="NavigateToBucketList" @onclick:preventDefault>
+                        <span class="bi bi-geo-alt-fill" aria-hidden="true"></span> Bucket List
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link @GetActiveClass(RouteStatistics)" href="statistics" @onclick="NavigateToStatistics" @onclick:preventDefault>
                         <span class="bi bi-bar-chart-fill" aria-hidden="true"></span> Statistics
                     </a>
@@ -84,6 +89,7 @@
     private const string RouteHome = "";
     private const string RouteLocations = "locations";
     private const string RouteMap = "map";
+    private const string RouteBucketList = "bucketlist";
     private const string RouteStatistics = "statistics";
     private const string RouteUpload = "upload";
     private const string RouteChat = "chat";
@@ -101,6 +107,7 @@
     private Task NavigateToHome() => NavigateWithSpinner(RouteHome);
     private Task NavigateToLocations() => NavigateWithSpinner(RouteLocations);
     private Task NavigateToMap() => NavigateWithSpinner(RouteMap);
+    private Task NavigateToBucketList() => NavigateWithSpinner(RouteBucketList);
     private Task NavigateToStatistics() => NavigateWithSpinner(RouteStatistics);
     private Task NavigateToUpload() => NavigateWithSpinner(RouteUpload);
     private Task NavigateToChat() => NavigateWithSpinner(RouteChat);
@@ -109,13 +116,13 @@
     private async Task NavigateWithSpinner(string path)
     {
         var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        
+
         // Only show spinner if navigating to a different page
         if (!string.Equals(currentPath, path, StringComparison.OrdinalIgnoreCase))
         {
             await OnNavigating.InvokeAsync();
         }
-        
+
         collapseNavMenu = true;
         NavigationManager.NavigateTo(path);
     }
