@@ -189,6 +189,16 @@
           "Chatbot"
         ],
         "summary": "Send a message to the chatbot and get a response",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -232,12 +242,23 @@
         }
       }
     },
-    "/api/Locations": {
+    "/api/Locations/{userid}": {
       "get": {
         "tags": [
           "Locations"
         ],
         "summary": "Get all locations for the authenticated user",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -271,7 +292,7 @@
         }
       }
     },
-    "/api/Locations/{id}": {
+    "/api/Locations/{userid}/{id}": {
       "get": {
         "tags": [
           "Locations"
@@ -280,6 +301,15 @@
         "parameters": [
           {
             "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
             "in": "path",
             "required": true,
             "schema": {
@@ -312,7 +342,7 @@
         }
       }
     },
-    "/api/Locations/by-state/{state}": {
+    "/api/Locations/by-state/{userid}/{state}": {
       "get": {
         "tags": [
           "Locations"
@@ -325,6 +355,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -361,13 +400,22 @@
         }
       }
     },
-    "/api/Locations/by-date-range": {
+    "/api/Locations/by-date-range/{userid}": {
       "get": {
         "tags": [
           "Locations"
         ],
         "summary": "Get locations by date range",
         "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
           {
             "name": "startDate",
             "in": "query",
@@ -418,12 +466,23 @@
         }
       }
     },
-    "/api/Locations/count-by-state": {
+    "/api/Locations/count-by-state/{userid}": {
       "get": {
         "tags": [
           "Locations"
         ],
         "summary": "Get location count by state",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -624,7 +683,7 @@
         "tags": [
           "NationalParks"
         ],
-        "summary": "Get a specific national park by ID and state",
+        "summary": "Get a specific national park by ID",
         "parameters": [
           {
             "name": "id",
@@ -633,13 +692,6 @@
             "schema": {
               "type": "integer",
               "format": "int32"
-            }
-          },
-          {
-            "name": "state",
-            "in": "query",
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -716,12 +768,23 @@
         }
       }
     },
-    "/api/NationalParks/visited": {
+    "/api/NationalParks/visited/{userId}": {
       "get": {
         "tags": [
           "NationalParks"
         ],
         "summary": "Get national parks visited by the authenticated user",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -985,9 +1048,21 @@
       }
     }
   },
-  "security": [
+  "tags": [
     {
-      "ApiKeyAuth": [ ]
+      "name": "Account"
+    },
+    {
+      "name": "Chatbot"
+    },
+    {
+      "name": "Locations"
+    },
+    {
+      "name": "LocationTypes"
+    },
+    {
+      "name": "NationalParks"
     }
   ]
 }

@@ -1,0 +1,51 @@
+State,Highpoint,Elevation (Feet),Gain (Feet),Distance (Miles),Difficulty,Effort,Latitude,Longitude,Nearest Town
+Alaska,Denali,20320,24500,56.0,10,1000,63.069,-151.0063,Talkeetna
+Wyoming,Gannett Peak,13804,8650,40.4,9,506,43.1843,-109.6544,Pinedale
+Washington,Mount Rainier,14411,9100,16.0,9,366,46.8529,-121.7604,Ashford
+Montana,Granite Peak,12799,7700,22.2,9,368,45.1663,-109.808,Cooke City
+California,Mount Whitney,14494,6750,21.4,7,263,36.5785,-118.2924,Lone Pine
+Utah,Kings Peak,13528,5350,28.8,7,291,40.7764,-110.3729,Mountain View
+Colorado,Mount Elbert,14440,5000,9.0,6,147,39.1178,-106.4451,Leadville
+Oregon,Mount Hood,11239,5300,8.0,8,222,45.3735,-121.6959,Government Camp
+Idaho,Borah Peak,12662,5550,6.8,8,181,44.1373,-113.7811,Mackay
+Nevada,Boundary Peak,13140,4400,7.4,6,126,37.8462,-118.3513,Dyer
+Arizona,Humphreys Peak,12633,3500,9.0,6,120,35.3464,-111.678,Flagstaff
+New York,Mount Marcy,5344,3200,14.8,5,151,44.1126,-73.9235,Keene Valley
+Maine,Katahdin,5268,4200,10.4,5,141,45.9045,-68.9216,Millinocket
+New Mexico,Wheeler Peak,13161,3250,6.2,6,98,36.5568,-105.4169,Taos
+Texas,Guadalupe Peak,8749,2950,8.4,5,106,31.8914,-104.8608,Dell City
+Virginia,Mount Rogers,5729,1500,8.6,4,81,36.659,-81.5415,Marion
+Oklahoma,Black Mesa,4975,775,8.6,4,68,36.733,-102.997,Kenton
+South Dakota,Black Elk Peak,7242,1500,5.8,4,64,43.8662,-103.5317,Custer
+Minnesota,Eagle Mountain,2301,600,7.0,4,55,47.8998,-90.5604,Grand Marais
+Vermont,Mount Mansfield,4393,1053,2.8,3,28,44.5438,-72.815,Underhill
+Connecticut,Mount Frissell-South Slope,2380,862,2.3,3,31,42.0495,-73.483,Salisbury
+North Dakota,White Butte,3506,400,3.4,2,29,46.3861,-103.2986,Amidon
+Hawaii,Mauna Kea,13796,230,0.4,2,7,19.8206,-155.4681,Hilo
+Maryland,Hoye Crest,3360,750,2.2,3,27,39.2069,-79.4853,Oakland
+Tennessee,Clingmans Dome,6643,330,1.0,2,12,35.5629,-83.4986,Gatlinburg
+Georgia,Brasstown Bald,4784,400,1.0,2,1,34.8747,-83.8108,Hiawassee
+Illinois,Charles Mound,1235,275,2.5,2,21,42.5048,-90.239,Galena
+North Carolina,Mount Mitchell,6684,100,0.2,1,3,35.7656,-82.2653,Burnsville
+Arkansas,Magazine Mountain,2753,225,1.0,2,10,35.1671,-93.6447,Paris
+Louisiana,Driskill Mountain,535,150,1.8,2,14,32.4248,-92.8969,Bryceland
+West Virginia,Spruce Knob,4863,20,0.3,1,2,38.6996,-79.5329,Riverton
+Wisconsin,Timms Hill,1951,120,0.4,1,5,45.4513,-90.1954,Ogema
+South Carolina,Sassafras Mountain,3533,50,0.15,1,2,35.0646,-82.7773,Rocky Bottom
+Missouri,Taum Sauk Mountain,1772,30,0.4,1,3,37.5689,-90.7298,Ironton
+New Hampshire,Mount Washington,6288,20,0.1,1,0,44.2706,-71.3033,Gorham
+Kentucky,Black Mountain,4145,30,0.1,1,1,36.9012,-82.8874,Lynch
+New Jersey,High Point,1803,40,0.2,1,2,41.3209,-74.6616,Sussex
+Nebraska,Panorama Point,5424,0,0.1,1,0,41.0036,-104.035,Kimball
+Massachusetts,Mount Greylock,3491,20,0.1,1,1,42.6379,-73.1665,North Adams
+Kansas,Mount Sunflower,4039,0,0.1,1,0,39.0219,-102.0372,Weskan
+Michigan,Mount Arvon,1979,10,0.1,1,0,46.756,-88.1564,L'Anse
+Rhode Island,Jerimoth Hill,812,0,0.2,1,1,41.8384,-71.7789,Foster
+Pennsylvania,Mount Davis,3213,0,0.1,1,0,39.7897,-79.1767,Meyersdale
+Alabama,Cheaha Mountain,2407,0,0.1,1,0,33.4854,-85.8086,Delta
+Iowa,Hawkeye Point,1670,0,0.1,1,0,43.4619,-95.7083,Sibley
+Ohio,Campbell Hill,1550,0,0.1,1,0,40.3695,-83.7354,Bellefontaine
+Indiana,Hoosier Hill,1257,0,0.1,1,0,40.0001,-84.8486,Liberty
+Mississippi,Woodall Mountain,806,0,0.1,1,0,34.9979,-88.2006,Iuka
+Delaware,Ebright Azimuth,448,0,0.1,1,0,39.8385,-75.52,Wilmington
+Florida,Britton Hill,345,0,0.1,1,0,30.988,-86.2833,Lakewood
