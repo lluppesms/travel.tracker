@@ -9,6 +9,7 @@
 param appName string = ''
 param environmentCode string = 'azd'
 param location string = resourceGroup().location
+param instanceNumber string = '1'
 
 param storageSku string = 'Standard_LRS'
 param webSiteSku string = 'B1'
@@ -72,6 +73,7 @@ module resourceNames 'resourcenames.bicep' = {
   params: {
     appName: appName
     environmentCode: environmentCode
+    instanceNumber: instanceNumber
   }
 }
 // --------------------------------------------------------------------------------
