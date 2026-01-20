@@ -1,5 +1,5 @@
---USE [TravelTrackerDB]
---GO
+-- USE [TravelTrackerDB]
+-- GO
 
 CREATE TABLE [dbo].[Locations](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
@@ -84,6 +84,7 @@ CREATE TABLE [dbo].[Users](
 	[Username] [nvarchar](200) NOT NULL,
 	[Email] [nvarchar](200) NOT NULL,
 	[EntraIdUserId] [nvarchar](50) NOT NULL,
+	[ApiKey] [nvarchar](200) NULL,
 	[CreatedDate] [datetime2](7) NOT NULL,
 	[LastLoginDate] [datetime2](7) NULL,
  CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED ([Id] ASC)

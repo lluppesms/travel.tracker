@@ -1,7 +1,37 @@
-truncate table Destinations
-go
+delete from Destinations
+GO
+delete from DestinationTypes
+GO
+delete from locationTypes
+GO
 
+DBCC CHECKIDENT ('Destinations', RESEED, 0)
+DBCC CHECKIDENT ('DestinationTypes', RESEED, 0)
+DBCC CHECKIDENT ('LocationTypes', RESEED, 0)
 
+Print 'Inserting LocationTypes'
+INSERT INTO LocationTypes (Name, Description) VALUES
+('RV Park', 'RV Park or campground'),
+('National Park', 'US National Park'),
+('National Monument', 'US National Monument'),
+('National Memorial', 'US National Memorial'),
+('National Military Battlefield', 'National Military Battlefield'),
+('Harvest Host', 'Harvest Host location'),
+('State Park', 'State Park'),
+('Family', 'Family or friends location'),
+('Presidential Library', 'Presidential Library'),
+('Boondocking', 'Boondocking'),
+('Home', 'Home'),
+('State High Point', 'State High Point'),
+('Other', 'Other location type')
+
+Print 'Inserting DestinationTypes'
+INSERT INTO DestinationTypes (Name, Description) VALUES
+('National Park', 'US National Parks'),
+('State High Point', 'Highest point in each US state'),
+('Presidential Library', 'Presidential Libraries and Museums')
+
+Print 'Inserting National Parks'
 INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description) VALUES
 (1, 'Acadia National Park', 'Maine', 44.338974, -68.273430, 'The only national park in New England, featuring a wild coastal wilderness of mountains, sea cliffs, and beaches.'),
 (1, 'American Samoa National Park', 'American Samoa', -14.235000, -170.688000, 'A tropical park protecting coral reefs, volcanic peaks, and Polynesian culture.'),
@@ -65,7 +95,10 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 (1, 'Wrangell-St. Elias National Park', 'Alaska', 61.710445, 142.985687, 'The largest national park in the United States, spanning approximately 13.2 million acres of towering volcanic and glaciated mountain ranges-including Mount St. Elias-and vast wilderness from sea level to 18,008 ft peaks.'),
 (1, 'Yellowstone National Park', 'Wyoming', 44.427895, 110.588379, 'The world''s first national park, famed for hydrothermal features like Old Faithful and abundant megafauna.'),
 (1, 'Yosemite National Park', 'California', 37.865101, 119.538330, 'Iconic granite cliffs, giant sequoias, waterfalls, and deep valleys define this legendary park'),
-(1, 'Zion National Park', 'Utah', 37.297817, 113.028770, 'Known for its towering red sandstone cliffs, narrow canyons, and the Virgin River''s carved landscapes'),
+(1, 'Zion National Park', 'Utah', 37.297817, 113.028770, 'Known for its towering red sandstone cliffs, narrow canyons, and the Virgin River''s carved landscapes')
+
+Print 'Inserting State High Points'
+INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description) VALUES
 (2, 'Denali', 'Alaska', 63.069, -151.0063, 'Highest point in Alaska and North America at 20,320 feet. Located near Talkeetna with a gain of 24,500 feet over 56.0 miles.'),
 (2, 'Gannett Peak', 'Wyoming', 43.1843, -109.6544, 'Highest point in Wyoming at 13,804 feet. Located near Pinedale with a gain of 8,650 feet over 40.4 miles.'),
 (2, 'Mount Rainier', 'Washington', 46.8529, -121.7604, 'Highest point in Washington at 14,411 feet. Located near Ashford with a gain of 9,100 feet over 16.0 miles.'),
@@ -115,7 +148,11 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 (2, 'Hoosier Hill', 'Indiana', 40.0001, -84.8486, 'Highest point in Indiana at 1,257 feet. Located near Liberty with a gain of 0 feet over 0.1 miles.'),
 (2, 'Woodall Mountain', 'Mississippi', 34.9979, -88.2006, 'Highest point in Mississippi at 806 feet. Located near Iuka with a gain of 0 feet over 0.1 miles.'),
 (2, 'Ebright Azimuth', 'Delaware', 39.8385, -75.52, 'Highest point in Delaware at 448 feet. Located near Wilmington with a gain of 0 feet over 0.1 miles.'),
-(2, 'Britton Hill', 'Florida', 30.988, -86.2833, 'Highest point in Florida at 345 feet. Located near Lakewood with a gain of 0 feet over 0.1 miles.'),
+(2, 'Britton Hill', 'Florida', 30.988, -86.2833, 'Highest point in Florida at 345 feet. Located near Lakewood with a gain of 0 feet over 0.1 miles.')
+
+
+Print 'Inserting Presidential Libraries and Museums'
+INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description) VALUES
 (3, 'Herbert Hoover Presidential Library and Museum', 'Iowa', 41.6712, -91.346, 'Located in West Branch, Iowa. Dedicated to America''s 31st President.'),
 (3, 'Franklin D. Roosevelt Presidential Library and Museum', 'New York', 41.7677, -73.9327, 'Located in Hyde Park, NY. The first presidential library, dedicated to FDR.'),
 (3, 'Harry S. Truman Presidential Library and Museum', 'Missouri', 39.0911, -94.4178, 'Located in Independence, Missouri. Dedicated to America''s 33rd President.'),
@@ -130,4 +167,6 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 (3, 'William J. Clinton Presidential Library and Museum', 'Arkansas', 34.7466, -92.2635, 'Located in Little Rock, Arkansas. Dedicated to America''s 42nd President.'),
 (3, 'George W. Bush Presidential Library and Museum', 'Texas', 32.8407, -96.7784, 'Located in Dallas, Texas. Dedicated to America''s 43rd President.')
 
-Select * From Destinations
+Print 'Showing Results'
+Select * From LocationTypes
+Select dt.Name as DestType, d.* From Destinations d INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id
