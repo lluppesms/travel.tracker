@@ -24,7 +24,7 @@ output webSiteName string                = webSiteName
 output webSiteAppServicePlanName string  = '${webSiteName}-${resourceAbbreviations.webServerFarms}'
 output webSiteAppInsightsName string     = '${webSiteName}-${resourceAbbreviations.webSitesAppService}'
 
-output sqlServerName string              = toLower('${sanitizedAppNameInstance}-${resourceAbbreviations.sqlServers}-${sanitizedEnvironment}')
+output sqlServerName string              = toLower('${sanitizedAppNameInstance}${resourceAbbreviations.sqlServers}${sanitizedEnvironment}')
 output cosmosDatabaseName string         = toLower('${sanitizedAppNameInstance}-${resourceAbbreviations.documentDBDatabaseAccounts}-${sanitizedEnvironment}')
 
 output logAnalyticsWorkspaceName string  = toLower('${sanitizedAppInstanceNameWithDashes}-${sanitizedEnvironment}-${resourceAbbreviations.operationalInsightsWorkspaces}')

@@ -51,9 +51,6 @@ param sqlAdminUser string = ''
 @secure()
 param sqlAdminPassword string = ''
 
-// param sqlADAdminLoginUserId string = ''
-// param sqlADAdminLoginUserSid string = ''
-// param sqlADAdminLoginTenantId string = ''
 param sqlAdminLoginUserId string = ''
 param sqlAdminLoginUserSid string = ''
 param sqlAdminLoginTenantId string = ''
