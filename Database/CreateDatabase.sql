@@ -54,30 +54,6 @@ CREATE TABLE [dbo].[Destinations](
 )
 GO
 
-CREATE TABLE [dbo].[NationalParks](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Type] [nvarchar](50) NOT NULL,
-	[Name] [nvarchar](200) NOT NULL,
-	[State] [nvarchar](50) NOT NULL,
-	[Latitude] [float] NOT NULL,
-	[Longitude] [float] NOT NULL,
-	[Description] [nvarchar](max) NOT NULL,
- CONSTRAINT [PK_NationalParks] PRIMARY KEY CLUSTERED ([Id] ASC)
-)
-GO
-
-CREATE TABLE [dbo].[HighPoints](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Type] [nvarchar](50) NOT NULL,
-	[Name] [nvarchar](200) NOT NULL,
-	[State] [nvarchar](50) NOT NULL,
-	[Latitude] [float] NOT NULL,
-	[Longitude] [float] NOT NULL,
-	[Description] [nvarchar](max) NOT NULL,
- CONSTRAINT [PK_HighPoints] PRIMARY KEY CLUSTERED ([Id] ASC)
-)
-GO
-
 CREATE TABLE [dbo].[Users](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Type] [nvarchar](50) NOT NULL,
@@ -117,18 +93,6 @@ CREATE NONCLUSTERED INDEX [IX_Destinations_State] ON [dbo].[Destinations]
 GO
 CREATE NONCLUSTERED INDEX [IX_Destinations_DestinationTypeId] ON [dbo].[Destinations]
 ([DestinationTypeId] ASC)
-GO
-CREATE NONCLUSTERED INDEX [IX_NationalParks_Name] ON [dbo].[NationalParks]
-([Name] ASC)
-GO
-CREATE NONCLUSTERED INDEX [IX_NationalParks_State] ON [dbo].[NationalParks]
-([State] ASC)
-GO
-CREATE NONCLUSTERED INDEX [IX_HighPoints_Name] ON [dbo].[HighPoints]
-([Name] ASC)
-GO
-CREATE NONCLUSTERED INDEX [IX_HighPoints_State] ON [dbo].[HighPoints]
-([State] ASC)
 GO
 CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_ApiKey] ON [dbo].[Users]
 ([ApiKey] ASC)
@@ -210,7 +174,7 @@ GROUP BY p.LocationType
 
 SELECT 'States_Visited' as TableName, MAX(State) as RowType, Count(*) as Counter FROM @places WHERE ISNULL(STATE,'') <> '' GROUP BY State ORDER BY State
 
-SELECT 'All_National_Parks_List' as TableName, Name, State from NationalParks Order by Name
+SELECT 'All_Destinations_List' as TableName, Name, State from Destinations Order by Name
 
 END
 GO
