@@ -1,0 +1,72 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Reusable Workflow to Load All Project Configurations
+# ------------------------------------------------------------------------------------------------------------------------
+# Usage in calling workflow:
+#   jobs:
+#     load-config:
+#       uses: ./.github/workflows/template-load-config.yml
+#     
+#     build-dacpac:
+#       needs: load-config
+#       uses: ./.github/workflows/template-dacpac-build.yml
+#       with:
+#         appFolderName: ${{ needs.load-config.outputs.sql_rootDirectory }}
+#         appProjectName: ${{ needs.load-config.outputs.sql_projectName }}
+# ------------------------------------------------------------------------------------------------------------------------
+name: z_template_load_config
+run-name: Load Project Config
+
+on:
+  workflow_call:
+    outputs:
+      # SQL project
+      sql_shortName:
+        description: 'SQL project short name'
+        value: ${{ jobs.load.outputs.sql_shortName }}
+      sql_rootDirectory:
+        description: 'SQL project root directory'
+        value: ${{ jobs.load.outputs.sql_rootDirectory }}
+      sql_projectName:
+        description: 'SQL project name'
+        value: ${{ jobs.load.outputs.sql_projectName }}
+      sql_solutionName:
+        description: 'SQL solution name'
+        value: ${{ jobs.load.outputs.sql_solutionName }}
+      sql_testDirectory:
+        description: 'SQL test directory'
+        value: ${{ jobs.load.outputs.sql_testDirectory }}
+      sql_testProjectName:
+        description: 'SQL test project name'
+        value: ${{ jobs.load.outputs.sql_testProjectName }}
+
+      # Meta
+      projectKeys:
+        description: 'Comma-separated list of all project keys'
+        value: ${{ jobs.load.outputs.projectKeys }}
+
+jobs:
+  load:
+    name: Load Project Config Settings
+    runs-on: ubuntu-latest
+    outputs:
+      # SQL
+      sql_shortName: ${{ steps.config.outputs.sql_shortName }}
+      sql_rootDirectory: ${{ steps.config.outputs.sql_rootDirectory }}
+      sql_projectName: ${{ steps.config.outputs.sql_projectName }}
+      sql_solutionName: ${{ steps.config.outputs.sql_solutionName }}
+      sql_testDirectory: ${{ steps.config.outputs.sql_testDirectory }}
+      sql_testProjectName: ${{ steps.config.outputs.sql_testProjectName }}
+      # Meta
+      projectKeys: ${{ steps.config.outputs.projectKeys }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/config
+            .github/actions
+
+      - name: Load all project configurations
+        id: config
+        uses: ./.github/actions/load-project-config
