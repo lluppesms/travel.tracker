@@ -6,16 +6,13 @@ public class DataImportService : IDataImportService
 {
     private readonly ILocationService _locationService;
     private readonly ILocationTypeRepository _locationTypeRepository;
-    private readonly INationalParkRepository _nationalParkRepository;
 
     public DataImportService(
         ILocationService locationService,
-        ILocationTypeRepository locationTypeRepository,
-        INationalParkRepository nationalParkRepository)
+        ILocationTypeRepository locationTypeRepository)
     {
         _locationService = locationService;
         _locationTypeRepository = locationTypeRepository;
-        _nationalParkRepository = nationalParkRepository;
     }
 
     public async Task<ImportResult> ImportFromJsonAsync(Stream jsonStream, int userId)
@@ -469,21 +466,6 @@ public class DataImportService : IDataImportService
             var validTypes = await _locationTypeRepository.GetAllAsync();
             var validTypeNames = string.Join(", ", validTypes.Select(t => t.Name));
             throw new ArgumentException($"Invalid location type '{normalizedType}'. Valid types are: {validTypeNames}");
-        }
-
-        // Special validation for National Park type
-        if (normalizedType.Equals("National Park", StringComparison.OrdinalIgnoreCase))
-        {
-            var allParks = await _nationalParkRepository.GetAllAsync();
-            var matchingPark = allParks.FirstOrDefault(park =>
-                park.Name.Equals(locationName, StringComparison.OrdinalIgnoreCase) ||
-                park.Name.Contains(locationName, StringComparison.OrdinalIgnoreCase) ||
-                locationName.Contains(park.Name, StringComparison.OrdinalIgnoreCase));
-
-            if (matchingPark == null)
-            {
-                throw new ArgumentException($"National Park '{locationName}' is not found in the National Parks database. Please verify the park name.");
-            }
         }
 
         return normalizedType;

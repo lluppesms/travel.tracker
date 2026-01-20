@@ -13,8 +13,6 @@ public class TravelTrackerDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Location> Locations { get; set; }
-    public DbSet<NationalPark> NationalParks { get; set; }
-    public DbSet<HighPoint> HighPoints { get; set; }
     public DbSet<LocationType> LocationTypes { get; set; }
     public DbSet<Destination> Destinations { get; set; }
     public DbSet<DestinationType> DestinationTypes { get; set; }
