@@ -34,14 +34,14 @@ DECLARE @types TABLE (
 IF @UserName IS NULL SET @UserName = 'lyleluppes@microsoft.com'
 
 select @UserId = Id from Users Where Username = @UserName or Email = @UserName
-Select 'UserDefinition' as TableName, @UserId, u.UserName, u.Email FROM Users U where Id = @UserId
+Select 'UserDefinition' as TableName, @UserId, u.Username, u.Email FROM Users U where Id = @UserId
 
 INSERT INTO @places
 SELECT l.Name, l.TripName, l.LocationType, l.Address, l.City, l.State, l.Latitude, l.Longitude, l.StartDate, l.EndDate, l.Rating, l.Comments
 FROM Locations l 
 INNER JOIN Users u ON l.UserId = u.Id 
 WHERE l.UserId = @UserId
-ORDER BY l.Longitude, u.UserName, l.StartDate
+ORDER BY l.Longitude, u.Username, l.StartDate
 
 UPDATE @places Set Comments = '' Where Comments = '0'
 
