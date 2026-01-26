@@ -17,12 +17,9 @@
         <div class="container-fluid">
             <div class="footer-content">
                 <span class="text-muted">Copyright @DateTime.Now.Year Luppes Consulting, Inc.</span>
-                @if (buildInfo is not null)
-                {
-                    <div class="build-info">
-                        <span class="build-number" title="@FormatBuildDate(buildInfo.BuildDate)">@buildInfo.BuildNumber</span>
-                    </div>
-                }
+                <div class="build-info">
+                  <span class="build-number" title="@FormatBuildDate()">@FormatBuildNumber()</span>
+                </div>
             </div>
         </div>
     </footer>
@@ -40,16 +37,23 @@
 
     protected override async Task OnInitializedAsync()
     {
-        buildInfo = await BuildInfoService.GetBuildInfoAsync();
+        buildInfo = BuildInfoService != null ? await BuildInfoService.GetBuildInfoAsync() : null;
     }
 
-    private string FormatBuildDate(string buildDate)
+    private string FormatBuildDate()
     {
-        if (DateTime.TryParse(buildDate, out var date))
+        if (buildInfo != null)
         {
-            return $"Compiled {date.ToString("yyyy-MM-dd HH:mm:ss")}";
+            if (DateTime.TryParse(buildInfo.BuildDate, out var date))
+            {
+                return $"Compiled {date.ToString("yyyy-MM-dd HH:mm:ss")}";
+            }
         }
-        return buildDate;
+        return "Unknown Date";
+    }
+    private string FormatBuildNumber()
+    {
+        return buildInfo != null ? buildInfo.BuildNumber : "Unknown";
     }
     private void HandleNavigating()
     {

@@ -1,5 +1,4 @@
-
-using System;
+using TravelTracker.Helpers;
 using TravelTracker.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -198,6 +197,8 @@ builder.Services.AddSwaggerGen(options =>
 
 // Add HTTP context accessor for getting authenticated user
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<HttpContextAccessor>();
+
 builder.Services.AddCascadingAuthenticationState();
 
 // Add Model Context Protocol (MCP) Server
@@ -223,6 +224,8 @@ builder.Services.AddHttpClient("WeatherAPI", client =>
     client.BaseAddress = new Uri("https://api.weather.gov/");
     client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("mcp-weather-server", "1.0"));
 });
+
+builder.Services.AddTransient<Microsoft.AspNetCore.Authentication.IClaimsTransformation, MyClaimsTransformation>();
 
 // --------------------------------------------------------------------------------------------------------------------------------------------
 var app = builder.Build();

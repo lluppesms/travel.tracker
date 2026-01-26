@@ -37,8 +37,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @GetActiveClass(RouteUpload)" href="upload" @onclick="NavigateToUpload" @onclick:preventDefault>
-                        <span class="bi bi-upload" aria-hidden="true"></span> Data
+                    <a class="nav-link @GetActiveClass(RouteAdmin)" href="admin" @onclick="NavigateToAdmin" @onclick:preventDefault>
+                        <span class="bi bi-upload" aria-hidden="true"></span> Admin
                     </a>
                 </li>
                 <li class="nav-item">
@@ -93,6 +93,7 @@
     private const string RouteStatistics = "statistics";
     private const string RouteUpload = "upload";
     private const string RouteChat = "chat";
+    private const string RouteAdmin = "admin";
     private const string RouteAbout = "about";
 
     private bool collapseNavMenu = true;
@@ -111,6 +112,7 @@
     private Task NavigateToStatistics() => NavigateWithSpinner(RouteStatistics);
     private Task NavigateToUpload() => NavigateWithSpinner(RouteUpload);
     private Task NavigateToChat() => NavigateWithSpinner(RouteChat);
+    private Task NavigateToAdmin() => NavigateWithSpinner(RouteAdmin);
     private Task NavigateToAbout() => NavigateWithSpinner(RouteAbout);
 
     private async Task NavigateWithSpinner(string path)

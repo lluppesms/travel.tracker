@@ -1,0 +1,170 @@
+﻿@page "/admin"
+@using Microsoft.JSInterop;
+@using TravelTracker.Services
+@inject IConfiguration Configuration
+@inject HttpContextAccessor Context
+@inject IJSRuntime JsInterop
+@attribute [Authorize]
+
+<PageTitle>Admin</PageTitle>
+
+<div class="container" style="padding: 25px;">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h1>Admin Menu</h1>
+            <p>You are logged in as: @userName</p>
+
+            <AuthorizeView Roles="Admin">
+                <h4 class="mt-4 mb-3">Admin Tools</h4>
+                <div class="d-flex flex-wrap gap-3 mb-4">
+                    <a href="Upload" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Import/Export Data
+                    </a>
+                    <a href="api/swagger/index.html" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-code me-2"></i>Swagger API
+                    </a>
+                </div>
+
+                <h4 class="mt-4 mb-3">System Information</h4>
+                <ul>
+                    <li>Data Source: @dataSource</li>
+                    <li>API Key: @apiKeyInfo</li>
+                    <li>AI Chat: @aiChatInfo</li>
+                    <li>Azure Maps: @azureMapsInfo</li>
+                </ul>
+            </AuthorizeView>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string userName = string.Empty;
+    private string dataSource = string.Empty;
+    private string apiKeyInfo = string.Empty;
+    private string aiChatInfo = string.Empty;
+    private string azureMapsInfo = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            // await JsInterop.InvokeVoidAsync("syncHeaderTitle");
+            var userIdentity = Context.HttpContext.User;
+            userName = userIdentity != null ? userIdentity.Identity.Name : string.Empty;
+            var isInAdminRole = userIdentity != null && userIdentity.IsInRole("Admin");
+            if (isInAdminRole)
+            {
+                try
+                {
+                    var sqlDefaultConnection = Configuration["SqlServer:ConnectionString"];
+                    if (!string.IsNullOrEmpty(sqlDefaultConnection))
+                    {
+                        var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(sqlDefaultConnection);
+                        dataSource = $"SQL Server: {builder.DataSource}, Database: {builder.InitialCatalog}";
+                    }
+                    else
+                    {
+                        dataSource = "JSON File";
+                    }
+
+                    // Get AI Chat configuration
+                    var aiChatEndpoint = Configuration["AzureAIFoundry:Endpoint"];
+                    var aiChatModel = Configuration["AzureAIFoundry:DeploymentName"];
+                    if (!string.IsNullOrEmpty(aiChatEndpoint) && !string.IsNullOrEmpty(aiChatModel))
+                    {
+                        var endpointUri = new Uri(aiChatEndpoint);
+                        aiChatInfo = $"{endpointUri.Host} / {aiChatModel}";
+                    }
+                    else
+                    {
+                        aiChatInfo = "Not configured";
+                    }
+
+                    // azureMapsInfo
+                    var mapsKey = Configuration["AzureMaps:SubscriptionKey"];
+                    var mapsClient = Configuration["AzureMaps:ClientId"];
+                    if (!string.IsNullOrEmpty(mapsKey) && !string.IsNullOrEmpty(mapsClient))
+                    {
+                        azureMapsInfo = $"Client: {mapsClient} / {mapsKey.Substring(0, 2)}";
+                    }
+                    else
+                    {
+                        azureMapsInfo = "Not configured";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading admin page! {GetExceptionMessage(ex)}");
+                }
+            }
+            else
+            {
+                if (userIdentity == null)
+                {
+                    Console.WriteLine($"User tried to access the admin page but is not authenticated and therefore failed!");
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(userName))
+                    {
+                        Console.WriteLine($"User {userName} tried to access the admin page but failed!");
+                        //Console.WriteLine($"Admin list = {Data.Constants.AdminUserList} ");
+                        //Console.WriteLine($"IsAdmin = {Data.Constants.AdminUserList.Contains(userName, StringComparison.InvariantCultureIgnoreCase)}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"User tried to access the admin page and seems to be authenticated but the userName is blank!");
+                    }
+                }
+            }
+            StateHasChanged();
+        }
+    }
+    private string FormatBuildDate(string buildDate)
+    {
+        if (DateTime.TryParse(buildDate, out var date))
+        {
+            return $"Compiled {date.ToString("yyyy-MM-dd HH:mm:ss")}";
+        }
+        return buildDate;
+    }
+    public static string GetExceptionMessage(Exception ex)
+    {
+        var message = string.Empty;
+        if (ex == null)
+        {
+            return message;
+        }
+        if (ex.Message != null)
+        {
+            message += ex.Message;
+        }
+        if (ex.InnerException == null)
+        {
+            return message;
+        }
+        if (ex.InnerException.Message != null)
+        {
+            message += " " + ex.InnerException.Message;
+        }
+        if (ex.InnerException.InnerException == null)
+        {
+            return message;
+        }
+        if (ex.InnerException.InnerException.Message != null)
+        {
+            message += " " + ex.InnerException.InnerException.Message;
+        }
+        if (ex.InnerException.InnerException.InnerException == null)
+        {
+            return message;
+        }
+        if (ex.InnerException.InnerException.InnerException.Message != null)
+        {
+            message += " " + ex.InnerException.InnerException.InnerException.Message;
+        }
+        return message;
+    }
+}
