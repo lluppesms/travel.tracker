@@ -180,7 +180,7 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       
       ApiKey: apiKey
 
-      SqlServer__ConnectionString: 'Server=tcp:${sqlDbModule.outputs.serverName}${environment().suffixes.sqlServerHostname},1433;Initial Catalog=${sqlDbModule.outputs.databaseName};Authentication=Active Directory Default;Encrypt=True;Connection Timeout=30;'
+      SqlServer__ConnectionString: 'Server=tcp:${sqlDbModule.outputs.serverName}${environment().suffixes.sqlServerHostname},1433;Initial Catalog=${sqlDbModule.outputs.databaseName};Authentication=Active Directory Default;Encrypt=True;Connection Timeout=120;'
 
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain

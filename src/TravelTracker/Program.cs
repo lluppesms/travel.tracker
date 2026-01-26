@@ -14,7 +14,6 @@ builder.Services.AddSingleton<IConfiguration>(config);
 // Add authentication only if Azure AD is configured
 var azureAdConfigured = !string.IsNullOrEmpty(builder.Configuration["AzureAd:TenantId"]) &&
                         !string.IsNullOrEmpty(builder.Configuration["AzureAd:ClientId"]);
-
 if (azureAdConfigured)
 {
     Console.WriteLine("Azure AD configured - enabling authentication");
@@ -59,9 +58,18 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
         Console.WriteLine($"Overwriting tenant for managed identity credentials...");
         creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
         {
-            ExcludeEnvironmentCredential = true,
-            ExcludeManagedIdentityCredential = true,
+            ExcludeEnvironmentCredential =false,
+            ExcludeManagedIdentityCredential = false,
             TenantId = visualStudioTenantId
+        });
+    }
+    else
+    {
+        Console.WriteLine($"Using default tenant for managed identity credentials...");
+        creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+        {
+            ExcludeEnvironmentCredential =false,
+            ExcludeManagedIdentityCredential = false
         });
     }
     return creds;
@@ -71,7 +79,9 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
 var sqlConnectionString = builder.Configuration["SqlServer:ConnectionString"];
 if (!string.IsNullOrEmpty(sqlConnectionString))
 {
-    Console.WriteLine("Connecting to SQL Server database...");
+    var sqlConnectionObject = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(sqlConnectionString);
+    var dataSource = $"SQL Server: {sqlConnectionObject.DataSource}, Database: {sqlConnectionObject.InitialCatalog}";
+    Console.WriteLine($"Connecting to {dataSource}...");
     builder.Services.AddDbContext<TravelTrackerDbContext>(options => options.UseSqlServer(sqlConnectionString));
 
     // Add repositories
@@ -103,6 +113,21 @@ else
     Console.WriteLine("*******  No valid SQL Server configuration found!!!! *******");
     Console.WriteLine("*******  Please configure SqlServer:ConnectionString *******");
 }
+
+if (!string.IsNullOrEmpty(builder.Configuration["AzureAIFoundry:Endpoint"]))
+{
+    var azureAIFoundryEndpoint = builder.Configuration["AzureAIFoundry:Endpoint"];
+    var azureAIFoundryApiKey = builder.Configuration["AzureAIFoundry:ApiKey"];
+    var azureAIFoundryDeploymentName = builder.Configuration["AzureAIFoundry:DeploymentName"];
+    Console.WriteLine($"Connecting to Azure AI Foundry at {azureAIFoundryEndpoint} with deployment {azureAIFoundryDeploymentName} and Key {azureAIFoundryApiKey?[..2]}...");
+}
+else
+{
+    Console.WriteLine("*******  No valid Azure AI Foundry configuration found!!!! *******");
+    Console.WriteLine("*******  Please configure AzureAIFoundry:Endpoint, AzureAIFoundry:ApiKey, and AzureAIFoundry:DeploymentName *******");
+}
+
+
 // Add Razor Pages for authentication
 if (azureAdConfigured)
 {
