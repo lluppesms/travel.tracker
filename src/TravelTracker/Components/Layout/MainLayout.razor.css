@@ -10,7 +10,7 @@ main {
 
 .content {
     padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
+    padding-bottom: 4rem;
 }
 
 .footer {
@@ -19,7 +19,11 @@ main {
     padding: 1rem 0;
     text-align: center;
     border-top: 1px solid var(--border-color);
-    margin-top: auto;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
 }
 
 .footer p {

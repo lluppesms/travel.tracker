@@ -82,6 +82,12 @@ html, body {
     background-color: var(--bg-secondary) !important;
     color: var(--text-primary) !important;
     transition: background-color 0.3s ease, color 0.3s ease;
+    height: 100%;
+    margin: 0;
+}
+
+html {
+    min-height: 100%;
 }
 
 /* Force dark mode backgrounds */
