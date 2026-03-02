@@ -1,8 +1,13 @@
 ﻿global using Azure;
+global using Azure.AI.OpenAI;
 global using Azure.Identity;
+global using Microsoft.Agents.AI;
+global using Microsoft.Agents.AI.OpenAI;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.Logging;
+global using OpenAI.Chat;
+global using System.ClientModel;
 global using System.Globalization;
 global using System.Text.RegularExpressions;
 

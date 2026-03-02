@@ -1,4 +1,5 @@
 @page "/locations"
+@using System.Text.Json
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
 @inject ILocationService LocationService
@@ -190,37 +191,11 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-10 mb-3">
+                                <div class="col-md-12 mb-3">
                                     <label class="form-label">Address</label>
                                     <InputText class="form-control" @bind-Value="currentLocation.Address" disabled="@(isLookingUp || isSaving)" />
                                 </div>
-                                <div class="col-md-2 mb-3 d-flex align-items-end">
-                                    <button type="button"
-                                            class="btn btn-outline-secondary w-100"
-                                            @onclick="LookupLocationAsync"
-                                            disabled="@(isLookingUp || isSaving || string.IsNullOrWhiteSpace(currentLocation.Name))"
-                                            title="@(LocationLookupService.IsConfigured ? "Use AI to look up address and coordinates" : "AI lookup not configured")">
-                                        @if (isLookingUp)
-                                        {
-                                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                            <span>Looking up...</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="bi bi-search me-1"></span>
-                                            <span>Lookup</span>
-                                        }
-                                    </button>
-                                </div>
                             </div>
-
-                            @if (!string.IsNullOrEmpty(lookupMessage))
-                            {
-                                <div class="alert @(lookupSuccess ? "alert-success" : "alert-warning") alert-dismissible py-2 mb-3" role="alert">
-                                    @lookupMessage
-                                    <button type="button" class="btn-close" @onclick="() => lookupMessage = string.Empty"></button>
-                                </div>
-                            }
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -238,15 +213,39 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-5 mb-3">
                                     <label class="form-label">Latitude</label>
                                     <InputNumber class="form-control" @bind-Value="currentLocation.Latitude" disabled="@(isLookingUp || isSaving)" />
                                 </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-5 mb-3">
                                     <label class="form-label">Longitude</label>
                                     <InputNumber class="form-control" @bind-Value="currentLocation.Longitude" disabled="@(isLookingUp || isSaving)" />
                                 </div>
+                                <div class="col-md-2 mb-3 d-flex align-items-end">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary w-100"
+                                            @onclick="LookupLocationAsync"
+                                            disabled="@(isLookingUp || isSaving)"
+                                            title="Lookup">
+                                        @if (isLookingUp)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bi bi-geo-alt me-1"></span>
+                                        }
+                                    </button>
+                                </div>
                             </div>
+
+                            @if (!string.IsNullOrEmpty(lookupMessage))
+                            {
+                                <div class="alert @(lookupSuccess ? "alert-success" : "alert-warning") alert-dismissible py-2 mb-3" role="alert">
+                                    @lookupMessage
+                                    <button type="button" class="btn-close" @onclick="() => lookupMessage = string.Empty"></button>
+                                </div>
+                            }
                         }
 
                         <div class="row">
@@ -549,39 +548,88 @@
 
     private async Task LookupLocationAsync()
     {
-        if (string.IsNullOrWhiteSpace(currentLocation.Name))
-            return;
-
         try
         {
             isLookingUp = true;
             lookupMessage = string.Empty;
             StateHasChanged();
 
-            var result = await LocationLookupService.LookupLocationAsync(
-                currentLocation.Name,
-                currentLocation.Address,
-                currentLocation.City,
-                currentLocation.State,
-                currentLocation.ZipCode);
+            // Build query string from available address parts
+            var queryParts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(currentLocation.Address)) queryParts.Add(currentLocation.Address);
+            if (!string.IsNullOrWhiteSpace(currentLocation.City)) queryParts.Add(currentLocation.City);
+            if (!string.IsNullOrWhiteSpace(currentLocation.State)) queryParts.Add(currentLocation.State);
+            if (!string.IsNullOrWhiteSpace(currentLocation.ZipCode)) queryParts.Add(currentLocation.ZipCode);
 
-            if (result.Success)
+            if (queryParts.Count == 0)
             {
-                currentLocation.Address = result.Address;
-                currentLocation.City = result.City;
-                currentLocation.State = result.State;
-                currentLocation.ZipCode = result.ZipCode;
-                currentLocation.Latitude = result.Latitude;
-                currentLocation.Longitude = result.Longitude;
-                lookupSuccess = true;
-                lookupMessage = "Location details found and filled in successfully!";
+                lookupSuccess = false;
+                lookupMessage = "Please fill in at least one address field (Address, City, State, or Zip Code)";
+                return;
+            }
+
+            @* 
+            Calling: https://photon.komoot.io/api?q=12400+Skyline+Road+NE+Albuquerque+NM+87123
+            Returns: 
+            {
+            "type": "FeatureCollection",
+            "features": [
+              {
+                "type": "Feature",
+                "properties": {
+                    "osm_type": "W",
+                    "osm_id": 568612162,
+                    "osm_key": "tourism",
+                    "osm_value": "camp_site",
+                    "type": "house",
+                    "postcode": "87123",
+                    "housenumber": "12400",
+                    "countrycode": "US",
+                    "name": "Albuquerque KOA Journey",
+                    "street": "Skyline Road Northeast",
+                    "district": "Singing Arrow",
+                    "city": "Albuquerque",
+                    "county": "Bernalillo County",
+                    "state": "New Mexico",
+                    "country": "United States",
+                    "extent": [-106.5106866, 35.0744292, -106.5063027, 35.0721521]
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [-106.5090739, 35.0731944]
+                }
+              }
+            ]
+            } *@
+            var query = string.Join("+", queryParts.Select(p => Uri.EscapeDataString(p)));
+            var url = $"https://photon.komoot.io/api?q={query}&format=json";
+
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetStringAsync(url);
+            var jsonDoc = JsonDocument.Parse(response);
+
+            if (jsonDoc.RootElement.TryGetProperty("features", out var features) && features.GetArrayLength() > 0)
+            {
+                var firstFeature = features[0];
+                if (firstFeature.TryGetProperty("geometry", out var geometry) &&
+                    geometry.TryGetProperty("coordinates", out var coordinates) &&
+                    coordinates.GetArrayLength() >= 2)
+                {
+                    currentLocation.Longitude = coordinates[0].GetDouble();
+                    currentLocation.Latitude = coordinates[1].GetDouble();
+                    lookupSuccess = true;
+                    lookupMessage = "Coordinates found successfully!";
+                }
+                else
+                {
+                    lookupSuccess = false;
+                    lookupMessage = "Found location but couldn't extract coordinates";
+                }
             }
             else
             {
                 lookupSuccess = false;
-                lookupMessage = string.IsNullOrEmpty(result.ErrorMessage)
-                    ? "Could not find location details. Please fill in manually."
-                    : $"Lookup result: {result.ErrorMessage}";
+                lookupMessage = "No results found for the given address";
             }
         }
         catch (Exception ex)

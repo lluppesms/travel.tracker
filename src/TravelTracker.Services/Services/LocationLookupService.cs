@@ -1,5 +1,3 @@
-using Azure;
-using Azure.AI.Inference;
 using System.Text.Json;
 
 namespace TravelTracker.Services.Services;
@@ -7,20 +5,28 @@ namespace TravelTracker.Services.Services;
 public class LocationLookupService : ILocationLookupService
 {
     private readonly AzureAIFoundrySettings _settings;
-    private readonly ChatCompletionsClient? _client;
     private readonly ILogger<LocationLookupService> _logger;
+    private readonly IConfiguration _configuration;
+    private ChatClient? _chatClient;
 
-    public bool IsConfigured => _client != null;
+    public bool IsConfigured => !string.IsNullOrEmpty(_settings.Endpoint) && !string.IsNullOrEmpty(_settings.DeploymentName);
 
-    private const int LookupMaxTokens = 300;
-
-    private static readonly string SystemPrompt =
+    private const string SystemPrompt =
         """
-        You are a precise location data validator.
-        Given a location name and partial address details, validate or correct the address and find the exact latitude and longitude.
+        You are a precise location finder.
+        Given a location name and partial address details, get the exact latitude and longitude
+        by calling this API: https://photon.komoot.io/api?q=<address>+<city>+<state>+<zipCode>&format=json
         Always respond with a valid JSON object only - no markdown formatting, no code blocks, just the raw JSON.
         """;
-
+    // private const string SystemPrompt_V1 =
+    //     """
+    //     You are a precise location data validator.
+    //     Given a location name and partial address details, validate or correct the address and find the exact latitude and longitude.
+    //     If you can't find an EXACT match, return the closest match possible.  If a street address is provided, use that to find the latitude and longitude.
+    //     Call this API if needed to get a lat/long: https://photon.komoot.io/api?q=<address>+<city>+<state>+<zipCode>&format=json
+    //     Use Bing Maps, campground websites, national park websites, or campground directories as valid sources.
+    //     Always respond with a valid JSON object only - no markdown formatting, no code blocks, just the raw JSON.
+    //     """;
     public LocationLookupService(
         IOptions<AzureAIFoundrySettings> settings,
         ILogger<LocationLookupService> logger,
@@ -28,23 +34,45 @@ public class LocationLookupService : ILocationLookupService
     {
         _settings = settings.Value;
         _logger = logger;
+        _configuration = configuration;
+    }
 
-        if (!string.IsNullOrEmpty(_settings.Endpoint))
+    private bool InitializeChatClient()
+    {
+        if (_chatClient != null) return true;
+
+        if (string.IsNullOrEmpty(_settings.Endpoint) || string.IsNullOrEmpty(_settings.DeploymentName))
         {
+            _logger.LogWarning("Azure OpenAI endpoint or deployment name not configured");
+            return false;
+        }
+
+        try
+        {
+            AzureOpenAIClient azureClient;
+
             if (!string.IsNullOrEmpty(_settings.ApiKey))
             {
-                _client = new ChatCompletionsClient(new Uri(_settings.Endpoint), new AzureKeyCredential(_settings.ApiKey));
+                azureClient = new AzureOpenAIClient(new Uri(_settings.Endpoint), new ApiKeyCredential(_settings.ApiKey));
             }
             else
             {
-                _client = new ChatCompletionsClient(new Uri(_settings.Endpoint), CredentialsHelper.GetCredentials(configuration));
+                azureClient = new AzureOpenAIClient(new Uri(_settings.Endpoint), CredentialsHelper.GetCredentials(_configuration));
             }
+
+            _chatClient = azureClient.GetChatClient(_settings.DeploymentName);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error initializing Location Lookup ChatClient");
+            return false;
         }
     }
 
     public async Task<LocationLookupResult> LookupLocationAsync(string name, string address, string city, string state, string zipCode)
     {
-        if (_client == null)
+        if (!InitializeChatClient())
         {
             return new LocationLookupResult
             {
@@ -68,24 +96,16 @@ public class LocationLookupService : ILocationLookupService
 
         try
         {
-            var requestOptions = new ChatCompletionsOptions
+            var messages = new List<ChatMessage>
             {
-                Messages =
-                {
-                    new ChatRequestSystemMessage(SystemPrompt),
-                    new ChatRequestUserMessage(userPrompt)
-                },
-                Model = _settings.DeploymentName,
-                MaxTokens = LookupMaxTokens
+                new SystemChatMessage(SystemPrompt),
+                new UserChatMessage(userPrompt)
             };
 
-            Console.WriteLine($"Endpoint: {_settings.Endpoint}");
-            Console.WriteLine($"DeploymentName: {_settings.DeploymentName}");
-            Console.WriteLine($"ApiKey: {_settings.ApiKey}");
-            Console.WriteLine($"AgentId: {_settings.AgentId}");
+            var options = new ChatCompletionOptions();
 
-            var response = await _client.CompleteAsync(requestOptions);
-            var content = response.Value.Choices[0].Message.Content ?? string.Empty;
+            var response = await _chatClient!.CompleteChatAsync(messages, options);
+            var content = response.Value.Content[0].Text ?? string.Empty;
 
             _logger.LogInformation("Location lookup AI response: {Content}", content);
 
