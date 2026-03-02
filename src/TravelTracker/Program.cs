@@ -98,6 +98,7 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<IDataExportService, DataExportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
     builder.Services.AddScoped<IChatbotService, ChatbotService>();
+    builder.Services.AddScoped<ILocationLookupService, LocationLookupService>();
     builder.Services.AddScoped<IDestinationService, DestinationService>();
 
     // Add MCP tools
