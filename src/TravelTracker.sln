@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36930.0 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TravelTracker", "TravelTracker\TravelTracker.csproj", "{8F9051D5-FBAF-F349-AC9F-439D6DC284FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TravelTracker.Data", "TravelTracker.Data\TravelTracker.Data.csproj", "{A13F9B4F-38C6-B236-78DA-3934F940C32C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TravelTracker.Services", "TravelTracker.Services\TravelTracker.Services.csproj", "{3062B628-60D6-23A0-C45F-F287A7D0E20B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TravelTracker.Tests", "TravelTracker.Tests\TravelTracker.Tests.csproj", "{27FDAABC-53FF-4348-B518-C19E94B63A2C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		..\Database\CreateDatabase.sql = ..\Database\CreateDatabase.sql
+		..\Database\DatabaseQueries.sql = ..\Database\DatabaseQueries.sql
+		..\Database\Insert_Default_Data.sql = ..\Database\Insert_Default_Data.sql
+		..\Database\TravelTrackerDB-Compare-Data.dcmp = ..\Database\TravelTrackerDB-Compare-Data.dcmp
+		..\Database\TravelTrackerDB-Compare-Schema.scmp = ..\Database\TravelTrackerDB-Compare-Schema.scmp
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F9051D5-FBAF-F349-AC9F-439D6DC284FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F9051D5-FBAF-F349-AC9F-439D6DC284FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F9051D5-FBAF-F349-AC9F-439D6DC284FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F9051D5-FBAF-F349-AC9F-439D6DC284FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A13F9B4F-38C6-B236-78DA-3934F940C32C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A13F9B4F-38C6-B236-78DA-3934F940C32C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A13F9B4F-38C6-B236-78DA-3934F940C32C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A13F9B4F-38C6-B236-78DA-3934F940C32C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3062B628-60D6-23A0-C45F-F287A7D0E20B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3062B628-60D6-23A0-C45F-F287A7D0E20B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3062B628-60D6-23A0-C45F-F287A7D0E20B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3062B628-60D6-23A0-C45F-F287A7D0E20B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27FDAABC-53FF-4348-B518-C19E94B63A2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27FDAABC-53FF-4348-B518-C19E94B63A2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27FDAABC-53FF-4348-B518-C19E94B63A2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27FDAABC-53FF-4348-B518-C19E94B63A2C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C016E994-65CE-4EA4-B447-96656A3FDAA2}
+	EndGlobalSection
+EndGlobal

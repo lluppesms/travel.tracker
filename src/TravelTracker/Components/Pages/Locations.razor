@@ -252,7 +252,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Start Date *</label>
-                                <InputDate class="form-control" @bind-Value="currentLocation.StartDate" disabled="@(isLookingUp || isSaving)" />
+                                <InputDate class="form-control" @bind-Value="currentLocation.StartDate" @bind-Value:after="OnStartDateChanged" disabled="@(isLookingUp || isSaving)" />
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">End Date</label>
@@ -421,7 +421,9 @@
         currentLocation = new Location
         {
             UserId = currentUserId,
-            StartDate = DateTime.Today
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today,
+            Rating = 5
         };
         isEditMode = false;
         showLocationForm = true;
@@ -487,6 +489,15 @@
         }
 
         StateHasChanged();
+    }
+
+    private void OnStartDateChanged()
+    {
+        // For new locations, automatically set end date to match start date
+        if (!isEditMode && currentLocation.EndDate == null)
+        {
+            currentLocation.EndDate = currentLocation.StartDate;
+        }
     }
 
     private async Task LoadDestinationsForTypeAsync(string locationType)

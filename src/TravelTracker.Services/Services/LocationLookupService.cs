@@ -79,6 +79,11 @@ public class LocationLookupService : ILocationLookupService
                 MaxTokens = LookupMaxTokens
             };
 
+            Console.WriteLine($"Endpoint: {_settings.Endpoint}");
+            Console.WriteLine($"DeploymentName: {_settings.DeploymentName}");
+            Console.WriteLine($"ApiKey: {_settings.ApiKey}");
+            Console.WriteLine($"AgentId: {_settings.AgentId}");
+
             var response = await _client.CompleteAsync(requestOptions);
             var content = response.Value.Choices[0].Message.Content ?? string.Empty;
 
