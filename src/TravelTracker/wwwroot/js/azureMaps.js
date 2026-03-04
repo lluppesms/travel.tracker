@@ -5,6 +5,17 @@ let maps = {}; // Store multiple map instances
 let popups = {}; // Store multiple popup instances
 let mapMarkers = {}; // Store markers for each map
 
+// Escape user-provided strings before inserting into HTML to prevent XSS
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // Marker color selection based on location type
 function getMarkerColor(locationType) {
     if (!locationType) return '#dc3545';
@@ -307,7 +318,7 @@ function createPopupContent(properties) {
 function createBucketListPopupContent(properties) {
     const status = properties.isVisited ? '✓ Visited' : '○ Not Yet Visited';
     const statusColor = properties.isVisited ? '#28a745' : '#dc3545';
-    const descriptionLine = properties.description ? `<span style="color: #444; font-style: italic;">${properties.description}</span><br/>` : '';
+    const descriptionLine = properties.description ? `<span style="color: #444; font-style: italic;">${escapeHtml(properties.description)}</span><br/>` : '';
     return `
         <div style="padding: 10px; max-width: 260px;">
             <strong>${properties.name}</strong><br/>
