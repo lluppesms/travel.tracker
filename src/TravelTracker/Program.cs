@@ -98,8 +98,15 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<IDataExportService, DataExportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
     builder.Services.AddScoped<IChatbotService, ChatbotService>();
-    builder.Services.AddScoped<ILocationLookupService, LocationLookupService>();
     builder.Services.AddScoped<IDestinationService, DestinationService>();
+
+    // Register LocationLookupService with a typed HttpClient (uses Nominatim + Photon public APIs)
+    builder.Services.AddHttpClient<ILocationLookupService, LocationLookupService>(client =>
+    {
+        // Nominatim usage policy requires a descriptive User-Agent header
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("TravelTracker/1.0 (https://github.com/lluppesms/travel.tracker)");
+        client.Timeout = TimeSpan.FromSeconds(15);
+    });
 
     // Add MCP tools
     builder.Services.AddScoped<LocationTools>();
