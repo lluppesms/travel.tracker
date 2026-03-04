@@ -351,7 +351,7 @@ function createBucketListPopupContent(properties, includeDescription = true) {
         ? `<span style="color: #444; font-style: italic;">${escapeHtml(properties.description)}</span><br/>`
         : '';
     return `
-        <div style="padding: 10px; max-width: 260px;">
+        <div style="padding: 10px; width: 260px; max-width: 260px; white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
             <strong>${properties.name}</strong><br/>
             <span style="color: #666;">📍 ${properties.state}</span><br/>
             <span style="color: #666;">🏷️ ${properties.destinationType}</span><br/>
