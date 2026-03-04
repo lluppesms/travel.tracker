@@ -30,6 +30,18 @@ function getBucketListMarkerColor(isVisited) {
     return isVisited ? '#28a745' : '#dc3545'; // Green for visited, red for not visited
 }
 
+// Check if a destination type is a presidential library/site type
+function isPresidentialSiteType(destinationType) {
+    if (!destinationType) return false;
+    return destinationType.toLowerCase().includes('presidential');
+}
+
+// Get the marker text icon for a presidential site based on its name
+function getPresidentialSiteMarkerText(name) {
+    const nameLower = (name || '').toLowerCase();
+    return nameLower.includes('library') ? '🏛' : '📄';
+}
+
 // Initialize the map with custom container ID
 window.initializeAzureMap = function (containerIdOrKey, subscriptionKeyOrLat, centerLatOrLon, centerLonOrZoom, zoomOrUndef) {
     return new Promise((resolve, reject) => {
@@ -120,11 +132,14 @@ window.updateBucketListMapMarkers = function (containerId, destinations) {
                 isVisited: dest.isVisited
             };
             
-            // Create HTML marker with custom color
+            // Create HTML marker with color and optional icon text for presidential sites
+            const markerText = isPresidentialSiteType(destProps.destinationType)
+                ? getPresidentialSiteMarkerText(dest.name)
+                : '';
             const marker = new atlas.HtmlMarker({
                 position: [dest.lon, dest.lat],
                 color: color,
-                text: ''
+                text: markerText
             });
 
             // Add hover event
