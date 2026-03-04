@@ -336,13 +336,21 @@
 
     public async ValueTask DisposeAsync()
     {
+        if (!isMapInitialized)
+            return;
+
         try
         {
-            if (isMapInitialized)
-            {
-                Logger.LogInformation("Disposing Azure Map");
-                await JSRuntime.InvokeVoidAsync("disposeAzureMap");
-            }
+            Logger.LogInformation("Disposing Azure Map");
+            await JSRuntime.InvokeVoidAsync("disposeAzureMap");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Expected when the circuit disconnects during app shutdown — safe to ignore.
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when the cancellation token fires during shutdown — safe to ignore.
         }
         catch (Exception ex)
         {

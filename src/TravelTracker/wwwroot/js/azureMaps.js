@@ -5,6 +5,17 @@ let maps = {}; // Store multiple map instances
 let popups = {}; // Store multiple popup instances
 let mapMarkers = {}; // Store markers for each map
 
+// Escape user-provided strings before inserting into HTML to prevent XSS
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // Marker color selection based on location type
 function getMarkerColor(locationType) {
     if (!locationType) return '#dc3545';
@@ -28,6 +39,18 @@ function getMarkerColor(locationType) {
 // Get marker color for bucket list based on visited status
 function getBucketListMarkerColor(isVisited) {
     return isVisited ? '#28a745' : '#dc3545'; // Green for visited, red for not visited
+}
+
+// Check if a destination type is a presidential library/site type
+function isPresidentialSiteType(destinationType) {
+    if (!destinationType) return false;
+    return destinationType.toLowerCase().includes('presidential');
+}
+
+// Get the marker text icon for a presidential site based on its name
+function getPresidentialSiteMarkerText(name) {
+    const nameLower = (name || '').toLowerCase();
+    return nameLower.includes('library') ? '🏛' : '📄';
 }
 
 // Initialize the map with custom container ID
@@ -103,6 +126,14 @@ window.updateBucketListMapMarkers = function (containerId, destinations) {
             return false;
         }
 
+        // Track whether popup is pinned open by a click (vs. just hovered).
+        // When pinned, hover events on other markers are suppressed until the
+        // user explicitly closes the popup via the × button.
+        let popupPinned = false;
+        // Keep a reference to the current close listener so it can be replaced
+        // if the user clicks a different marker before closing the popup.
+        let currentCloseListener = null;
+
         // Clear existing markers
         const markers = mapMarkers[containerId] || [];
         markers.forEach(marker => map.markers.remove(marker));
@@ -116,35 +147,58 @@ window.updateBucketListMapMarkers = function (containerId, destinations) {
             const destProps = {
                 name: dest.name,
                 state: dest.state,
+                description: dest.description || '',
                 destinationType: dest.destinationType || 'Unknown',
                 isVisited: dest.isVisited
             };
             
-            // Create HTML marker with custom color
+            // Create HTML marker with color and optional icon text for presidential sites
+            const markerText = isPresidentialSiteType(destProps.destinationType)
+                ? getPresidentialSiteMarkerText(dest.name)
+                : '';
             const marker = new atlas.HtmlMarker({
                 position: [dest.lon, dest.lat],
                 color: color,
-                text: ''
+                text: markerText
             });
 
-            // Add hover event
+            // Add hover event (compact tooltip — no description)
             map.events.add('mouseover', marker, function (e) {
+                if (popupPinned) return; // don't override a click-pinned popup
                 popup.setOptions({
-                    content: createBucketListPopupContent(destProps),
-                    position: marker.getOptions().position
+                    content: createBucketListPopupContent(destProps, false),
+                    position: marker.getOptions().position,
+                    closeButton: false
                 });
                 popup.open(map);
             });
 
             // Add mouse leave event
             map.events.add('mouseleave', marker, function () {
-                popup.close();
+                if (!popupPinned) popup.close();
             });
 
-            // Add click event
+            // Add click event - open a sticky popup with full details and a close button
             map.events.add('click', marker, function (e) {
-                const status = destProps.isVisited ? 'Visited' : 'Not Yet Visited';
-                alert(`${destProps.name}\n${destProps.state}\nStatus: ${status}`);
+                // Remove any existing close listener before registering a new one
+                if (currentCloseListener) {
+                    map.events.remove('close', popup, currentCloseListener);
+                    currentCloseListener = null;
+                }
+                popupPinned = true;
+                popup.setOptions({
+                    content: createBucketListPopupContent(destProps),
+                    position: marker.getOptions().position,
+                    closeButton: true
+                });
+                popup.open(map);
+                // Unpin when the user explicitly closes the popup
+                currentCloseListener = () => {
+                    popupPinned = false;
+                    map.events.remove('close', popup, currentCloseListener);
+                    currentCloseListener = null;
+                };
+                map.events.add('close', popup, currentCloseListener);
             });
 
             map.markers.add(marker);
@@ -288,16 +342,20 @@ function createPopupContent(properties) {
     `;
 }
 
-// Create bucket list popup content HTML
-function createBucketListPopupContent(properties) {
+// Create bucket list popup content HTML.
+// Pass includeDescription=false for the compact hover tooltip.
+function createBucketListPopupContent(properties, includeDescription = true) {
     const status = properties.isVisited ? '✓ Visited' : '○ Not Yet Visited';
     const statusColor = properties.isVisited ? '#28a745' : '#dc3545';
+    const descriptionLine = (includeDescription && properties.description)
+        ? `<span style="color: #444; font-style: italic;">${escapeHtml(properties.description)}</span><br/>`
+        : '';
     return `
-        <div style="padding: 10px;">
+        <div style="padding: 10px; width: 260px; max-width: 260px; white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
             <strong>${properties.name}</strong><br/>
             <span style="color: #666;">📍 ${properties.state}</span><br/>
             <span style="color: #666;">🏷️ ${properties.destinationType}</span><br/>
-            <span style="color: ${statusColor}; font-weight: bold;">${status}</span>
+            ${descriptionLine}<span style="color: ${statusColor}; font-weight: bold;">${status}</span>
         </div>
     `;
 }

@@ -74,6 +74,18 @@
         </div>
     </div>
 
+    <!-- Presidential Libraries Map Legend -->
+    @if (selectedTab == "pres-libraries")
+    {
+        <div class="d-flex flex-wrap gap-3 align-items-center mb-2 px-1 small">
+            <strong>Map Key:</strong>
+            <span><span class="marker-legend-icon" style="background-color:#28a745;">🏛</span> Library (Visited)</span>
+            <span><span class="marker-legend-icon" style="background-color:#dc3545;">🏛</span> Library (Not Visited)</span>
+            <span><span class="marker-legend-icon" style="background-color:#28a745;">📄</span> Presidential Site (Visited)</span>
+            <span><span class="marker-legend-icon" style="background-color:#dc3545;">📄</span> Presidential Site (Not Visited)</span>
+        </div>
+    }
+
     <!-- Destination List -->
     <div class="card">
         <div class="card-header">
@@ -147,6 +159,18 @@
 
     .table-success {
         --bs-table-bg: rgba(25, 135, 84, 0.1);
+    }
+
+    .marker-legend-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 3px;
+        font-size: 13px;
+        vertical-align: middle;
+        margin-right: 2px;
     }
 </style>
 
@@ -245,6 +269,7 @@
                     lon = d.Longitude,
                     name = d.Name,
                     state = d.State,
+                    description = d.Description,
                     isVisited = visitedDestinations.Any(v => v.Id == d.Id),
                     destinationType = GetDestinationTypeName(d.DestinationTypeId)
                 })
@@ -262,13 +287,21 @@
 
     public async ValueTask DisposeAsync()
     {
+        if (!isMapInitialized)
+            return;
+
         try
         {
-            if (isMapInitialized)
-            {
-                Logger.LogInformation("Disposing Bucket List Map");
-                await JSRuntime.InvokeVoidAsync("disposeAzureMap", "bucketListMap");
-            }
+            Logger.LogInformation("Disposing Bucket List Map");
+            await JSRuntime.InvokeVoidAsync("disposeAzureMap", "bucketListMap");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Expected when the circuit disconnects during app shutdown — safe to ignore.
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when the cancellation token fires during shutdown — safe to ignore.
         }
         catch (Exception ex)
         {
