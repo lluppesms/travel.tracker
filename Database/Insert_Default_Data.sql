@@ -1,10 +1,15 @@
-delete from Destinations
+-- =============================================
+-- Script: InsertDefaultData.sql
+-- Description: Inserts default data for Travel Tracker
+-- =============================================
+
+DELETE FROM Destinations
 GO
-delete from DestinationTypes
+DELETE FROM DestinationTypes
 GO
-delete from locationTypes
+DELETE FROM Locations
 GO
-delete from locations
+DELETE FROM LocationTypes
 GO
 
 DBCC CHECKIDENT ('Destinations', RESEED, 0)
@@ -155,41 +160,41 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 
 
 Print 'Inserting Presidential Libraries and Museums'
-INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description, PresidentialNumber, LibraryType) VALUES
-(3, 'George Washington Papers', 'Virginia', 38.7074, -77.0868, '1 (Not-NARA) Mount Vernon research library preserving George Washington''s papers and personal archives.', '1', 'Not-NARA'),
-(3, 'John Adams Papers', 'Massachusetts', 42.2551, -71.0113, '2 (Not-NARA) Historic Quincy library containing John Adams'' personal collection at Adams National Historical Park.', '2', 'Not-NARA'),
-(3, 'Thomas Jefferson Papers', 'Virginia', 38.0097, -78.4544, '3 (Not-NARA) Charlottesville research campus at Monticello supporting scholarship on Thomas Jefferson.', '3', 'Not-NARA'),
-(3, 'James Madison Papers', 'Virginia', 38.0336, -78.508, '4 (Collection) University of Virginia collection housing James Madison''s papers and correspondence.', '4', 'Collection'),
-(3, 'James Monroe Museum and Memorial Library', 'Virginia', 38.3019, -77.4606, '5 (Not-NARA) Fredericksburg museum and archives interpreting President James Monroe''s life.', '5', 'Not-NARA'),
-(3, 'John Quincy Adams Papers', 'Massachusetts', 42.2551, -71.0113, '6 (Not-NARA) Adams family stone library preserving John Quincy Adams'' extensive book collection.', '6', 'Not-NARA'),
-(3, 'Andrew Jackson Papers', 'Tennessee', 35.9553, -83.9309, '7 (Collection) University of Tennessee collection and reading room for Andrew Jackson''s papers.', '7', 'Collection'),
-(3, 'James Buchanan Papers', 'Pennsylvania', 39.9489, -75.1635, '15 (Collection) Philadelphia archives providing access to James Buchanan''s manuscripts and letters.', '15', 'Collection'),
-(3, 'Abraham Lincoln Presidential Library and Museum', 'Illinois', 39.7983, -89.6485, '16 (Not-NARA) Springfield complex blending museum exhibits with the Lincoln Presidential Library.', '16', 'Not-NARA'),
-(3, 'Andrew Johnson Museum and Library', 'Tennessee', 36.1687, -82.7419, '17 (Collection) Tusculum University museum preserving artifacts and records for Andrew Johnson.', '17', 'Collection'),
-(3, 'Ulysses S. Grant Presidential Library', 'Mississippi', 33.4543, -88.794, '18 (Collection) Mississippi State University library dedicated to Ulysses S. Grant scholarship.', '18', 'Collection'),
-(3, 'Rutherford B. Hayes Presidential Library and Museum', 'Ohio', 41.3503, -83.121, '19 (Not-NARA) Fremont estate housing the Hayes home, museum, and research library.', '19', 'Not-NARA'),
-(3, 'Grover Cleveland Papers', 'New Jersey', 40.347, -74.656, '22 and 24 (Collection) Princeton repository for Grover Cleveland''s papers and memorabilia.', '22 and 24', 'Collection'),
-(3, 'William McKinley Presidential Library and Museum', 'Ohio', 40.8207, -81.3816, '25 (Not-NARA) Canton museum featuring science exhibits and tributes to William McKinley.', '25', 'Not-NARA'),
-(3, 'Theodore Roosevelt Presidential Library', 'North Dakota', 46.9133, -103.5243, '26 (NARA) Opening 2026 - planned Medora campus honoring Theodore Roosevelt''s conservation legacy.', '26', 'NARA'),
-(3, 'Woodrow Wilson Presidential Library', 'Virginia', 38.1496, -79.073, '28 (Not-NARA) Staunton birthplace site with museum exhibits on Woodrow Wilson''s presidency.', '28', 'Not-NARA'),
-(3, 'Warren G. Harding Presidential Center', 'Ohio', 40.5895, -83.1289, '29 (Not-NARA) Marion site combining the Harding Home, memorial, and newly built library museum.', '29', 'Not-NARA'),
-(3, 'Calvin Coolidge Presidential Library and Museum', 'Massachusetts', 42.3188, -72.6311, '30 (Not-NARA) Northampton collection inside Forbes Library chronicling Calvin Coolidge''s career.', '30', 'Not-NARA'),
-(3, 'Herbert Hoover Presidential Library and Museum', 'Iowa', 41.6712, -91.346, '31 (NARA) Located in West Branch, Iowa. Dedicated to America''s 31st President.', '31', 'NARA'),
-(3, 'Franklin D. Roosevelt Presidential Library and Museum', 'New York', 41.7677, -73.9327, '32 (NARA) Located in Hyde Park, NY. The first presidential library, dedicated to FDR.', '32', 'NARA'),
-(3, 'Harry S. Truman Presidential Library and Museum', 'Missouri', 39.0911, -94.4178, '33 (NARA) Located in Independence, Missouri. Dedicated to America''s 33rd President.', '33', 'NARA'),
-(3, 'Dwight D. Eisenhower Presidential Library and Museum', 'Kansas', 38.9172, -97.2133, '34 (NARA) Located in Abilene, Kansas. Dedicated to the 34th President and WWII Supreme Commander.', '34', 'NARA'),
-(3, 'John F. Kennedy Presidential Library and Museum', 'Massachusetts', 42.3161, -71.0337, '35 (NARA) Located in Boston, Massachusetts. Dedicated to America''s 35th President.', '35', 'NARA'),
-(3, 'Lyndon Baines Johnson Presidential Library and Museum', 'Texas', 30.285, -97.7324, '36 (NARA) Located in Austin, Texas. Dedicated to America''s 36th President.', '36', 'NARA'),
-(3, 'Richard Nixon Presidential Library and Museum', 'California', 33.8895, -117.8822, '37 (NARA) Located in Yorba Linda, California. Dedicated to America''s 37th President.', '37', 'NARA'),
-(3, 'Gerald R. Ford Presidential Museum', 'Michigan', 42.9664, -85.6741, '38 (NARA) Located in Grand Rapids, Michigan. Dedicated to America''s 38th President.', '38', 'NARA'),
-(3, 'Jimmy Carter Presidential Library and Museum', 'Georgia', 33.7677, -84.3486, '39 (NARA) Located in Atlanta, Georgia. Dedicated to America''s 39th President.', '39', 'NARA'),
-(3, 'Ronald Reagan Presidential Library', 'California', 34.2596, -118.8196, '40 (NARA) Located in Simi Valley, California. Dedicated to America''s 40th President.', '40', 'NARA'),
-(3, 'George H. W. Bush Presidential Library and Museum', 'Texas', 30.6154, -96.3141, '41 (NARA) Located in College Station, Texas. Dedicated to America''s 41st President.', '41', 'NARA'),
-(3, 'William J. Clinton Presidential Library and Museum', 'Arkansas', 34.7466, -92.2635, '42 (NARA) Located in Little Rock, Arkansas. Dedicated to America''s 42nd President.', '42', 'NARA'),
-(3, 'George W. Bush Presidential Library and Museum', 'Texas', 32.8407, -96.7784, '43 (NARA) Located in Dallas, Texas. Dedicated to America''s 43rd President.', '43', 'NARA'),
-(3, 'Barack Obama Presidential Library and Museum', 'Illinois', 41.783, -87.59, '44 (NARA) Jackson Park campus opening in 2026 to showcase President Barack Obama''s story.', '44', 'NARA'),
-(3, 'Donald J. Trump Presidential Center', 'Florida', 25.7663, -80.2374, '45 and 47 (Fictional) Conceptual propaganda site in Miami; not an official NARA facility.', '45 and 47', 'Fictional'),
-(3, 'Joseph R. Biden Jr. Presidential Library and Museum', 'Delaware', 39.7391, -75.5398, '46 (NARA) Planned Delaware presidential center announced for President Joe Biden.', '46', 'NARA')
+INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description) VALUES
+(3, 'George Washington Papers', 'Virginia', 38.7074, -77.0868, '1 (Not-NARA) Mount Vernon research library preserving George Washington''s papers and personal archives.'),
+(3, 'John Adams Papers', 'Massachusetts', 42.2551, -71.0113, '2 (Not-NARA) Historic Quincy library containing John Adams'' personal collection at Adams National Historical Park.'),
+(3, 'Thomas Jefferson Papers', 'Virginia', 38.0097, -78.4544, '3 (Not-NARA) Charlottesville research campus at Monticello supporting scholarship on Thomas Jefferson.'),
+(3, 'James Madison Papers', 'Virginia', 38.0336, -78.508, '4 (Collection) University of Virginia collection housing James Madison''s papers and correspondence.'),
+(3, 'James Monroe Museum and Memorial Library', 'Virginia', 38.3019, -77.4606, '5 (Not-NARA) Fredericksburg museum and archives interpreting President James Monroe''s life.'),
+(3, 'John Quincy Adams Papers', 'Massachusetts', 42.2551, -71.0113, '6 (Not-NARA) Adams family stone library preserving John Quincy Adams'' extensive book collection.'),
+(3, 'Andrew Jackson Papers', 'Tennessee', 35.9553, -83.9309, '7 (Collection) University of Tennessee collection and reading room for Andrew Jackson''s papers.'),
+(3, 'James Buchanan Papers', 'Pennsylvania', 39.9489, -75.1635, '15 (Collection) Philadelphia archives providing access to James Buchanan''s manuscripts and letters.'),
+(3, 'Abraham Lincoln Presidential Library and Museum', 'Illinois', 39.7983, -89.6485, '16 (Not-NARA) Springfield complex blending museum exhibits with the Lincoln Presidential Library.'),
+(3, 'Andrew Johnson Museum and Library', 'Tennessee', 36.1687, -82.7419, '17 (Collection) Tusculum University museum preserving artifacts and records for Andrew Johnson.'),
+(3, 'Ulysses S. Grant Presidential Library', 'Mississippi', 33.4543, -88.794, '18 (Collection) Mississippi State University library dedicated to Ulysses S. Grant scholarship.'),
+(3, 'Rutherford B. Hayes Presidential Library and Museum', 'Ohio', 41.3503, -83.121, '19 (Not-NARA) Fremont estate housing the Hayes home, museum, and research library.'),
+(3, 'Grover Cleveland Papers', 'New Jersey', 40.347, -74.656, '22 and 24 (Collection) Princeton repository for Grover Cleveland''s papers and memorabilia.'),
+(3, 'William McKinley Presidential Library and Museum', 'Ohio', 40.8207, -81.3816, '25 (Not-NARA) Canton museum featuring science exhibits and tributes to William McKinley.'),
+(3, 'Theodore Roosevelt Presidential Library', 'North Dakota', 46.9133, -103.5243, '26 (NARA) Opening 2026 - planned Medora campus honoring Theodore Roosevelt''s conservation legacy.'),
+(3, 'Woodrow Wilson Presidential Library', 'Virginia', 38.1496, -79.073, '28 (Not-NARA) Staunton birthplace site with museum exhibits on Woodrow Wilson''s presidency.'),
+(3, 'Warren G. Harding Presidential Center', 'Ohio', 40.5895, -83.1289, '29 (Not-NARA) Marion site combining the Harding Home, memorial, and newly built library museum.'),
+(3, 'Calvin Coolidge Presidential Library and Museum', 'Massachusetts', 42.3188, -72.6311, '30 (Not-NARA) Northampton collection inside Forbes Library chronicling Calvin Coolidge''s career.'),
+(3, 'Herbert Hoover Presidential Library and Museum', 'Iowa', 41.6712, -91.346, '31 (NARA) Located in West Branch, Iowa. Dedicated to America''s 31st President.'),
+(3, 'Franklin D. Roosevelt Presidential Library and Museum', 'New York', 41.7677, -73.9327, '32 (NARA) Located in Hyde Park, NY. The first presidential library, dedicated to FDR.'),
+(3, 'Harry S. Truman Presidential Library and Museum', 'Missouri', 39.0911, -94.4178, '33 (NARA) Located in Independence, Missouri. Dedicated to America''s 33rd President.'),
+(3, 'Dwight D. Eisenhower Presidential Library and Museum', 'Kansas', 38.9172, -97.2133, '34 (NARA) Located in Abilene, Kansas. Dedicated to the 34th President and WWII Supreme Commander.'),
+(3, 'John F. Kennedy Presidential Library and Museum', 'Massachusetts', 42.3161, -71.0337, '35 (NARA) Located in Boston, Massachusetts. Dedicated to America''s 35th President.'),
+(3, 'Lyndon Baines Johnson Presidential Library and Museum', 'Texas', 30.285, -97.7324, '36 (NARA) Located in Austin, Texas. Dedicated to America''s 36th President.'),
+(3, 'Richard Nixon Presidential Library and Museum', 'California', 33.8895, -117.8822, '37 (NARA) Located in Yorba Linda, California. Dedicated to America''s 37th President.'),
+(3, 'Gerald R. Ford Presidential Museum', 'Michigan', 42.9664, -85.6741, '38 (NARA) Located in Grand Rapids, Michigan. Dedicated to America''s 38th President.'),
+(3, 'Jimmy Carter Presidential Library and Museum', 'Georgia', 33.7677, -84.3486, '39 (NARA) Located in Atlanta, Georgia. Dedicated to America''s 39th President.'),
+(3, 'Ronald Reagan Presidential Library', 'California', 34.2596, -118.8196, '40 (NARA) Located in Simi Valley, California. Dedicated to America''s 40th President.'),
+(3, 'George H. W. Bush Presidential Library and Museum', 'Texas', 30.6154, -96.3141, '41 (NARA) Located in College Station, Texas. Dedicated to America''s 41st President.'),
+(3, 'William J. Clinton Presidential Library and Museum', 'Arkansas', 34.7466, -92.2635, '42 (NARA) Located in Little Rock, Arkansas. Dedicated to America''s 42nd President.'),
+(3, 'George W. Bush Presidential Library and Museum', 'Texas', 32.8407, -96.7784, '43 (NARA) Located in Dallas, Texas. Dedicated to America''s 43rd President.'),
+(3, 'Barack Obama Presidential Library and Museum', 'Illinois', 41.783, -87.59, '44 (NARA) Jackson Park campus opening in 2026 to showcase President Barack Obama''s story.'),
+(3, 'Donald J. Trump Presidential Center', 'Florida', 25.7663, -80.2374, '45 and 47 (Fictional) Conceptual propaganda site in Miami; not an official NARA facility.'),
+(3, 'Joseph R. Biden Jr. Presidential Library and Museum', 'Delaware', 39.7391, -75.5398, '46 (NARA) Planned Delaware presidential center announced for President Joe Biden.')
 
 Print 'Showing Results'
 Select * From LocationTypes
