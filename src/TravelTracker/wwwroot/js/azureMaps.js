@@ -162,11 +162,11 @@ window.updateBucketListMapMarkers = function (containerId, destinations) {
                 text: markerText
             });
 
-            // Add hover event
+            // Add hover event (compact tooltip — no description)
             map.events.add('mouseover', marker, function (e) {
                 if (popupPinned) return; // don't override a click-pinned popup
                 popup.setOptions({
-                    content: createBucketListPopupContent(destProps),
+                    content: createBucketListPopupContent(destProps, false),
                     position: marker.getOptions().position,
                     closeButton: false
                 });
@@ -342,11 +342,14 @@ function createPopupContent(properties) {
     `;
 }
 
-// Create bucket list popup content HTML
-function createBucketListPopupContent(properties) {
+// Create bucket list popup content HTML.
+// Pass includeDescription=false for the compact hover tooltip.
+function createBucketListPopupContent(properties, includeDescription = true) {
     const status = properties.isVisited ? '✓ Visited' : '○ Not Yet Visited';
     const statusColor = properties.isVisited ? '#28a745' : '#dc3545';
-    const descriptionLine = properties.description ? `<span style="color: #444; font-style: italic;">${escapeHtml(properties.description)}</span><br/>` : '';
+    const descriptionLine = (includeDescription && properties.description)
+        ? `<span style="color: #444; font-style: italic;">${escapeHtml(properties.description)}</span><br/>`
+        : '';
     return `
         <div style="padding: 10px; max-width: 260px;">
             <strong>${properties.name}</strong><br/>
