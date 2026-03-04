@@ -126,6 +126,14 @@ window.updateBucketListMapMarkers = function (containerId, destinations) {
             return false;
         }
 
+        // Track whether popup is pinned open by a click (vs. just hovered).
+        // When pinned, hover events on other markers are suppressed until the
+        // user explicitly closes the popup via the × button.
+        let popupPinned = false;
+        // Keep a reference to the current close listener so it can be replaced
+        // if the user clicks a different marker before closing the popup.
+        let currentCloseListener = null;
+
         // Clear existing markers
         const markers = mapMarkers[containerId] || [];
         markers.forEach(marker => map.markers.remove(marker));
@@ -139,6 +147,7 @@ window.updateBucketListMapMarkers = function (containerId, destinations) {
             const destProps = {
                 name: dest.name,
                 state: dest.state,
+                description: dest.description || '',
                 destinationType: dest.destinationType || 'Unknown',
                 isVisited: dest.isVisited
             };
@@ -155,22 +164,41 @@ window.updateBucketListMapMarkers = function (containerId, destinations) {
 
             // Add hover event
             map.events.add('mouseover', marker, function (e) {
+                if (popupPinned) return; // don't override a click-pinned popup
                 popup.setOptions({
                     content: createBucketListPopupContent(destProps),
-                    position: marker.getOptions().position
+                    position: marker.getOptions().position,
+                    closeButton: false
                 });
                 popup.open(map);
             });
 
             // Add mouse leave event
             map.events.add('mouseleave', marker, function () {
-                popup.close();
+                if (!popupPinned) popup.close();
             });
 
-            // Add click event
+            // Add click event - open a sticky popup with full details and a close button
             map.events.add('click', marker, function (e) {
-                const status = destProps.isVisited ? 'Visited' : 'Not Yet Visited';
-                alert(`${destProps.name}\n${destProps.state}\nStatus: ${status}`);
+                // Remove any existing close listener before registering a new one
+                if (currentCloseListener) {
+                    map.events.remove('close', popup, currentCloseListener);
+                    currentCloseListener = null;
+                }
+                popupPinned = true;
+                popup.setOptions({
+                    content: createBucketListPopupContent(destProps),
+                    position: marker.getOptions().position,
+                    closeButton: true
+                });
+                popup.open(map);
+                // Unpin when the user explicitly closes the popup
+                currentCloseListener = () => {
+                    popupPinned = false;
+                    map.events.remove('close', popup, currentCloseListener);
+                    currentCloseListener = null;
+                };
+                map.events.add('close', popup, currentCloseListener);
             });
 
             map.markers.add(marker);
