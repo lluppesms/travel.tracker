@@ -167,7 +167,7 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 (3, 'Abraham Lincoln Presidential Library and Museum', 'Illinois', 39.7983, -89.6485, '16 (Not-NARA) Springfield complex blending museum exhibits with the Lincoln Presidential Library.', '16', 'Not-NARA'),
 (3, 'Andrew Johnson Museum and Library', 'Tennessee', 36.1687, -82.7419, '17 (Collection) Tusculum University museum preserving artifacts and records for Andrew Johnson.', '17', 'Collection'),
 (3, 'Ulysses S. Grant Presidential Library', 'Mississippi', 33.4543, -88.794, '18 (Collection) Mississippi State University library dedicated to Ulysses S. Grant scholarship.', '18', 'Collection'),
-(3, 'Rutherford B. Hayes Presidential Center', 'Ohio', 41.3503, -83.121, '19 (Not-NARA) Fremont estate housing the Hayes home, museum, and research library.', '19', 'Not-NARA'),
+(3, 'Rutherford B. Hayes Presidential Library and Museum', 'Ohio', 41.3503, -83.121, '19 (Not-NARA) Fremont estate housing the Hayes home, museum, and research library.', '19', 'Not-NARA'),
 (3, 'Grover Cleveland Papers', 'New Jersey', 40.347, -74.656, '22 and 24 (Collection) Princeton repository for Grover Cleveland''s papers and memorabilia.', '22 and 24', 'Collection'),
 (3, 'William McKinley Presidential Library and Museum', 'Ohio', 40.8207, -81.3816, '25 (Not-NARA) Canton museum featuring science exhibits and tributes to William McKinley.', '25', 'Not-NARA'),
 (3, 'Theodore Roosevelt Presidential Library', 'North Dakota', 46.9133, -103.5243, '26 (NARA) Opening 2026 - planned Medora campus honoring Theodore Roosevelt''s conservation legacy.', '26', 'NARA'),
@@ -187,9 +187,9 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 (3, 'George H. W. Bush Presidential Library and Museum', 'Texas', 30.6154, -96.3141, '41 (NARA) Located in College Station, Texas. Dedicated to America''s 41st President.', '41', 'NARA'),
 (3, 'William J. Clinton Presidential Library and Museum', 'Arkansas', 34.7466, -92.2635, '42 (NARA) Located in Little Rock, Arkansas. Dedicated to America''s 42nd President.', '42', 'NARA'),
 (3, 'George W. Bush Presidential Library and Museum', 'Texas', 32.8407, -96.7784, '43 (NARA) Located in Dallas, Texas. Dedicated to America''s 43rd President.', '43', 'NARA'),
-(3, 'Barack Obama Presidential Center', 'Illinois', 41.783, -87.59, '44 (NARA) Jackson Park campus opening in 2026 to showcase President Barack Obama''s story.', '44', 'NARA'),
+(3, 'Barack Obama Presidential Library and Museum', 'Illinois', 41.783, -87.59, '44 (NARA) Jackson Park campus opening in 2026 to showcase President Barack Obama''s story.', '44', 'NARA'),
 (3, 'Donald J. Trump Presidential Center', 'Florida', 25.7663, -80.2374, '45 and 47 (Fictional) Conceptual propaganda site in Miami; not an official NARA facility.', '45 and 47', 'Fictional'),
-(3, 'Joseph R. Biden Jr. Presidential Center', 'Delaware', 39.7391, -75.5398, '46 (NARA) Planned Delaware presidential center announced for President Joe Biden.', '46', 'NARA')
+(3, 'Joseph R. Biden Jr. Presidential Library and Museum', 'Delaware', 39.7391, -75.5398, '46 (NARA) Planned Delaware presidential center announced for President Joe Biden.', '46', 'NARA')
 
 Print 'Showing Results'
 Select * From LocationTypes
