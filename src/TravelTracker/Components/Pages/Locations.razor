@@ -3,6 +3,8 @@
 @using TravelTracker.Services.Interfaces
 @inject ILocationService LocationService
 @inject ILocationTypeService LocationTypeService
+@inject IDestinationService DestinationService
+@inject ILocationLookupService LocationLookupService
 @inject IAuthenticationService AuthenticationService
 
 <PageTitle>Locations - Travel Tracker</PageTitle>
@@ -113,21 +115,12 @@
                         <DataAnnotationsValidator />
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Name *</label>
-                                <InputText class="form-control" @bind-Value="currentLocation.Name" />
-                                <ValidationMessage For="@(() => currentLocation.Name)" />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Trip Name</label>
-                                <InputText class="form-control" @bind-Value="currentLocation.TripName" />
-                            </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Location Type *</label>
-                                <InputSelect class="form-select" @bind-Value="currentLocation.LocationType">
+                                <InputSelect class="form-select"
+                                             @bind-Value="currentLocation.LocationType"
+                                             @bind-Value:after="OnLocationTypeChangedAsync"
+                                             disabled="@(isLookingUp || isSaving)">
                                     <option value="">-- Select Location Type --</option>
                                     @foreach (var locationType in locationTypes)
                                     {
@@ -138,65 +131,155 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label">Address</label>
-                                <InputText class="form-control" @bind-Value="currentLocation.Address" />
+                        @if (IsDestinationPickerType(currentLocation.LocationType))
+                        {
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Select @currentLocation.LocationType *</label>
+                                    @if (isLoadingDestinations)
+                                    {
+                                        <div class="d-flex align-items-center">
+                                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <span>Loading @currentLocation.LocationType list...</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <select class="form-select"
+                                                value="@selectedDestinationId"
+                                                @onchange="OnDestinationSelected"
+                                                disabled="@(isLookingUp || isSaving)">
+                                            <option value="0">-- Select a @currentLocation.LocationType --</option>
+                                            @foreach (var dest in availableDestinations)
+                                            {
+                                                <option value="@dest.Id">@dest.Name (@dest.State)</option>
+                                            }
+                                        </select>
+                                    }
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">City</label>
-                                <InputText class="form-control" @bind-Value="currentLocation.City" />
+                            @if (selectedDestinationId > 0)
+                            {
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Name</label>
+                                        <InputText class="form-control" @bind-Value="currentLocation.Name" readonly />
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Trip Name</label>
+                                        <InputText class="form-control" @bind-Value="currentLocation.TripName" disabled="@(isLookingUp || isSaving)" />
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Name *</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.Name" disabled="@(isLookingUp || isSaving)" />
+                                    <ValidationMessage For="@(() => currentLocation.Name)" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">City</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.City" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">State *</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.State" placeholder="e.g., CA, NY" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                                <div class="col-md-2 mb-3 d-flex align-items-end">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary w-100"
+                                            @onclick="LookupLocationAsync"
+                                            disabled="@(isLookingUp || isSaving)"
+                                            title="Lookup coordinates">
+                                        @if (isLookingUp)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bi bi-geo-alt me-1" aria-hidden="true"></span>
+                                        }
+                                        <span>Lookup</span>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">State *</label>
-                                <InputText class="form-control" @bind-Value="currentLocation.State" placeholder="e.g., CA, NY" />
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="form-label">Zip Code</label>
-                                <InputText class="form-control" @bind-Value="currentLocation.ZipCode" />
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Latitude</label>
-                                <InputNumber class="form-control" @bind-Value="currentLocation.Latitude" />
+                            <div class="row">
+                                <div class="col-md-9 mb-3">
+                                    <label class="form-label">Address</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.Address" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Zip Code</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.ZipCode" disabled="@(isLookingUp || isSaving)" />
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Longitude</label>
-                                <InputNumber class="form-control" @bind-Value="currentLocation.Longitude" />
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Latitude</label>
+                                    <InputNumber class="form-control" @bind-Value="currentLocation.Latitude" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Longitude</label>
+                                    <InputNumber class="form-control" @bind-Value="currentLocation.Longitude" disabled="@(isLookingUp || isSaving)" />
+                                </div>
                             </div>
-                        </div>
+
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Trip Name</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.TripName" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(lookupMessage))
+                            {
+                                <div class="alert @(lookupSuccess ? "alert-success" : "alert-warning") alert-dismissible py-2 mb-3" role="alert">
+                                    @lookupMessage
+                                    <button type="button" class="btn-close" @onclick="() => lookupMessage = string.Empty"></button>
+                                </div>
+                            }
+                        }
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Start Date *</label>
-                                <InputDate class="form-control" @bind-Value="currentLocation.StartDate" />
+                                <InputDate class="form-control" @bind-Value="currentLocation.StartDate" @bind-Value:after="OnStartDateChanged" disabled="@(isLookingUp || isSaving)" />
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">End Date</label>
-                                <InputDate class="form-control" @bind-Value="currentLocation.EndDate" />
+                                <InputDate class="form-control" @bind-Value="currentLocation.EndDate" disabled="@(isLookingUp || isSaving)" />
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Rating (1-5)</label>
-                                <InputNumber class="form-control" @bind-Value="currentLocation.Rating" min="0" max="5" />
+                                <InputSelect class="form-select" @bind-Value="currentLocation.Rating" TValue="int">
+                                    <option value="0">-- Select Rating --</option>
+                                    @for (var rating = 1; rating <= 5; rating++)
+                                    {
+                                        <option value="@rating">@rating</option>
+                                    }
+                                </InputSelect>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Comments</label>
-                            <InputTextArea class="form-control" @bind-Value="currentLocation.Comments" rows="3" />
+                            <InputTextArea class="form-control" @bind-Value="currentLocation.Comments" rows="3" disabled="@(isLookingUp || isSaving)" />
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" @onclick="HideLocationForm">Cancel</button>
-                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            <button type="button" class="btn btn-secondary" @onclick="HideLocationForm" disabled="@(isLookingUp || isSaving)">Cancel</button>
+                            <button type="submit" class="btn btn-primary" disabled="@(isSaving || isLookingUp)">
                                 @if (isSaving)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"></span>
@@ -242,6 +325,8 @@
 @code {
     private List<Location> locations = new();
     private List<LocationType> locationTypes = new();
+    private List<Destination> availableDestinations = new();
+    private int selectedDestinationId = 0;
     private Location currentLocation = new();
     private Location? locationToDelete;
     private bool showLocationForm = false;
@@ -250,11 +335,23 @@
     private bool isLoading = false;
     private bool isSaving = false;
     private bool isDeleting = false;
+    private bool isLookingUp = false;
+    private bool isLoadingDestinations = false;
+    private bool lookupSuccess = false;
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
+    private string lookupMessage = string.Empty;
     private int currentUserId;
     private string filterText = string.Empty;
     private PaginationState pagination = new() { ItemsPerPage = 15 };
+
+    private static readonly HashSet<string> DestinationPickerTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "National Park", "Presidential Library", "State High Point"
+    };
+
+    private bool IsDestinationPickerType(string? locationType) =>
+        !string.IsNullOrEmpty(locationType) && DestinationPickerTypes.Contains(locationType);
 
     private IQueryable<Location> FilteredLocations
     {
@@ -329,15 +426,20 @@
         currentLocation = new Location
         {
             UserId = currentUserId,
-            StartDate = DateTime.Today
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today,
+            Rating = 5
         };
         isEditMode = false;
         showLocationForm = true;
+        selectedDestinationId = 0;
+        availableDestinations = new();
+        lookupMessage = string.Empty;
         errorMessage = string.Empty;
         successMessage = string.Empty;
     }
 
-    private void ShowEditLocationForm(Location location)
+    private async Task ShowEditLocationForm(Location location)
     {
         currentLocation = new Location
         {
@@ -361,14 +463,180 @@
         };
         isEditMode = true;
         showLocationForm = true;
+        selectedDestinationId = 0;
+        availableDestinations = new();
+        lookupMessage = string.Empty;
         errorMessage = string.Empty;
         successMessage = string.Empty;
+
+        if (IsDestinationPickerType(currentLocation.LocationType))
+        {
+            await LoadDestinationsForTypeAsync(currentLocation.LocationType);
+            var matchingDest = availableDestinations.FirstOrDefault(d =>
+                string.Equals(d.Name, currentLocation.Name, StringComparison.OrdinalIgnoreCase) ||
+                (currentLocation.Name != null && currentLocation.Name.Contains(d.Name, StringComparison.OrdinalIgnoreCase)));
+            selectedDestinationId = matchingDest?.Id ?? 0;
+        }
+    }
+
+    private async Task OnLocationTypeChangedAsync()
+    {
+        selectedDestinationId = 0;
+        availableDestinations = new();
+        lookupMessage = string.Empty;
+
+        if (IsDestinationPickerType(currentLocation.LocationType))
+        {
+            currentLocation.Address = string.Empty;
+            currentLocation.City = string.Empty;
+            currentLocation.ZipCode = string.Empty;
+            await LoadDestinationsForTypeAsync(currentLocation.LocationType);
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnStartDateChanged()
+    {
+        // For new locations, automatically set end date to match start date
+        if (!isEditMode && currentLocation.EndDate == null)
+        {
+            currentLocation.EndDate = currentLocation.StartDate;
+        }
+    }
+
+    private async Task LoadDestinationsForTypeAsync(string locationType)
+    {
+        try
+        {
+            isLoadingDestinations = true;
+            StateHasChanged();
+            var destinations = await DestinationService.GetDestinationsByTypeNameAsync(locationType);
+            availableDestinations = destinations.OrderBy(d => d.Name).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load {locationType} list: {ex.Message}";
+            availableDestinations = new();
+        }
+        finally
+        {
+            isLoadingDestinations = false;
+        }
+    }
+
+    private void OnDestinationSelected(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var destId) && destId > 0)
+        {
+            selectedDestinationId = destId;
+            var dest = availableDestinations.FirstOrDefault(d => d.Id == destId);
+            if (dest != null)
+            {
+                currentLocation.Name = dest.Name;
+                currentLocation.State = dest.State;
+                currentLocation.Latitude = dest.Latitude;
+                currentLocation.Longitude = dest.Longitude;
+                currentLocation.Address = string.Empty;
+                currentLocation.City = string.Empty;
+                currentLocation.ZipCode = string.Empty;
+            }
+        }
+        else
+        {
+            selectedDestinationId = 0;
+            currentLocation.Name = string.Empty;
+            currentLocation.State = string.Empty;
+            currentLocation.Latitude = 0;
+            currentLocation.Longitude = 0;
+        }
+    }
+
+    private async Task LookupLocationAsync()
+    {
+        try
+        {
+            isLookingUp = true;
+            lookupMessage = string.Empty;
+            StateHasChanged();
+
+            var hasLookupInput = !string.IsNullOrWhiteSpace(currentLocation.Address)
+                || !string.IsNullOrWhiteSpace(currentLocation.City)
+                || !string.IsNullOrWhiteSpace(currentLocation.State)
+                || !string.IsNullOrWhiteSpace(currentLocation.ZipCode);
+
+            if (!hasLookupInput)
+            {
+                lookupSuccess = false;
+                lookupMessage = "Please fill in at least one address field (Address, City, State, or Zip Code)";
+                return;
+            }
+
+            var lookupResult = await LocationLookupService.LookupLocationAsync(
+                currentLocation.Name ?? string.Empty,
+                currentLocation.Address ?? string.Empty,
+                currentLocation.City ?? string.Empty,
+                currentLocation.State ?? string.Empty,
+                currentLocation.ZipCode ?? string.Empty);
+
+            if (lookupResult.Success)
+            {
+                if (!string.IsNullOrWhiteSpace(lookupResult.Address))
+                {
+                    currentLocation.Address = lookupResult.Address;
+                }
+
+                if (!string.IsNullOrWhiteSpace(lookupResult.City))
+                {
+                    currentLocation.City = lookupResult.City;
+                }
+
+                if (!string.IsNullOrWhiteSpace(lookupResult.State))
+                {
+                    currentLocation.State = lookupResult.State;
+                }
+
+                if (!string.IsNullOrWhiteSpace(lookupResult.ZipCode))
+                {
+                    currentLocation.ZipCode = lookupResult.ZipCode;
+                }
+
+                var hasCoordinates = lookupResult.Latitude != 0 || lookupResult.Longitude != 0;
+                if (hasCoordinates)
+                {
+                    currentLocation.Latitude = lookupResult.Latitude;
+                    currentLocation.Longitude = lookupResult.Longitude;
+                }
+
+                lookupSuccess = true;
+                lookupMessage = "Coordinates found successfully!";
+            }
+            else
+            {
+                lookupSuccess = false;
+                lookupMessage = string.IsNullOrWhiteSpace(lookupResult.ErrorMessage)
+                    ? "Lookup failed. Please verify the address and try again."
+                    : lookupResult.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            lookupSuccess = false;
+            lookupMessage = $"Lookup failed: {ex.Message}";
+        }
+        finally
+        {
+            isLookingUp = false;
+        }
     }
 
     private void HideLocationForm()
     {
         showLocationForm = false;
         currentLocation = new Location();
+        selectedDestinationId = 0;
+        availableDestinations = new();
+        lookupMessage = string.Empty;
     }
 
     private async Task SaveLocation()
