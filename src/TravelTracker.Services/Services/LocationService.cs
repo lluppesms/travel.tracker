@@ -1,9 +1,15 @@
+using Microsoft.Extensions.Logging;
+
 namespace TravelTracker.Services.Services;
 
-public class LocationService(ILocationRepository locationRepository, ILocationTypeRepository locationTypeRepository) : ILocationService
+public class LocationService(
+    ILocationRepository locationRepository,
+    ILocationTypeRepository locationTypeRepository,
+    ILogger<LocationService> logger) : ILocationService
 {
     private readonly ILocationRepository _locationRepository = locationRepository;
     private readonly ILocationTypeRepository _locationTypeRepository = locationTypeRepository;
+    private readonly ILogger<LocationService> _logger = logger;
 
     public async Task<Location?> GetLocationByIdAsync(int id, int userId)
     {
@@ -34,9 +40,19 @@ public class LocationService(ILocationRepository locationRepository, ILocationTy
         }
         catch (Exception ex)
         {
-            var msg = ex.Message;
-            msg += ex.InnerException != null ? " " + ex.InnerException.Message : string.Empty;
-            Console.WriteLine($"Error importing {location.Name}: {msg}");
+            var message = ex.InnerException != null ? $"{ex.Message} {ex.InnerException.Message}" : ex.Message;
+            _logger.LogError(
+                ex,
+                "Failed to create location '{Name}' for user {UserId}. Type={Type}, City={City}, State={State}, Zip={Zip}, Latitude={Latitude}, Longitude={Longitude}. Details: {Details}",
+                location.Name,
+                location.UserId,
+                location.LocationType,
+                location.City,
+                location.State,
+                location.ZipCode,
+                location.Latitude,
+                location.Longitude,
+                message);
             return null;
         }
     }

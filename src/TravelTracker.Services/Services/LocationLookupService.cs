@@ -47,25 +47,46 @@ public class LocationLookupService : ILocationLookupService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error looking up location '{Name}'", name);
+            _logger.LogError(
+                ex,
+                "Error looking up location '{Name}' with address '{Address}', city '{City}', state '{State}', zip '{Zip}'",
+                name,
+                address,
+                city,
+                state,
+                zipCode);
             return new LocationLookupResult { Success = false, ErrorMessage = $"Lookup failed: {ex.Message}" };
         }
     }
 
     private async Task<LocationLookupResult?> LookupAddressViaNominatimAsync(string name, string city, string state)
     {
+        string? url = null;
         try
         {
             var queryParts = new[] { name, city, state }.Where(s => !string.IsNullOrWhiteSpace(s));
             var query = Uri.EscapeDataString(string.Join(", ", queryParts));
-            var url = $"https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdetails=1&limit=1&countrycodes=us";
+            url = $"https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdetails=1&limit=1&countrycodes=us";
 
             _logger.LogInformation("Nominatim request: {Url}", url);
             var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
             var content = await response.Content.ReadAsStringAsync();
-            _logger.LogDebug("Nominatim response: {Content}", content[..Math.Min(500, content.Length)]);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Nominatim returned {StatusCode} ({Reason}) for '{Name}' in {City}, {State}. Url: {Url}. Body: {Body}",
+                    (int)response.StatusCode,
+                    response.ReasonPhrase ?? string.Empty,
+                    name,
+                    city,
+                    state,
+                    url,
+                    TruncateForLog(content));
+                return null;
+            }
+
+            _logger.LogDebug("Nominatim response: {Content}", TruncateForLog(content));
 
             using var doc = JsonDocument.Parse(content);
             var results = doc.RootElement;
@@ -103,7 +124,7 @@ public class LocationLookupService : ILocationLookupService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Nominatim lookup failed for '{Name}' in {City}, {State}", name, city, state);
+            _logger.LogWarning(ex, "Nominatim lookup failed for '{Name}' in {City}, {State}. Url: {Url}", name, city, state, url ?? "unknown");
             return null;
         }
     }
@@ -111,18 +132,33 @@ public class LocationLookupService : ILocationLookupService
     private async Task<(double lat, double lon)?> LookupCoordinatesViaPhotonAsync(
         string address, string city, string state, string zipCode)
     {
+        string? url = null;
         try
         {
             var queryParts = new[] { address, city, state, zipCode }.Where(s => !string.IsNullOrWhiteSpace(s));
             var query = Uri.EscapeDataString(string.Join(" ", queryParts));
-            var url = $"https://photon.komoot.io/api?q={query}&limit=1";
+            url = $"https://photon.komoot.io/api?q={query}&limit=1";
 
             _logger.LogInformation("Photon request: {Url}", url);
             var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
             var content = await response.Content.ReadAsStringAsync();
-            _logger.LogDebug("Photon response: {Content}", content[..Math.Min(500, content.Length)]);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Photon returned {StatusCode} ({Reason}) for address '{Address}' ({City}, {State} {Zip}). Url: {Url}. Body: {Body}",
+                    (int)response.StatusCode,
+                    response.ReasonPhrase ?? string.Empty,
+                    address,
+                    city,
+                    state,
+                    zipCode,
+                    url,
+                    TruncateForLog(content));
+                return null;
+            }
+
+            _logger.LogDebug("Photon response: {Content}", TruncateForLog(content));
 
             using var doc = JsonDocument.Parse(content);
             if (!doc.RootElement.TryGetProperty("features", out var features) ||
@@ -140,9 +176,26 @@ public class LocationLookupService : ILocationLookupService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Photon lookup failed for address '{Address}'", address);
+            _logger.LogWarning(
+                ex,
+                "Photon lookup failed for address '{Address}' ({City}, {State} {Zip}). Url: {Url}",
+                address,
+                city,
+                state,
+                zipCode,
+                url ?? "unknown");
             return null;
         }
+    }
+
+    private static string TruncateForLog(string? value, int maxLength = 500)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        return value.Length <= maxLength ? value : $"{value[..maxLength]}...";
     }
 
     // Returns the first non-empty string value among the given property names in a JSON element
