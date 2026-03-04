@@ -307,12 +307,13 @@ function createPopupContent(properties) {
 function createBucketListPopupContent(properties) {
     const status = properties.isVisited ? '✓ Visited' : '○ Not Yet Visited';
     const statusColor = properties.isVisited ? '#28a745' : '#dc3545';
+    const descriptionLine = properties.description ? `<span style="color: #444; font-style: italic;">${properties.description}</span><br/>` : '';
     return `
-        <div style="padding: 10px;">
+        <div style="padding: 10px; max-width: 260px;">
             <strong>${properties.name}</strong><br/>
             <span style="color: #666;">📍 ${properties.state}</span><br/>
             <span style="color: #666;">🏷️ ${properties.destinationType}</span><br/>
-            <span style="color: ${statusColor}; font-weight: bold;">${status}</span>
+            ${descriptionLine}<span style="color: ${statusColor}; font-weight: bold;">${status}</span>
         </div>
     `;
 }

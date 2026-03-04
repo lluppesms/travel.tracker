@@ -269,6 +269,7 @@
                     lon = d.Longitude,
                     name = d.Name,
                     state = d.State,
+                    description = d.Description,
                     isVisited = visitedDestinations.Any(v => v.Id == d.Id),
                     destinationType = GetDestinationTypeName(d.DestinationTypeId)
                 })
