@@ -29,6 +29,10 @@ public class LocationLookupService : ILocationLookupService
 
     public async Task<LocationLookupResult> LookupLocationAsync(string name, string address, string city, string state, string zipCode)
     {
+        _logger.LogInformation(
+            "LocationLookupService called with Name='{Name}', Address='{Address}', City='{City}', State='{State}', ZipCode='{ZipCode}'",
+            name, address, city, state, zipCode);
+
         if (!IsConfigured)
         {
             _logger.LogInformation("AI Foundry is not configured, using public API fallback.");
@@ -42,6 +46,8 @@ public class LocationLookupService : ILocationLookupService
                 tokenProvider: CredentialsHelper.GetCredentials(_configuration));
 
             var agent = new AgentReference(_settings.AgentName, _settings.AgentVersion);
+            _logger.LogInformation("Using AI Foundry agent '{AgentName}' version '{AgentVersion}' at endpoint '{Endpoint}'",
+                _settings.AgentName, _settings.AgentVersion, _settings.ProjectEndpoint);
             var responseClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agent, null);
 
             var queryParts = new[] { name, address, city, state, zipCode }
@@ -50,7 +56,7 @@ public class LocationLookupService : ILocationLookupService
 
             var prompt = $"Look up the full location information for: {locationQuery}";
 
-            _logger.LogInformation("AI Foundry location lookup for: {Query}", locationQuery);
+            _logger.LogInformation("AI Foundry prompt: {Prompt}", prompt);
 
             var response = await responseClient.CreateResponseAsync(prompt, null);
 

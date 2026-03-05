@@ -1,10 +1,12 @@
 @page "/locations"
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
+@using TravelTracker.Services.Services
 @inject ILocationService LocationService
 @inject ILocationTypeService LocationTypeService
 @inject IDestinationService DestinationService
 @inject ILocationLookupService LocationLookupService
+@inject LocationLookupAPIService LocationLookupAPIService
 @inject IAuthenticationService AuthenticationService
 
 <PageTitle>Locations - Travel Tracker</PageTitle>
@@ -189,14 +191,14 @@
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label class="form-label">State *</label>
-                                    <InputText class="form-control" @bind-Value="currentLocation.State" placeholder="e.g., CA, NY" disabled="@(isLookingUp || isSaving)" />
+                                    <InputText class="form-control" @bind-Value="currentLocation.State" placeholder="CA" maxlength="2" disabled="@(isLookingUp || isSaving)" />
                                 </div>
                                 <div class="col-md-2 mb-3 d-flex align-items-end">
-                                    <button type="button"
+                                    <button type="button" style="padding: 2px; margin: 2px;"
                                             class="btn btn-outline-secondary w-100"
                                             @onclick="LookupLocationAsync"
                                             disabled="@(isLookingUp || isSaving)"
-                                            title="Lookup coordinates">
+                                            title="Lookup via AI Foundry agent">
                                         @if (isLookingUp)
                                         {
                                             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
@@ -205,7 +207,22 @@
                                         {
                                             <span class="bi bi-geo-alt me-1" aria-hidden="true"></span>
                                         }
-                                        <span>AI Lookup</span>
+                                        <span>AI</span>
+                                    </button>
+                                    <button type="button" style="padding: 2px; margin: 2px;"
+                                            class="btn btn-outline-secondary w-100"
+                                            @onclick="LookupLocationViaAPIAsync"
+                                            disabled="@(isLookingUp || isSaving)"
+                                            title="Lookup via public API">
+                                        @if (isLookingUp)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bi bi-search me-1" aria-hidden="true"></span>
+                                        }
+                                        <span>API</span>
                                     </button>
                                 </div>
                             </div>
@@ -623,6 +640,73 @@
         {
             lookupSuccess = false;
             lookupMessage = $"Lookup failed: {ex.Message}";
+        }
+        finally
+        {
+            isLookingUp = false;
+        }
+    }
+
+    private async Task LookupLocationViaAPIAsync()
+    {
+        try
+        {
+            isLookingUp = true;
+            lookupMessage = string.Empty;
+            StateHasChanged();
+
+            var hasLookupInput = !string.IsNullOrWhiteSpace(currentLocation.Address)
+                || !string.IsNullOrWhiteSpace(currentLocation.City)
+                || !string.IsNullOrWhiteSpace(currentLocation.State)
+                || !string.IsNullOrWhiteSpace(currentLocation.ZipCode);
+
+            if (!hasLookupInput)
+            {
+                lookupSuccess = false;
+                lookupMessage = "Please fill in at least one address field (Address, City, State, or Zip Code)";
+                return;
+            }
+
+            var lookupResult = await LocationLookupAPIService.LookupLocationAsync(
+                currentLocation.Name ?? string.Empty,
+                currentLocation.Address ?? string.Empty,
+                currentLocation.City ?? string.Empty,
+                currentLocation.State ?? string.Empty,
+                currentLocation.ZipCode ?? string.Empty);
+
+            if (lookupResult.Success)
+            {
+                if (!string.IsNullOrWhiteSpace(lookupResult.Address))
+                    currentLocation.Address = lookupResult.Address;
+                if (!string.IsNullOrWhiteSpace(lookupResult.City))
+                    currentLocation.City = lookupResult.City;
+                if (!string.IsNullOrWhiteSpace(lookupResult.State))
+                    currentLocation.State = lookupResult.State;
+                if (!string.IsNullOrWhiteSpace(lookupResult.ZipCode))
+                    currentLocation.ZipCode = lookupResult.ZipCode;
+
+                var hasCoordinates = lookupResult.Latitude != 0 || lookupResult.Longitude != 0;
+                if (hasCoordinates)
+                {
+                    currentLocation.Latitude = lookupResult.Latitude;
+                    currentLocation.Longitude = lookupResult.Longitude;
+                }
+
+                lookupSuccess = true;
+                lookupMessage = "Coordinates found via public API!";
+            }
+            else
+            {
+                lookupSuccess = false;
+                lookupMessage = string.IsNullOrWhiteSpace(lookupResult.ErrorMessage)
+                    ? "API Lookup failed. Please verify the address and try again."
+                    : lookupResult.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            lookupSuccess = false;
+            lookupMessage = $"API Lookup failed: {ex.Message}";
         }
         finally
         {

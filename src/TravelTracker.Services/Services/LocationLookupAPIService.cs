@@ -18,9 +18,15 @@ public class LocationLookupAPIService : ILocationLookupService
 
     public async Task<LocationLookupResult> LookupLocationAsync(string name, string address, string city, string state, string zipCode)
     {
+        _logger.LogInformation(
+            "LocationLookupAPIService called with Name='{Name}', Address='{Address}', City='{City}', State='{State}', ZipCode='{ZipCode}'",
+            name, address, city, state, zipCode);
+
         try
         {
             // Step 1: Use Nominatim to resolve the address from name + city + state
+            _logger.LogInformation("Step 1: Calling Nominatim with Name='{Name}', City='{City}', State='{State}' (Address and ZipCode not used by Nominatim)",
+                name, city, state);
             var result = await LookupAddressViaNominatimAsync(name, city, state);
             if (result == null)
             {
@@ -32,6 +38,9 @@ public class LocationLookupAPIService : ILocationLookupService
             }
 
             // Step 2: Use Photon to get precise lat/lon from the resolved address
+            _logger.LogInformation(
+                "Step 2: Calling Photon with resolved Address='{Address}', City='{City}', State='{State}', ZipCode='{ZipCode}'",
+                result.Address, result.City, result.State, result.ZipCode);
             var coords = await LookupCoordinatesViaPhotonAsync(
                 result.Address, result.City, result.State, result.ZipCode);
 
