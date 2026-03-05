@@ -6,4 +6,7 @@ public class AzureAIFoundrySettings
     public string ApiKey { get; set; } = string.Empty;
     public string DeploymentName { get; set; } = string.Empty;
     public string AgentId { get; set; } = string.Empty;
+    public string ProjectEndpoint { get; set; } = string.Empty;
+    public string AgentName { get; set; } = string.Empty;
+    public string AgentVersion { get; set; } = string.Empty;
 }

@@ -32,6 +32,9 @@ param azureAIFoundryEndpoint string = ''
 @secure()
 param azureAIFoundryApiKey string = ''
 param azureAIFoundryDeploymentName string = ''
+param azureAIFoundryProjectEndpoint string = ''
+param azureAIFoundryAgentName string = ''
+param azureAIFoundryAgentVersion string = ''
 
 param appDataSource string = 'JSON'
 param appSwaggerEnabled string = 'true'
@@ -195,6 +198,9 @@ module webSiteAppSettingsModule './modules/webapp/websiteappsettings.bicep' = {
       AzureAIFoundry__Endpoint: azureAIFoundryEndpoint
       AzureAIFoundry__ApiKey: azureAIFoundryApiKey
       AzureAIFoundry__DeploymentName: azureAIFoundryDeploymentName
+      AzureAIFoundry__ProjectEndpoint: azureAIFoundryProjectEndpoint
+      AzureAIFoundry__AgentName: azureAIFoundryAgentName
+      AzureAIFoundry__AgentVersion: azureAIFoundryAgentVersion
     }
   }
 }

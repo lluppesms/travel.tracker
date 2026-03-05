@@ -55,6 +55,9 @@ gh secret set AzureMaps_ClientId -b "clientid"
 gh secret set AzureAIFoundry_Endpoint -b "endpoint"
 gh secret set AzureAIFoundry_ApiKey -b "apikey"
 gh secret set AzureAIFoundry_DeploymentName -b "deploymentname"
+gh secret set AzureAIFoundry_ProjectEndpoint -b "projectendpoint"
+gh secret set AzureAIFoundry_AgentName -b "agentname"
+gh secret set AzureAIFoundry_AgentVersion -b "agentversion"
 
 gh variable set SQL_SERVER_NAME_PREFIX -b 'TravelTracker'
 gh variable set SQL_DATABASE_NAME -b 'TravelTrackerDB'
