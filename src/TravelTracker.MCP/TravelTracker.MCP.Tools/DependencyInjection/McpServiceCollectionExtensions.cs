@@ -4,36 +4,15 @@ public static class McpServiceCollectionExtensions
 {
     public static IServiceCollection AddTravelTrackerMcpDependencies(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<SqlServerSettings>(configuration.GetSection("SqlServer"));
-        services.Configure<AzureAIFoundrySettings>(configuration.GetSection("AzureAIFoundry"));
         services.AddSingleton<IConfiguration>(configuration);
 
         services.AddHttpContextAccessor();
         services.AddScoped<HttpContextAccessor>();
 
-        var sqlConnectionString = configuration["SqlServer:ConnectionString"];
-        if (string.IsNullOrWhiteSpace(sqlConnectionString))
-        {
-            throw new InvalidOperationException("Missing required SqlServer:ConnectionString configuration for MCP services.");
-        }
-
-        services.AddDbContext<TravelTrackerDbContext>(options => options.UseSqlServer(sqlConnectionString));
-
-        services.AddScoped<ILocationRepository, LocationRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<ILocationTypeRepository, LocationTypeRepository>();
-        services.AddScoped<IDestinationRepository, DestinationRepository>();
-        services.AddScoped<IDestinationTypeRepository, DestinationTypeRepository>();
-
-        services.AddScoped<ILocationService, LocationService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IAuthenticationService, AuthenticationService>();
-        services.AddScoped<ILocationTypeService, LocationTypeService>();
-        services.AddScoped<IChatbotService, ChatbotService>();
-        services.AddScoped<IDestinationService, DestinationService>();
+        // MCP server is configured as API-first and does not require direct SQL access.
+        services.AddScoped<IAuthenticationService, McpPassthroughAuthenticationService>();
 
         services.AddScoped<LocationTools>();
-        services.AddScoped<ChatbotTools>();
 
         services.AddHttpClient("WeatherAPI", client =>
         {

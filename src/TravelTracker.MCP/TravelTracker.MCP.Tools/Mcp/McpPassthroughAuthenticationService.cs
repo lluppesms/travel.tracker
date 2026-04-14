@@ -1,12 +1,12 @@
-using Microsoft.Extensions.Configuration;
+namespace TravelTracker.Mcp;
 
-namespace TravelTracker.Mcp.Stdio;
-
-public sealed class StdioAuthenticationService : IAuthenticationService
+public sealed class McpPassthroughAuthenticationService : IAuthenticationService
 {
+    private const string UnauthenticatedUserMessage = "User is not authenticated.";
+
     private readonly IConfiguration _configuration;
 
-    public StdioAuthenticationService(IConfiguration configuration)
+    public McpPassthroughAuthenticationService(IConfiguration configuration)
     {
         _configuration = configuration;
     }
@@ -15,10 +15,10 @@ public sealed class StdioAuthenticationService : IAuthenticationService
     {
         if (requestedUserId <= 0)
         {
-            return (0, "User is not authenticated.");
+            return (0, UnauthenticatedUserMessage);
         }
 
-        // In stdio MCP mode, user authorization is delegated to downstream API endpoints.
+        // In MCP API-first mode, downstream API authorization validates the user context.
         return (requestedUserId, null);
     }
 

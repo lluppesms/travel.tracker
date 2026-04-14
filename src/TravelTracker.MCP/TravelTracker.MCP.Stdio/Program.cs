@@ -4,7 +4,6 @@ using Microsoft.Extensions.Hosting;
 using TravelTracker.Mcp;
 using TravelTracker.Mcp.DependencyInjection;
 using TravelTracker.Mcp.Stdio;
-using TravelTracker.Services.Interfaces;
 
 var builder = Host.CreateApplicationBuilder(args);
 

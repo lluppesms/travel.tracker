@@ -25,7 +25,7 @@ public class LocationTools
 
     [McpServerTool(Name = "get_all_locations")]
     [Description("Get all travel locations for the authenticated user. Returns a list of all visited locations including RV parks, national parks, and other travel destinations.")]
-    public async Task<IEnumerable<Location>> GetAllLocations(
+    public async Task<IEnumerable<Dictionary<string, object?>>> GetAllLocations(
         [Description("The unique identifier of the user being queried")] int userId)
     {
         var (validatedUserId, errorMessage) = _authenticationService.ValidateUserAccess(userId);
@@ -34,12 +34,12 @@ public class LocationTools
             throw new UnauthorizedAccessException(errorMessage);
         }
 
-        return await SendGetAsync<List<Location>>($"{validatedUserId}");
+        return await SendGetAsync<List<Dictionary<string, object?>>>($"{validatedUserId}");
     }
 
     [McpServerTool(Name = "get_location_by_id")]
     [Description("Get details of a specific location by its ID. Requires authentication and user must own the location.")]
-    public async Task<Location?> GetLocationById(
+    public async Task<Dictionary<string, object?>?> GetLocationById(
         [Description("The unique identifier of the user being queried")] int userId,
         [Description("The unique identifier of the location")] int locationId)
     {
@@ -64,12 +64,12 @@ public class LocationTools
             throw await CreateRequestException(response, request.RequestUri?.ToString() ?? string.Empty);
         }
 
-        return await response.Content.ReadFromJsonAsync<Location>();
+        return await response.Content.ReadFromJsonAsync<Dictionary<string, object?>>();
     }
 
     [McpServerTool(Name = "get_locations_by_state")]
     [Description("Get all locations in a specific US state. Useful for viewing travel history in a particular state.")]
-    public async Task<IEnumerable<Location>> GetLocationsByState(
+    public async Task<IEnumerable<Dictionary<string, object?>>> GetLocationsByState(
         [Description("The unique identifier of the user being queried")] int userId,
         [Description("Two-letter US state code (e.g., 'CA', 'NY', 'WY')")] string state)
     {
@@ -79,12 +79,12 @@ public class LocationTools
             throw new UnauthorizedAccessException(errorMessage);
         }
 
-        return await SendGetAsync<List<Location>>($"by-state/{validatedUserId}/{Uri.EscapeDataString(state)}");
+        return await SendGetAsync<List<Dictionary<string, object?>>>($"by-state/{validatedUserId}/{Uri.EscapeDataString(state)}");
     }
 
     [McpServerTool(Name = "get_locations_by_date_range")]
     [Description("Get all locations visited within a specific date range. Useful for reviewing trips during a particular time period.")]
-    public async Task<IEnumerable<Location>> GetLocationsByDateRange(
+    public async Task<IEnumerable<Dictionary<string, object?>>> GetLocationsByDateRange(
         [Description("The unique identifier of the user being queried")] int userId,
         [Description("Start date in ISO 8601 format (e.g., '2024-01-01')")] DateTime startDate,
         [Description("End date in ISO 8601 format (e.g., '2024-12-31')")] DateTime endDate)
@@ -102,7 +102,7 @@ public class LocationTools
 
         var start = Uri.EscapeDataString(startDate.ToString("O"));
         var end = Uri.EscapeDataString(endDate.ToString("O"));
-        return await SendGetAsync<List<Location>>($"by-date-range/{validatedUserId}?startDate={start}&endDate={end}");
+        return await SendGetAsync<List<Dictionary<string, object?>>>($"by-date-range/{validatedUserId}?startDate={start}&endDate={end}");
     }
 
     [McpServerTool(Name = "get_location_count_by_state")]
