@@ -15,15 +15,14 @@ public class AuthenticationService(IHttpContextAccessor httpContextAccessor, IUs
     public (int UserId, string? ErrorMessage) ValidateUserAccess(int requestedUserId)
     {
         var signedInUserId = GetCurrentUserInternalId();
-        if (signedInUserId == 0)
+        if (signedInUserId == requestedUserId)
         {
-            return (0, HttpMessages.UnauthenticatedUser);
+            return (requestedUserId, HttpMessages.AuthorizedUser);
         }
 
-        var isGlobalApiKey = IsGlobalApiKeyUser();
-        if (!isGlobalApiKey && signedInUserId != requestedUserId)
+        if (IsGlobalApiKeyUser())
         {
-            return (0, HttpMessages.UnauthorizedUser);
+            return (requestedUserId, HttpMessages.GlobalKeyUser);
         }
 
         return (requestedUserId, HttpMessages.UnknownUser);

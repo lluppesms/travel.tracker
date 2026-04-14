@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36930.0 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11429.125 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TravelTracker", "TravelTracker\TravelTracker.csproj", "{8F9051D5-FBAF-F349-AC9F-439D6DC284FB}"
 EndProject
@@ -16,6 +16,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\Database\CreateDatabase.sql = ..\Database\CreateDatabase.sql
 		..\Database\DatabaseQueries.sql = ..\Database\DatabaseQueries.sql
 		..\Database\Insert_Default_Data.sql = ..\Database\Insert_Default_Data.sql
+		requests-api-tests-prod.http = requests-api-tests-prod.http
+		requests-api-tests.http = requests-api-tests.http
+		requests-mcp-tests-prod.http = requests-mcp-tests-prod.http
+		requests-mcp-tests.http = requests-mcp-tests.http
 		..\Database\TravelTrackerDB-Compare-Data.dcmp = ..\Database\TravelTrackerDB-Compare-Data.dcmp
 		..\Database\TravelTrackerDB-Compare-Schema.scmp = ..\Database\TravelTrackerDB-Compare-Schema.scmp
 	EndProjectSection

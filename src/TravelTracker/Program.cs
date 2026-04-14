@@ -106,10 +106,6 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     // Register LocationLookupService (uses Azure AI Foundry agent with API fallback)
     builder.Services.AddScoped<ILocationLookupService, LocationLookupService>();
 
-    // Add MCP tools
-    builder.Services.AddScoped<LocationTools>();
-    builder.Services.AddScoped<ChatbotTools>();
-
     // Add build info service
     builder.Services.AddScoped<IBuildInfoService, BuildInfoService>();
 }
@@ -207,30 +203,6 @@ builder.Services.AddScoped<HttpContextAccessor>();
 
 builder.Services.AddCascadingAuthenticationState();
 
-// Add Model Context Protocol (MCP) Server
-Console.WriteLine("Configuring MCP server...");
-builder.Services.AddMcpServer(options =>
-{
-    options.ServerInfo = new()
-    {
-        Name = "Travel Tracker MCP Server",
-        Version = "1.0.0"
-    };
-}).WithHttpTransport( options =>
-{
-    // See: https://deepwiki.com/donaldmucci/mcp-csharp-sdk/5.1-http-endpoint-configuration
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.MaxIdleSessionCount = 500;
-})
-.WithToolsFromAssembly();
-
-// Add Weather Tool for MCP Servers
-builder.Services.AddHttpClient("WeatherAPI", client =>
-{
-    client.BaseAddress = new Uri("https://api.weather.gov/");
-    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("mcp-weather-server", "1.0"));
-});
-
 builder.Services.AddTransient<Microsoft.AspNetCore.Authentication.IClaimsTransformation, MyClaimsTransformation>();
 
 // --------------------------------------------------------------------------------------------------------------------------------------------
@@ -269,28 +241,5 @@ app.MapRazorPages();
 app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
-// Note: When Azure AD is configured and FallbackPolicy = DefaultPolicy - all endpoints without an explicit authorization policy require authentication by default
-// The [AllowAnonymous] attribute on LocationTools is a class-level attribute, but since the MCP endpoint is mapped via app.MapMcp("/api/mcp"),
-// it doesn't inherit that attribute, and the [AllowAnonymous] on MCP tool classes don't automatically apply to the MCP endpoint mappings.
-// Adding the ".AllowAnonymous()" option to make it apply to all MCP servers...
-// The internal mechanism in the tools will check the user access by API Key as it's called
-
-// Ask the agent:
-// is there an issue having this in an API? can we initiate SSE connection?
-// give the agent the SDK URL and use that, add in DeepWiki and Context7 for context
-// use plan mode first with claude sonnet, then use GPT Codex to do a critical review of the planned code
-
-// Map MCP endpoints
-app.MapMcp("/api/mcp").AllowAnonymous();
-//app.MapMcp("/api/mcp", mcp =>
-//{
-//    mcp.WithHttpTransport(options =>
-//    {
-//        options.SessionTimeout = TimeSpan.FromHours(1); // Auto-close idle sessions
-//        options.MaxSessions = 10000;                    // Limit concurrent sessions
-//    })
-//    .AllowAnonymous();
-Console.WriteLine("MCP server endpoint configured at /api/mcp");
 
 app.Run();

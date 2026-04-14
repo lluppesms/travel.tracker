@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\TravelTracker.Services\TravelTracker.Services.csproj" />
+    <ProjectReference Include="..\..\TravelTracker.Data\TravelTracker.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="0.4.0-preview.3" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>118dd78e-dbdd-4ef6-8e89-d2b13d801d29</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

@@ -1,8 +1,5 @@
 namespace TravelTracker.Mcp;
 
-/// <summary>
-/// MCP tools for interacting with the travel chatbot
-/// </summary>
 [AllowAnonymous]
 [McpServerToolType]
 public class ChatbotTools
@@ -16,9 +13,6 @@ public class ChatbotTools
         _authenticationService = authenticationService;
     }
 
-    /// <summary>
-    /// Send a message to the travel chatbot
-    /// </summary>
     [McpServerTool(Name = "send_message_to_chatbot")]
     [Description("Send a message to the AI travel assistant and get a response. The chatbot can answer questions about your travel history, locations visited, and provide travel recommendations. Requires authentication.")]
     public async Task<ChatbotResponse> SendMessageToChatbot(
@@ -50,28 +44,13 @@ public class ChatbotTools
     }
 }
 
-/// <summary>
-/// Response from the chatbot
-/// </summary>
 public class ChatbotResponse
 {
-    /// <summary>
-    /// The chatbot's response message
-    /// </summary>
     public string Message { get; set; } = string.Empty;
 
-    /// <summary>
-    /// The thread ID for continuing the conversation
-    /// </summary>
     public string ThreadId { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Timestamp of the response
-    /// </summary>
     public DateTime Timestamp { get; set; }
 
-    /// <summary>
-    /// Latest message date in the thread
-    /// </summary>
     public DateTimeOffset? LatestMessageDate { get; set; }
 }
