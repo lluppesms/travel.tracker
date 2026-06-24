@@ -13,17 +13,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Travel\" />
-    <Folder Include="dbo\" />
-    <Folder Include="dbo\Stored Procedures" />
-    <Folder Include="dbo\Tables" />
+    <Folder Include="Travel\Stored Procedures\" />
+    <Folder Include="Travel\Tables\" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="Travel\Travel.sql" />
-    <Build Include="dbo\Stored Procedures\usp_LocationSummary.sql" />
-    <Build Include="dbo\Tables\Locations.sql" />
-    <Build Include="dbo\Tables\LocationTypes.sql" />
-    <Build Include="dbo\Tables\DestinationTypes.sql" />
-    <Build Include="dbo\Tables\Destinations.sql" />
-    <Build Include="dbo\Tables\Users.sql" />
+    <Build Include="Travel\Stored Procedures\usp_LocationSummary.sql" />
+    <Build Include="Travel\Tables\Locations.sql" />
+    <Build Include="Travel\Tables\LocationTypes.sql" />
+    <Build Include="Travel\Tables\DestinationTypes.sql" />
+    <Build Include="Travel\Tables\Destinations.sql" />
+    <Build Include="Travel\Tables\Users.sql" />
   </ItemGroup>
 </Project>

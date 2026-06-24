@@ -9,14 +9,14 @@ All application-owned objects are deployed into the `Travel` schema so the app c
 - **Travel/** - Schema definition
   - Travel.sql - Creates the `Travel` schema
 
-- **dbo/Tables/** - Database table definitions for objects deployed into the `Travel` schema
+- **Travel/Tables/** - Database table definitions for objects deployed into the `Travel` schema
   - Locations.sql - Location tracking information
   - LocationTypes.sql - Location type definitions
   - DestinationTypes.sql - Destination type definitions
   - Destinations.sql - Destination information
   - Users.sql - User information
 
-- **dbo/Stored Procedures/** - Stored procedures deployed into the `Travel` schema
+- **Travel/Stored Procedures/** - Stored procedures deployed into the `Travel` schema
   - usp_LocationSummary.sql - Gets location summary for a user
 
 - **Patch/** - Post-deployment scripts and patches

@@ -156,7 +156,7 @@ DECLARE @types TABLE (
 IF @UserName IS NULL SET @UserName = 'lyleluppes@microsoft.com'
 
 select @UserId = Id from [Travel].[Users] Where Username = @UserName or Email = @UserName
-Select 'UserDefinition' as TableName@UserId, u.UserName, u.Email FROM [Travel].[Users] U where Id = @UserId
+Select 'UserDefinition' as TableName, @UserId, u.UserName, u.Email FROM [Travel].[Users] U where Id = @UserId
 
 INSERT INTO @places
 SELECT l.Name, l.TripName, l.LocationType, l.Address, l.City, l.State, l.Latitude, l.Longitude, l.StartDate, l.EndDate, l.Rating, l.Comments
