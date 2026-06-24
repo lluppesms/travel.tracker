@@ -1,0 +1,2 @@
+CREATE SCHEMA [Travel] AUTHORIZATION [dbo];
+GO

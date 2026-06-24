@@ -1,6 +1,8 @@
+using TravelTracker.Data;
+
 namespace TravelTracker.Data.Models;
 
-[Table("Users")]
+[Table("Users", Schema = DatabaseSchema.Name)]
 //[Index(nameof(ApiKey), IsUnique = true)]
 public class User
 {

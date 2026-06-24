@@ -1,3 +1,4 @@
+using TravelTracker.Data;
 using TravelTracker.Helpers;
 using TravelTracker.Services;
 
@@ -81,7 +82,9 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     var sqlConnectionObject = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(sqlConnectionString);
     var dataSource = $"SQL Server: {sqlConnectionObject.DataSource}, Database: {sqlConnectionObject.InitialCatalog}";
     Console.WriteLine($"Connecting to {dataSource}...");
-    builder.Services.AddDbContext<TravelTrackerDbContext>(options => options.UseSqlServer(sqlConnectionString));
+    builder.Services.AddDbContext<TravelTrackerDbContext>(options => options.UseSqlServer(
+        sqlConnectionString,
+        sqlOptions => sqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", DatabaseSchema.Name)));
 
     // Add repositories
     builder.Services.AddScoped<ILocationRepository, LocationRepository>();

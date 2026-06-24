@@ -2,7 +2,7 @@
 -- Table: Destinations
 -- Description: Stores destination information
 -- =============================================
-CREATE TABLE [dbo].[Destinations](
+CREATE TABLE [Travel].[Destinations](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[DestinationTypeId] [int] NOT NULL,
 	[Name] [nvarchar](200) NOT NULL,
@@ -15,22 +15,22 @@ CREATE TABLE [dbo].[Destinations](
 GO
 
 -- Indexes
-CREATE NONCLUSTERED INDEX [IX_Destinations_Name] ON [dbo].[Destinations]
+CREATE NONCLUSTERED INDEX [IX_Destinations_Name] ON [Travel].[Destinations]
 ([Name] ASC)
 GO
 
-CREATE NONCLUSTERED INDEX [IX_Destinations_State] ON [dbo].[Destinations]
+CREATE NONCLUSTERED INDEX [IX_Destinations_State] ON [Travel].[Destinations]
 ([State] ASC)
 GO
 
-CREATE NONCLUSTERED INDEX [IX_Destinations_DestinationTypeId] ON [dbo].[Destinations]
+CREATE NONCLUSTERED INDEX [IX_Destinations_DestinationTypeId] ON [Travel].[Destinations]
 ([DestinationTypeId] ASC)
 GO
 
 -- Foreign Keys
-ALTER TABLE [dbo].[Destinations]  WITH CHECK ADD  CONSTRAINT [FK_Destinations_DestinationTypes_DestinationTypeId] FOREIGN KEY([DestinationTypeId])
-REFERENCES [dbo].[DestinationTypes] ([Id])
+ALTER TABLE [Travel].[Destinations]  WITH CHECK ADD  CONSTRAINT [FK_Destinations_DestinationTypes_DestinationTypeId] FOREIGN KEY([DestinationTypeId])
+REFERENCES [Travel].[DestinationTypes] ([Id])
 GO
 
-ALTER TABLE [dbo].[Destinations] CHECK CONSTRAINT [FK_Destinations_DestinationTypes_DestinationTypeId]
+ALTER TABLE [Travel].[Destinations] CHECK CONSTRAINT [FK_Destinations_DestinationTypes_DestinationTypeId]
 GO

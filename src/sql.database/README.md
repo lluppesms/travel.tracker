@@ -2,16 +2,21 @@
 
 This folder contains the SQL Server Database Project (DACPAC) for the Travel Tracker application.
 
+All application-owned objects are deployed into the `Travel` schema so the app can share a database with other applications without using `dbo`.
+
 ## Structure
 
-- **dbo/Tables/** - Database table definitions
+- **Travel/** - Schema definition
+  - Travel.sql - Creates the `Travel` schema
+
+- **dbo/Tables/** - Database table definitions for objects deployed into the `Travel` schema
   - Locations.sql - Location tracking information
   - LocationTypes.sql - Location type definitions
   - DestinationTypes.sql - Destination type definitions
   - Destinations.sql - Destination information
   - Users.sql - User information
 
-- **dbo/Stored Procedures/** - Stored procedures
+- **dbo/Stored Procedures/** - Stored procedures deployed into the `Travel` schema
   - usp_LocationSummary.sql - Gets location summary for a user
 
 - **Patch/** - Post-deployment scripts and patches
@@ -39,6 +44,8 @@ Use the workflow `4-build-deploy-dacpac.yml` to build and deploy the database.
 ```bash
 sqlpackage /Action:Publish /SourceFile:sql.database.dacpac /TargetServerName:your-server.database.windows.net /TargetDatabaseName:TravelTrackerDB /TargetUser:username /TargetPassword:password
 ```
+
+Use a dedicated login/user that only has permissions on the `Travel` schema.
 
 ## Project Configuration
 

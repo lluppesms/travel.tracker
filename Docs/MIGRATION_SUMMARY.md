@@ -45,10 +45,12 @@ The Travel Tracker application has been successfully migrated from Azure Cosmos 
 ```json
 {
   "SqlServer": {
-    "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+    "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;Application Name=TravelTracker"
   }
 }
 ```
+
+All SQL Server objects for the app are now created in the `Travel` schema.
 
 ### 5. Data Model Changes
 
@@ -148,38 +150,40 @@ Edit `src/TravelTracker/appsettings.json`:
 
 Local Windows (SQL Express with Windows Auth):
 ```
-Server=localhost\\SQLEXPRESS;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true
+Server=localhost\\SQLEXPRESS;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;Application Name=TravelTracker
 ```
 
 Local Windows (LocalDB):
 ```
-Server=(localdb)\\mssqllocaldb;Database=TravelTrackerDB;Trusted_Connection=True;MultipleActiveResultSets=true
+Server=(localdb)\\mssqllocaldb;Database=TravelTrackerDB;Trusted_Connection=True;MultipleActiveResultSets=true;Application Name=TravelTracker
 ```
 
 Docker or SQL Auth:
 ```
-Server=localhost;Database=TravelTrackerDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;MultipleActiveResultSets=true
+Server=localhost;Database=TravelTrackerDB;User Id=traveltracker_app;******;TrustServerCertificate=True;MultipleActiveResultSets=true;Application Name=TravelTracker
 ```
 
 Azure SQL Database:
 ```
-Server=tcp:yourserver.database.windows.net,1433;Database=TravelTrackerDB;User ID=yourusername;Password=yourpassword;Encrypt=True;TrustServerCertificate=False;
+Server=tcp:yourserver.database.windows.net,1433;Database=TravelTrackerDB;User ID=traveltracker_app;******;Encrypt=True;TrustServerCertificate=False;Application Name=TravelTracker;
 ```
 
-### Step 3: Run Database Migrations
+The connection string should use a dedicated login/user whose default schema is `Travel` and whose permissions are limited to `SCHEMA::Travel`.
+
+### Step 3: Deploy the Database Objects
 
 ```bash
-# Navigate to the data project
-cd src/TravelTracker.Data
+# Navigate to the SQL database project
+cd src/sql.database
 
-# Apply migrations to create the database and tables
-dotnet ef database update --startup-project ../TravelTracker
+# Build the DACPAC
+dotnet build sql.database.sln
 ```
 
 This will:
 1. Create the `TravelTrackerDB` database (if it doesn't exist)
-2. Create three tables: `Users`, `Locations`, `NationalParks`
-3. Set up indexes for optimal performance
+2. Create the `Travel` schema and the app tables inside it
+3. Set up indexes and the `Travel.usp_LocationSummary` stored procedure
 
 ### Step 4: Run the Application
 

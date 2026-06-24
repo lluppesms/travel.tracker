@@ -2,14 +2,14 @@
 -- Stored Procedure: usp_LocationSummary
 -- Description: Gets location summary for a user
 -- =============================================
-CREATE PROCEDURE [dbo].[usp_LocationSummary] (
+CREATE PROCEDURE [Travel].[usp_LocationSummary] (
   @UserName    nvarchar(128) = null
 )
 AS 
 /*
 Example Usage:
-  EXEC usp_LocationSummary
-  EXEC usp_LocationSummary @UserName = 'lyleluppes@microsoft.com'
+  EXEC [Travel].[usp_LocationSummary]
+  EXEC [Travel].[usp_LocationSummary] @UserName = 'lyleluppes@microsoft.com'
 */
 BEGIN
 
@@ -33,13 +33,13 @@ DECLARE @types TABLE (
 )
 IF @UserName IS NULL SET @UserName = 'lyleluppes@microsoft.com'
 
-SELECT @UserId = Id FROM Users WHERE Username = @UserName OR Email = @UserName
-SELECT 'UserDefinition' as TableName, @UserId, u.Username, u.Email FROM Users U WHERE Id = @UserId
+SELECT @UserId = Id FROM [Travel].[Users] WHERE Username = @UserName OR Email = @UserName
+SELECT 'UserDefinition' as TableName, @UserId, u.Username, u.Email FROM [Travel].[Users] U WHERE Id = @UserId
 
 INSERT INTO @places
 SELECT l.Name, l.TripName, l.LocationType, l.Address, l.City, l.State, l.Latitude, l.Longitude, l.StartDate, l.EndDate, l.Rating, l.Comments
-FROM Locations l 
-INNER JOIN Users u ON l.UserId = u.Id 
+FROM [Travel].[Locations] l 
+INNER JOIN [Travel].[Users] u ON l.UserId = u.Id 
 WHERE l.UserId = @UserId
 ORDER BY l.Longitude, u.Username, l.StartDate
 
@@ -57,19 +57,19 @@ GROUP BY p.LocationType
 SELECT 'States_Visited' as TableName, MAX(State) as RowType, Count(*) as Counter FROM @places WHERE ISNULL(STATE,'') <> '' GROUP BY State ORDER BY State
 
 SELECT 'National_Parks_List' as TableName, d.Name, d.State, dt.Name as DestinationType, CASE WHEN l.StartDate IS NULL THEN 'Not Visited' ELSE FORMAT(l.StartDate, 'MMM dd, yyyy') END as DateVisited
-FROM Destinations d INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id 
+FROM [Travel].[Destinations] d INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id 
 LEFT OUTER JOIN @places l ON l.Name = d.Name 
 WHERE dt.Name = 'National Park'
 ORDER BY d.Name
 
 SELECT 'State_High_Points_List' as TableName, d.Name, d.State, dt.Name as DestinationType, CASE WHEN l.StartDate IS NULL THEN 'Not Visited' ELSE FORMAT(l.StartDate, 'MMM dd, yyyy') END as DateVisited
-FROM Destinations d INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id 
+FROM [Travel].[Destinations] d INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id 
 LEFT OUTER JOIN @places l ON l.Name = d.Name 
 WHERE dt.Name = 'State High Point'
 ORDER BY d.Name
 
 SELECT 'Presidential_Libraries_List' as TableName, d.Name, d.State, dt.Name as DestinationType, CASE WHEN l.StartDate IS NULL THEN 'Not Visited' ELSE FORMAT(l.StartDate, 'MMM dd, yyyy') END as DateVisited
-FROM Destinations d INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id 
+FROM [Travel].[Destinations] d INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id 
 LEFT OUTER JOIN @places l ON l.Name = d.Name 
 WHERE dt.Name = 'Presidential Library'
 ORDER BY d.Name

@@ -12,11 +12,13 @@
     <ProjectGuid>{8b3e4f01-6a8c-4d2e-9f3a-1c5d7e8f9a0b}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
+    <Folder Include="Travel\" />
     <Folder Include="dbo\" />
     <Folder Include="dbo\Stored Procedures" />
     <Folder Include="dbo\Tables" />
   </ItemGroup>
   <ItemGroup>
+    <Build Include="Travel\Travel.sql" />
     <Build Include="dbo\Stored Procedures\usp_LocationSummary.sql" />
     <Build Include="dbo\Tables\Locations.sql" />
     <Build Include="dbo\Tables\LocationTypes.sql" />

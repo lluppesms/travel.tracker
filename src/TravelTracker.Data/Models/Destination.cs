@@ -1,6 +1,8 @@
+using TravelTracker.Data;
+
 namespace TravelTracker.Data.Models;
 
-[Table("Destinations")]
+[Table("Destinations", Schema = DatabaseSchema.Name)]
 public class Destination
 {
     [Key]

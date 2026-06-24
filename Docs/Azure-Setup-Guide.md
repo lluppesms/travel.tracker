@@ -167,7 +167,7 @@ After creating all Azure resources, update your `appsettings.json` file:
 ```json
 {
   "SqlServer": {
-    "ConnectionString": "Server=tcp:traveltracker-sqlserver.database.windows.net,1433;Database=TravelTrackerDB;User ID=sqladmin;Password={your_password};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+    "ConnectionString": "Server=tcp:traveltracker-sqlserver.database.windows.net,1433;Database=TravelTrackerDB;User ID=traveltracker_app;******;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Application Name=TravelTracker;"
   },
   "AzureAd": {
     "Instance": "https://login.microsoftonline.com/",
@@ -204,7 +204,7 @@ For local development, create an `appsettings.Development.json` file (already in
 ```json
 {
   "SqlServer": {
-    "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+    "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;Application Name=TravelTracker"
   },
   "AzureAd": {
     "ClientSecret": "<DEV_CLIENT_SECRET>"
@@ -238,16 +238,17 @@ For production deployments, configure Managed Identity:
    - Copy the Object ID
 
 2. **Grant Access to Resources**
-   - SQL Server: Add managed identity as a database user with appropriate permissions
+   - SQL Server: Add managed identity as a database user with permissions only on the `Travel` schema
    - Key Vault: Add access policy with Get/List secrets permissions
    - Azure Maps: Assign appropriate role
 
 3. **Update Connection String for Managed Identity**
    - For Azure SQL Database with Managed Identity:
      ```
-     Server=tcp:traveltracker-sqlserver.database.windows.net,1433;Database=TravelTrackerDB;Authentication=Active Directory Default;Encrypt=True;
+     Server=tcp:traveltracker-sqlserver.database.windows.net,1433;Database=TravelTrackerDB;Authentication=Active Directory Default;Encrypt=True;Application Name=TravelTracker;
      ```
-   - The application will use DefaultAzureCredential to authenticate
+    - The application will use DefaultAzureCredential to authenticate
+    - Set the database user's default schema to `Travel` and grant access on `SCHEMA::Travel` only
 
 ## Testing the Setup
 
@@ -260,10 +261,10 @@ For production deployments, configure Managed Identity:
 
 ### Test SQL Server Database
 
-1. Ensure the database migration has been applied:
+1. Ensure the Travel schema objects have been deployed:
    ```bash
-   cd src/TravelTracker.Data
-   dotnet ef database update --startup-project ../TravelTracker
+   cd src/sql.database
+   dotnet build sql.database.sln
    ```
 2. Navigate to `/locations` page
 3. Try creating a new location
@@ -290,7 +291,7 @@ For production deployments, configure Managed Identity:
 ### SQL Server Issues
 
 - **Error: Cannot open database** - Database doesn't exist
-  - Solution: Run database migrations using `dotnet ef database update`
+  - Solution: Deploy the SQL project or run `/Database/CreateDatabase.sql` to create the `Travel` schema objects
 
 - **Error: Login failed** - Invalid credentials
   - Solution: Verify username and password in connection string

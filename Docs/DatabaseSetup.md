@@ -4,7 +4,7 @@ This document provides instructions for setting up and managing the SQL Server d
 
 ## Overview
 
-The Travel Tracker application uses SQL Server as its backend database with Entity Framework Core for data access. The database stores user information, location tracking data, and national park information.
+The Travel Tracker application uses SQL Server as its backend database with Entity Framework Core for data access. All application-owned objects are created in the `Travel` schema so the app can share a database with other applications more safely.
 
 ## Prerequisites
 
@@ -56,22 +56,22 @@ Edit `src/TravelTracker/appsettings.json`:
 
 **SQL Server Express (Windows Authentication):**
 ```
-Server=localhost\\SQLEXPRESS;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true
+Server=localhost\SQLEXPRESS;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;Application Name=TravelTracker
 ```
 
 **SQL Server LocalDB:**
 ```
-Server=(localdb)\\mssqllocaldb;Database=TravelTrackerDB;Trusted_Connection=True;MultipleActiveResultSets=true
+Server=(localdb)\mssqllocaldb;Database=TravelTrackerDB;Trusted_Connection=True;MultipleActiveResultSets=true;Application Name=TravelTracker
 ```
 
 **SQL Server with SQL Authentication:**
 ```
-Server=localhost;Database=TravelTrackerDB;User Id=sa;Password=YourPassword;TrustServerCertificate=True;MultipleActiveResultSets=true
+Server=localhost;Database=TravelTrackerDB;User Id=traveltracker_app;******;TrustServerCertificate=True;MultipleActiveResultSets=true;Application Name=TravelTracker
 ```
 
 **Azure SQL Database:**
 ```
-Server=tcp:your-server.database.windows.net,1433;Database=TravelTrackerDB;User ID=yourusername;Password=yourpassword;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
+Server=tcp:your-server.database.windows.net,1433;Database=TravelTrackerDB;User ID=traveltracker_app;******;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Application Name=TravelTracker;
 ```
 
 ## Database Creation and Migration
@@ -83,22 +83,25 @@ Server=tcp:your-server.database.windows.net,1433;Database=TravelTrackerDB;User I
    dotnet tool install --global dotnet-ef
    ```
 
-2. Navigate to the data project directory:
+2. Navigate to the SQL database project directory:
    ```bash
-   cd src/TravelTracker.Data
+   cd src/sql.database
    ```
 
-3. Create the database and apply migrations:
+3. Build the DACPAC:
    ```bash
-   dotnet ef database update --startup-project ../TravelTracker
+   dotnet build sql.database.sln
    ```
 
 This will:
-- Create the `TravelTrackerDB` database (if it doesn't exist)
-- Create the following tables:
-  - `Users` - User accounts and authentication data
-  - `Locations` - Travel location tracking data
-  - `NationalParks` - National park reference data
+- Create the `Travel` schema (if it doesn't already exist)
+- Create the following tables in that schema:
+  - `Travel.Users` - User accounts and authentication data
+  - `Travel.Locations` - Travel location tracking data
+  - `Travel.LocationTypes` - Location type reference data
+  - `Travel.DestinationTypes` - Destination type reference data
+  - `Travel.Destinations` - Destination reference data
+- Create the `Travel.usp_LocationSummary` stored procedure
 
 ### Verify Database Creation
 
@@ -117,7 +120,7 @@ sqlcmd -S localhost -E -Q "SELECT name FROM sys.databases WHERE name = 'TravelTr
 
 ## Database Schema
 
-### Users Table
+### Travel.Users Table
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -134,7 +137,7 @@ sqlcmd -S localhost -E -Q "SELECT name FROM sys.databases WHERE name = 'TravelTr
 - Unique index on `EntraIdUserId`
 - Index on `Email`
 
-### Locations Table
+### Travel.Locations Table
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -163,7 +166,7 @@ sqlcmd -S localhost -E -Q "SELECT name FROM sys.databases WHERE name = 'TravelTr
 - Index on `State`
 - Index on `StartDate`
 
-### NationalParks Table
+### Travel.Destinations Table
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -180,51 +183,43 @@ sqlcmd -S localhost -E -Q "SELECT name FROM sys.databases WHERE name = 'TravelTr
 - Index on `State`
 - Index on `Name`
 
-## Migration Management
+## Deployment Management
 
-### Creating New Migrations
-
-When you modify the data models, create a new migration:
+Build and publish the DACPAC or run the checked-in SQL scripts when you need to create or update the database objects:
 
 ```bash
-cd src/TravelTracker.Data
-dotnet ef migrations add MigrationName --startup-project ../TravelTracker
+cd src/sql.database
+dotnet build sql.database.sln
 ```
 
-### Applying Migrations
+Then deploy `bin/Debug/sql.database.dacpac` with `sqlpackage`, or execute `/Database/CreateDatabase.sql` for manual setup.
 
-Apply pending migrations to the database:
+## Least-Privilege Access for a Shared Database
 
-```bash
-cd src/TravelTracker.Data
-dotnet ef database update --startup-project ../TravelTracker
+Using a different connection string alone does **not** limit SQL Server access to one schema. To isolate this app inside a shared database:
+
+1. Create the `Travel` schema objects.
+2. Create a dedicated login/user for the Travel Tracker app.
+3. Set that user's default schema to `Travel`.
+4. Grant permissions on `SCHEMA::Travel` only, and do **not** add the user to broad roles like `db_owner`.
+
+Example:
+
+```sql
+CREATE LOGIN [traveltracker_app] WITH PASSWORD = 'Use-A-Secret-From-Key-Vault';
+GO
+
+CREATE USER [traveltracker_app] FOR LOGIN [traveltracker_app] WITH DEFAULT_SCHEMA = [Travel];
+GO
+
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON SCHEMA::[Travel] TO [traveltracker_app];
+GO
 ```
 
-### Rolling Back Migrations
+Then use that dedicated identity in the connection string, for example:
 
-Revert to a specific migration:
-
-```bash
-cd src/TravelTracker.Data
-dotnet ef database update MigrationName --startup-project ../TravelTracker
-```
-
-### Removing the Last Migration
-
-Remove the most recent migration (before applying it):
-
-```bash
-cd src/TravelTracker.Data
-dotnet ef migrations remove --startup-project ../TravelTracker
-```
-
-### Viewing Migration SQL
-
-See the SQL that will be executed by a migration:
-
-```bash
-cd src/TravelTracker.Data
-dotnet ef migrations script --startup-project ../TravelTracker
+```text
+Server=tcp:your-server.database.windows.net,1433;Database=TravelTrackerDB;User ID=traveltracker_app;******;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Application Name=TravelTracker;
 ```
 
 ## Common Issues and Troubleshooting
@@ -281,7 +276,7 @@ To add initial data (e.g., national parks), you can:
 
 1. Create a seeding script in SQL
 2. Add a DbContext seed method in `TravelTrackerDbContext.cs`
-3. Use Entity Framework migrations with seed data
+3. Use the checked-in `InsertDefaultData.sql` script after deploying the schema
 
 Example seed method:
 
@@ -322,7 +317,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 3. Implement proper error handling and logging
 4. Monitor database performance and query execution
 5. Regularly update statistics and rebuild indexes
-6. Test migrations in a development environment first
+6. Test DACPAC/script deployment in a development environment first
 
 ## Additional Resources
 

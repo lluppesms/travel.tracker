@@ -1,40 +1,40 @@
 /*
-delete from Destinations
+delete from [Travel].[Destinations]
 GO
-delete from DestinationTypes
+delete from [Travel].[DestinationTypes]
 GO
-delete from locationTypes
+delete from [Travel].[locationTypes]
 GO
-delete from locations
+delete from [Travel].[locations]
 GO
 */
 
-select 'Users' as Table_Name, Count(*) as Row_Count from Users
+select 'Users' as Table_Name, Count(*) as Row_Count from [Travel].[Users]
 UNION
-select 'Destinations' as Table_Name, Count(*) as Row_Count from Destinations
+select 'Destinations' as Table_Name, Count(*) as Row_Count from [Travel].[Destinations]
 UNION
-select 'DestinationTypes' as Table_Name, Count(*) as Row_Count from DestinationTypes
+select 'DestinationTypes' as Table_Name, Count(*) as Row_Count from [Travel].[DestinationTypes]
 UNION
-select 'Locations' as Table_Name, Count(*) as Row_Count from Locations
+select 'Locations' as Table_Name, Count(*) as Row_Count from [Travel].[Locations]
 UNION
-select 'LocationTypes' as Table_Name, Count(*) as Row_Count from LocationTypes
+select 'LocationTypes' as Table_Name, Count(*) as Row_Count from [Travel].[LocationTypes]
 
 
---select * from users
---select * from locations
+--select * from [Travel].[users]
+--select * from [Travel].[locations]
 
 -- show every place I've visited
 Select u.UserName, l.Name, l.LocationType, l.City, l.State, l.ZipCode, l.StartDate
-from Locations l inner join users u on l.UserId = u.id 
+from [Travel].[Locations] l inner join [Travel].[users] u on l.UserId = u.id 
 --Where l.LocationType = 'National Park'
 order by u.UserName, l.StartDate
 
 -- show all destinations 
-Select dt.Name as DestType, d.* From Destinations d 
-INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id
+Select dt.Name as DestType, d.* From [Travel].[Destinations] d 
+INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id
 
 -- show all destinations with that I have visited
 Select dt.Name as DestType, d.*, l.StartDate as DateVisited
-From Destinations d 
-INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id
-LEFT OUTER JOIN Locations l on l.Name = d.Name 
+From [Travel].[Destinations] d 
+INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id
+LEFT OUTER JOIN [Travel].[Locations] l on l.Name = d.Name 
