@@ -2,7 +2,7 @@
 -- Table: Locations
 -- Description: Stores location tracking information
 -- =============================================
-CREATE TABLE [dbo].[Locations](
+CREATE TABLE [Travel].[Locations](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Type] [nvarchar](50) NOT NULL,
 	[UserId] [int] NOT NULL,
@@ -28,30 +28,30 @@ CREATE TABLE [dbo].[Locations](
 GO
 
 -- Default constraints
-ALTER TABLE [dbo].[Locations] ADD DEFAULT (N'[]') FOR [TagsJson]
+ALTER TABLE [Travel].[Locations] ADD DEFAULT (N'[]') FOR [TagsJson]
 GO
 
 -- Indexes
-CREATE NONCLUSTERED INDEX [IX_Locations_LocationTypeId] ON [dbo].[Locations]
+CREATE NONCLUSTERED INDEX [IX_Locations_LocationTypeId] ON [Travel].[Locations]
 ([LocationTypeId] ASC)
 GO
 
-CREATE NONCLUSTERED INDEX [IX_Locations_StartDate] ON [dbo].[Locations]
+CREATE NONCLUSTERED INDEX [IX_Locations_StartDate] ON [Travel].[Locations]
 ([StartDate] ASC)
 GO
 
-CREATE NONCLUSTERED INDEX [IX_Locations_State] ON [dbo].[Locations]
+CREATE NONCLUSTERED INDEX [IX_Locations_State] ON [Travel].[Locations]
 ([State] ASC)
 GO
 
-CREATE NONCLUSTERED INDEX [IX_Locations_UserId] ON [dbo].[Locations]
+CREATE NONCLUSTERED INDEX [IX_Locations_UserId] ON [Travel].[Locations]
 ([UserId] ASC)
 GO
 
 -- Foreign Keys
-ALTER TABLE [dbo].[Locations]  WITH CHECK ADD  CONSTRAINT [FK_Locations_LocationTypes_LocationTypeId] FOREIGN KEY([LocationTypeId])
-REFERENCES [dbo].[LocationTypes] ([Id])
+ALTER TABLE [Travel].[Locations]  WITH CHECK ADD  CONSTRAINT [FK_Locations_LocationTypes_LocationTypeId] FOREIGN KEY([LocationTypeId])
+REFERENCES [Travel].[LocationTypes] ([Id])
 GO
 
-ALTER TABLE [dbo].[Locations] CHECK CONSTRAINT [FK_Locations_LocationTypes_LocationTypeId]
+ALTER TABLE [Travel].[Locations] CHECK CONSTRAINT [FK_Locations_LocationTypes_LocationTypeId]
 GO

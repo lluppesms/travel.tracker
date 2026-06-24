@@ -75,14 +75,18 @@ Foundation development is complete. The application structure, data layer, servi
 2. Update the connection string in `appsettings.json`:
    ```json
    "SqlServer": {
-     "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+    "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;Application Name=TravelTracker"
    }
    ```
-3. Run database migrations:
+   The app stores all of its tables and stored procedures in the `Travel` schema.
+3. Create or deploy the database objects:
    ```bash
-   cd src/TravelTracker.Data
-   dotnet ef database update --startup-project ../TravelTracker
+   cd src/sql.database
+   dotnet build sql.database.sln
    ```
+   or publish `src/sql.database/bin/Debug/sql.database.dacpac` to your SQL database.
+
+4. Use a dedicated SQL login/user for this app and grant permissions only on the `Travel` schema. The connection string should use that dedicated identity; the connection string itself does not restrict schema access.
 
 ### Running Locally
 

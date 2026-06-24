@@ -3,22 +3,22 @@
 -- Description: Inserts default data for Travel Tracker
 -- =============================================
 
-DELETE FROM Destinations
+DELETE FROM [Travel].[Destinations]
 GO
-DELETE FROM DestinationTypes
+DELETE FROM [Travel].[DestinationTypes]
 GO
-DELETE FROM Locations
+DELETE FROM [Travel].[Locations]
 GO
-DELETE FROM LocationTypes
+DELETE FROM [Travel].[LocationTypes]
 GO
 
-DBCC CHECKIDENT ('Destinations', RESEED, 0)
-DBCC CHECKIDENT ('DestinationTypes', RESEED, 0)
-DBCC CHECKIDENT ('LocationTypes', RESEED, 0)
-DBCC CHECKIDENT ('Locations', RESEED, 0)
+DBCC CHECKIDENT (N'[Travel].[Destinations]', RESEED, 0)
+DBCC CHECKIDENT (N'[Travel].[DestinationTypes]', RESEED, 0)
+DBCC CHECKIDENT (N'[Travel].[LocationTypes]', RESEED, 0)
+DBCC CHECKIDENT (N'[Travel].[Locations]', RESEED, 0)
 
 Print 'Inserting LocationTypes'
-INSERT INTO LocationTypes (Name, Description) VALUES
+INSERT INTO [Travel].[LocationTypes] (Name, Description) VALUES
 ('RV Park', 'RV Park or campground'),
 ('National Park', 'US National Park'),
 ('National Monument', 'US National Monument'),
@@ -34,13 +34,13 @@ INSERT INTO LocationTypes (Name, Description) VALUES
 ('Other', 'Other location type')
 
 Print 'Inserting DestinationTypes'
-INSERT INTO DestinationTypes (Name, Description) VALUES
+INSERT INTO [Travel].[DestinationTypes] (Name, Description) VALUES
 ('National Park', 'US National Parks'),
 ('State High Point', 'Highest point in each US state'),
 ('Presidential Library', 'Presidential Libraries and Museums')
 
 Print 'Inserting National Parks'
-INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description) VALUES
+INSERT INTO [Travel].[Destinations] (DestinationTypeId, name, state, latitude, longitude, description) VALUES
 (1, 'Acadia National Park', 'Maine', 44.338974, -68.273430, 'The only national park in New England, featuring a wild coastal wilderness of mountains, sea cliffs, and beaches.'),
 (1, 'American Samoa National Park', 'American Samoa', -14.235000, -170.688000, 'A tropical park protecting coral reefs, volcanic peaks, and Polynesian culture.'),
 (1, 'Arches National Park', 'Utah', 38.733082, -109.592514, 'Home to the world''s largest concentration of natural sandstone arches set in dramatic desert scenery.'),
@@ -106,7 +106,7 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 (1, 'Zion National Park', 'Utah', 37.297817, -113.028770, 'Known for its towering red sandstone cliffs, narrow canyons, and the Virgin River''s carved landscapes')
 
 Print 'Inserting State High Points'
-INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description) VALUES
+INSERT INTO [Travel].[Destinations] (DestinationTypeId, name, state, latitude, longitude, description) VALUES
 (2, 'Denali', 'Alaska', 63.069, -151.0063, 'Highest point in Alaska and North America at 20,320 feet. Located near Talkeetna with a gain of 24,500 feet over 56.0 miles.'),
 (2, 'Gannett Peak', 'Wyoming', 43.1843, -109.6544, 'Highest point in Wyoming at 13,804 feet. Located near Pinedale with a gain of 8,650 feet over 40.4 miles.'),
 (2, 'Mount Rainier', 'Washington', 46.8529, -121.7604, 'Highest point in Washington at 14,411 feet. Located near Ashford with a gain of 9,100 feet over 16.0 miles.'),
@@ -160,7 +160,7 @@ INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, d
 
 
 Print 'Inserting Presidential Libraries and Museums'
-INSERT INTO Destinations (DestinationTypeId, name, state, latitude, longitude, description) VALUES
+INSERT INTO [Travel].[Destinations] (DestinationTypeId, name, state, latitude, longitude, description) VALUES
 (3, 'George Washington Papers', 'Virginia', 38.7074, -77.0868, '1 (Not-NARA) Mount Vernon research library preserving George Washington''s papers and personal archives.'),
 (3, 'John Adams Papers', 'Massachusetts', 42.2551, -71.0113, '2 (Not-NARA) Historic Quincy library containing John Adams'' personal collection at Adams National Historical Park.'),
 (3, 'Thomas Jefferson Papers', 'Virginia', 38.0097, -78.4544, '3 (Not-NARA) Charlottesville research campus at Monticello supporting scholarship on Thomas Jefferson.'),

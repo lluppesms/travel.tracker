@@ -2,7 +2,7 @@
 -- Table: Users
 -- Description: Stores user information
 -- =============================================
-CREATE TABLE [dbo].[Users](
+CREATE TABLE [Travel].[Users](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Type] [nvarchar](50) NOT NULL,
 	[Username] [nvarchar](200) NOT NULL,
@@ -16,19 +16,19 @@ CREATE TABLE [dbo].[Users](
 GO
 
 -- Default constraints
-ALTER TABLE [dbo].[Users] ADD CONSTRAINT [DF_Users_ApiKey] DEFAULT (newid()) FOR [ApiKey]
+ALTER TABLE [Travel].[Users] ADD CONSTRAINT [DF_Users_ApiKey] DEFAULT (newid()) FOR [ApiKey]
 GO
 
 -- Indexes
-CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_ApiKey] ON [dbo].[Users]
+CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_ApiKey] ON [Travel].[Users]
 ([ApiKey] ASC)
 WHERE [ApiKey] IS NOT NULL
 GO
 
-CREATE NONCLUSTERED INDEX [IX_Users_Email] ON [dbo].[Users]
+CREATE NONCLUSTERED INDEX [IX_Users_Email] ON [Travel].[Users]
 ([Email] ASC)
 GO
 
-CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_EntraIdUserId] ON [dbo].[Users]
+CREATE UNIQUE NONCLUSTERED INDEX [IX_Users_EntraIdUserId] ON [Travel].[Users]
 ([EntraIdUserId] ASC)
 GO
