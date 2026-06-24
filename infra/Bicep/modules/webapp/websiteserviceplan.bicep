@@ -41,4 +41,4 @@ resource appServiceResource 'Microsoft.Web/serverfarms@2024-11-01' = if (empty(e
 }
 output name string = empty(existingServicePlanName) ? appServiceResource.name : existingAppServiceResource.name
 output id string = empty(existingServicePlanName) ? appServiceResource.id : existingAppServiceResource.id
-output resourceGroupName string = empty(existingServicePlanName) ? resourceGroup().name : existingServicePlanResourceGroupName
+output resourceGroupName string = empty(existingServicePlanName) ? resourceGroup().name : (empty(existingServicePlanResourceGroupName) ? resourceGroup().name : existingServicePlanResourceGroupName)

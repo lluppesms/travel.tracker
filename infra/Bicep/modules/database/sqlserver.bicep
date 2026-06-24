@@ -66,7 +66,7 @@ var deployNewServer = empty(existingSqlServerName)
 // --------------------------------------------------------------------------------
 resource existingSqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' existing = if (!deployNewServer) {
   name: existingSqlServerName
-  scope: resourceGroup(existingSqlServerResourceGroupName)
+  scope: resourceGroup(empty(existingSqlServerResourceGroupName) ? resourceGroup().name : existingSqlServerResourceGroupName)
 }
 resource existingSqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' existing = if (!deployNewServer) {
   parent: existingSqlServerResource
