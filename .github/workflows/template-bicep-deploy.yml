@@ -73,6 +73,7 @@ jobs:
       envCode: ${{ inputs.envCode }}
       generatedAppEnvName: ${{ inputs.envCode == 'prod' && vars.APP_NAME || format('{0}-{1}-{2}', vars.APP_NAME, inputs.envCode, vars.INSTANCE_NUMBER) }}
       generatedResourceGroupName: ${{ vars.RESOURCE_GROUP_NAME || format('{0}-{1}-{2}', vars.RESOURCE_GROUP_PREFIX, inputs.envCode, vars.INSTANCE_NUMBER) }}
+      DEPLOYMENT_TYPE: ${{ inputs.deploymentType }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       requestorName: ${{ inputs.requestorName }}
 
@@ -90,24 +91,20 @@ jobs:
       if: ${{ inputs.runCreateInfra }}
       uses: actions/checkout@v6
 
-    - name: Create Variables
-      id: create-vars
-      run: |
-        DTS="$(echo $(date +'%Y%m%d%H%M'))"
-        echo "DTS=$DTS"
-        echo "DTS=$DTS" >> $GITHUB_OUTPUT
+    - name: Get the current date
+      if: ${{ inputs.runCreateInfra }}
+      id: get-date
+      run: echo "DATE_TIME_STAMP=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
 
     - name: Display Variables and Files
+      if: ${{ inputs.runCreateInfra }}
       run: |-
         echo "env.generatedAppEnvName=${{ env.generatedAppEnvName }}"
         echo "inputs.envCode=${{ inputs.envCode }}"
         echo "env.generatedResourceGroupName=${{ env.generatedResourceGroupName }}"
-        echo "deployInResourceGroup=${{ inputs.deployInResourceGroup }}"
         echo "templateFilePath=${{ inputs.templatePath }}${{ inputs.templateFile }}"
         echo "parameterFilePath=${{ inputs.templatePath }}${{ inputs.parameterFile }}"
         echo "bicepDeploymentMode=${{ inputs.bicepDeploymentMode }}"
-
-        echo "vars.APP_NAME=${{ vars.APP_NAME }}"
         echo "vars.INSTANCE_NUMBER=${{ vars.INSTANCE_NUMBER }}"
         echo "vars.RESOURCE_GROUP_PREFIX=${{ vars.RESOURCE_GROUP_PREFIX }}"
         echo "vars.RESOURCE_GROUP_LOCATION=${{ vars.RESOURCE_GROUP_LOCATION }}"
@@ -120,15 +117,13 @@ jobs:
         echo "---------------------------------"
         echo "##[group]All Variables:"
         echo "Environment:"
-        echo '${{ toJSON(env) }}'
+        echo "${{ toJSON(env) }}"
         echo "Variables:"
-        echo '${{ toJSON(vars) }}'
+        echo "${{ toJSON(vars) }}"
         echo "Secrets:"
-        echo '${{ toJSON(secrets) }}'
+        echo "${{ toJSON(secrets) }}"
         echo "Inputs:"
         echo '${{ toJSON(inputs) }}'
-        echo "steps.create-vars.outputs:"
-        echo '${{ toJSON(steps.create-vars.outputs) }}'
         echo "##[endgroup]"
         echo "---------------------------------"
         echo "##[group]Directory of ${{ github.workspace  }}"
@@ -141,9 +136,10 @@ jobs:
       uses: qetza/replacetokens-action@v1
       with:
         sources: '${{ inputs.templatePath }}${{ inputs.parameterFile }}; !local/ => ${{ inputs.parameterFile }}'
-        variables: '[${{ toJSON(env) }},${{ toJSON(vars) }},${{ toJSON(secrets) }},${{ toJSON(steps.create-vars.outputs) }}]' # use environment & variables & secrets
+        variables: '[${{ toJSON(env) }},${{ toJSON(vars) }},${{ toJSON(secrets) }}]' # use environment & variables & secrets
 
     - name: Display Param File
+      if: ${{ inputs.runCreateInfra }}
       run: |-
         echo "##[group]Contents of ${{ inputs.templatePath }}${{ inputs.parameterFile }}"
         cat ${{ inputs.templatePath }}${{ inputs.parameterFile }}
@@ -151,6 +147,7 @@ jobs:
       continue-on-error: true
       
     - name: Azure Login (Reusable Action)
+      if: ${{ inputs.runCreateInfra }}
       uses: ./.github/actions/login-action
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -167,7 +164,7 @@ jobs:
       run: |
         echo "Running what-if analysis..."
         az deployment group what-if \
-          --name ${{ inputs.templateFile }}-whatif-rg-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.create-vars.outputs.DTS}} \
+          --name ${{ inputs.templateFile }}-whatif-rg-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}} \
           --resource-group "${{ env.generatedResourceGroupName }}" \
           --template-file "${{ inputs.templatePath }}${{ inputs.templateFile }}" \
           --parameters "${{ inputs.templatePath }}${{ inputs.parameterFile }}" \
@@ -176,13 +173,13 @@ jobs:
     # The azure/arm-deploy action is being deprecated, replaced by azure/bicep-deploy
     # See: https://github.com/Azure/arm-deploy (old) vs https://github.com/azure/bicep-deploy (new)
     # Note: 'failOnStdErr' is not supported in bicep-deploy... will that be an issue in GHA where warnings are treated as errors???
-    - name: Deploy Azure Resources
+    - name: Deploy ${{ inputs.deploymentType }} Azure Resources
       uses: azure/bicep-deploy@v2
       if: ${{ inputs.runCreateInfra && inputs.deployInResourceGroup && inputs.bicepDeploymentMode != 'whatIf' }} 
       id: deploy-bicep-rg
       with:
         scope: resourceGroup
-        name: ${{ inputs.templateFile }}-rg-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.create-vars.outputs.DTS}}
+        name: ${{ inputs.templateFile }}-rg-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         resource-group-name: ${{ env.generatedResourceGroupName }}
         template-file: ${{ inputs.templatePath }}${{ inputs.templateFile }}
@@ -190,14 +187,14 @@ jobs:
         type: deployment
         operation: ${{ inputs.bicepDeploymentMode }} # Must be: create | validate | whatIf
 
-    - name: Deploy Azure Resources (SUB)
+    - name: Deploy ${{ inputs.deploymentType }} Azure Resources (SUB)
       uses: azure/bicep-deploy@v2
       if: ${{ inputs.runCreateInfra && !inputs.deployInResourceGroup && inputs.bicepDeploymentMode != 'whatIf' }}
       id: deploy-bicep-sub
       with:
         scope: subscription
         location: ${{ vars.RESOURCE_GROUP_LOCATION }}
-        name: ${{ inputs.templateFile }}-sub-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.create-vars.outputs.DTS}}
+        name: ${{ inputs.templateFile }}-sub-${{ vars.RESOURCE_GROUP_LOCATION }}-${{ steps.get-date.outputs.DATE_TIME_STAMP}}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         template-file: ${{ inputs.templatePath }}${{ inputs.templateFile }}
         parameters-file: ${{ inputs.templatePath }}${{ inputs.parameterFile }}
@@ -223,6 +220,32 @@ jobs:
           # Deployment summary
           - Resource Group: ${{ steps.deploy-bicep-rg.outputs.RESOURCE_GROUP_NAME || steps.deploy-bicep-sub.outputs.RESOURCE_GROUP_NAME }}
           - Environment: ${{ inputs.envCode }}
-          - Application URL: [https://${{ steps.deploy-bicep-rg.outputs.HOST_NAME || steps.deploy-bicep-sub.outputs.HOST_NAME }}](https://${{ steps.deploy-bicep-rg.outputs.HOST_NAME || steps.deploy-bicep-sub.outputs.HOST_NAME }})
+          - Application URL: [https://${{ steps.deploy-bicep-rg.outputs.WEB_HOST_NAME || steps.deploy-bicep-sub.outputs.WEB_HOST_NAME }}](https://${{ steps.deploy-bicep-rg.outputs.WEB_HOST_NAME || steps.deploy-bicep-sub.outputs.WEB_HOST_NAME }})
+
+          ## First-time SQL database permissions
+          If this is the first time you created the SQL database, grant rights to your CI/CD service principal so it can deploy the DACPAC schema, create the schema, then grant the application access to use the data.
+
+          **CI/CD:**
+          ```sql
+          CREATE USER [yourServicePrincipalName] FROM EXTERNAL PROVIDER;
+          ALTER ROLE db_owner ADD MEMBER [yourServicePrincipalName];
+          ```
+
+          **Schema:**
+          ```sql
+          CREATE SCHEMA [Dad];
+          GO
+          ```
+
+          **Application:**
+          ```sql
+          CREATE USER [yourAppManagedIdentityName] FROM EXTERNAL PROVIDER;
+          GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [yourAppManagedIdentityName];
+          GRANT EXECUTE ON SCHEMA::[Dad] TO [yourAppManagedIdentityName];
+
+          CREATE USER [yourAppId] FROM EXTERNAL PROVIDER;
+          GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [yourAppId];
+          GRANT EXECUTE ON SCHEMA::[Dad] TO [yourAppId];
+          ```
       run: echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
       continue-on-error: true

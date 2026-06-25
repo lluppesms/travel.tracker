@@ -1,4 +1,7 @@
 // // -----------------------------------------------------------------------------------------------
+// // ERROR: Key based authentication is not permitted on this storage account. 
+// //  ... why is this doing key based auth...???
+// // -----------------------------------------------------------------------------------------------
 // // This BICEP file will generate a list of secrets in a KeyVault to use for dup checks, like this:
 // // ";BlobStorageConnectionString;CosmosConnectionString;GenericSecret;IotHubConnectionString;"
 // // Each start and end with ";" so you can confidently search for ";mySecret;" and not get fooled

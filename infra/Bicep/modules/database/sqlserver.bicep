@@ -5,14 +5,13 @@
 // --------------------------------------------------------------------------------
 param sqlServerName string = uniqueString('sql', resourceGroup().id)
 param sqlDBName string = 'SampleDB'
-
 param existingSqlServerName string = ''
+param existingSqlDatabaseName string = ''
 param existingSqlServerResourceGroupName string = ''
 
 param adAdminUserId string = '' // 'somebody@somedomain.com'
 param adAdminUserSid string = '' // '12345678-1234-1234-1234-123456789012'
 param adAdminTenantId string = '' // '12345678-1234-1234-1234-123456789012'
-// param userAssignedIdentityPrincipalId string = ''
 param userAssignedIdentityResourceId string = ''
 param location string = resourceGroup().location
 param commonTags object = {}
@@ -40,11 +39,16 @@ param workspaceId string = ''
 param sqlAdminUser string = ''
 @secure()
 param sqlAdminPassword string = ''
+param addSecurityControlIgnoreTag bool = false
 
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~sqlserver.bicep' }
-var tags = union(commonTags, templateTag)
-var adAdminOnly = sqlAdminUser == '' 
+var securityControlIgnoreTag = addSecurityControlIgnoreTag ? { SecurityControl: 'Ignore' } : {}
+var tags = union(commonTags, templateTag, securityControlIgnoreTag)
+
+// Default to AD-only authentication; only enable SQL local auth if sqlAdminPassword has a value
+var useSqlAuth = !empty(sqlAdminPassword)
+var adAdminOnly = !useSqlAuth
 var adminDefinition = adAdminUserId == '' ? {} : {
   administratorType: 'ActiveDirectory'
   principalType: 'Group'
@@ -55,22 +59,18 @@ var adminDefinition = adAdminUserId == '' ? {} : {
 } 
 var primaryUserIdentity = userAssignedIdentityResourceId
 
-var deployNewServer = empty(existingSqlServerName)
+var existingSqlServerRgName = empty(existingSqlServerResourceGroupName) ? resourceGroup().name : existingSqlServerResourceGroupName
+var useExistingSqlResources = !empty(existingSqlServerName) && !empty(existingSqlDatabaseName)
+var deployNewServer = !useExistingSqlResources
 
 // --------------------------------------------------------------------------------
-// resource storageAccountResource 'Microsoft.Storage/storageAccounts@2021-04-01' existing = { name: storageAccountName }
-// var storageAccountKey = storageAccountResource.listKeys().keys[0].value
-// var storageEndpoint = 'https://${storageAccountResource.name}.${environment().suffixes.storage}'
-// var storageSubscriptionId = subscription().subscriptionId
-
-// --------------------------------------------------------------------------------
-resource existingSqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' existing = if (!deployNewServer) {
+resource existingSqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' existing = if (useExistingSqlResources) {
   name: existingSqlServerName
-  scope: resourceGroup(empty(existingSqlServerResourceGroupName) ? resourceGroup().name : existingSqlServerResourceGroupName)
+  scope: resourceGroup(existingSqlServerRgName)
 }
-resource existingSqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' existing = if (!deployNewServer) {
+resource existingSqlDBResource 'Microsoft.Sql/servers/databases@2024-11-01-preview' existing = if (useExistingSqlResources) {
   parent: existingSqlServerResource
-  name: sqlDBName
+  name: existingSqlDatabaseName
 }
 
 resource sqlServerResource 'Microsoft.Sql/servers@2024-11-01-preview' = if (deployNewServer) {
@@ -208,9 +208,13 @@ resource sqlDBAuditingSettings 'Microsoft.Sql/servers/auditingSettings@2024-11-0
 }
 
 // --------------------------------------------------------------------------------
-output serverName string = deployNewServer ? sqlServerResource.name : existingSqlServerResource.name
+var outputServerName = deployNewServer ? sqlServerResource.name : existingSqlServerResource.name
+var outputDatabaseName = deployNewServer ? sqlDBResource.name : existingSqlDBResource.name
+
+output serverName string = outputServerName
 output serverId string = deployNewServer ? sqlServerResource.id : existingSqlServerResource.id
 output apiVersion string = deployNewServer ? sqlServerResource.apiVersion : existingSqlServerResource.apiVersion
-output databaseName string = deployNewServer ? sqlDBResource.name : existingSqlDBResource.name
+output databaseName string = outputDatabaseName
 output databaseId string = deployNewServer ? sqlDBResource.id : existingSqlDBResource.id
+output identityConnectionString string = 'Server=tcp:${outputServerName}.database.windows.net,1433;Initial Catalog=${outputDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;Authentication="Active Directory Default";'
 //output serverPrincipalId string = sqlServerResource.identity.principalId

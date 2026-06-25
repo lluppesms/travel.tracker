@@ -6,6 +6,13 @@
 #     load-config:
 #       uses: ./.github/workflows/template-load-config.yml
 #     
+#     build-web:
+#       needs: load-config
+#       uses: ./.github/workflows/template-webapp-build.yml
+#       with:
+#         rootDirectory: ${{ needs.load-config.outputs.web_rootDirectory }}
+#         projectName: ${{ needs.load-config.outputs.web_projectName }}
+#
 #     build-dacpac:
 #       needs: load-config
 #       uses: ./.github/workflows/template-dacpac-build.yml
@@ -19,6 +26,23 @@ run-name: Load Project Config
 on:
   workflow_call:
     outputs:
+      # Web project
+      web_shortName:
+        description: 'Web project short name'
+        value: ${{ jobs.load.outputs.web_shortName }}
+      web_rootDirectory:
+        description: 'Web project root directory'
+        value: ${{ jobs.load.outputs.web_rootDirectory }}
+      web_projectName:
+        description: 'Web project name'
+        value: ${{ jobs.load.outputs.web_projectName }}
+      web_testDirectory:
+        description: 'Web test directory'
+        value: ${{ jobs.load.outputs.web_testDirectory }}
+      web_testProjectName:
+        description: 'Web test project name'
+        value: ${{ jobs.load.outputs.web_testProjectName }}
+      
       # SQL project
       sql_shortName:
         description: 'SQL project short name'
@@ -49,6 +73,12 @@ jobs:
     name: Load Project Config Settings
     runs-on: ubuntu-latest
     outputs:
+      # Web
+      web_shortName: ${{ steps.config.outputs.web_shortName }}
+      web_rootDirectory: ${{ steps.config.outputs.web_rootDirectory }}
+      web_projectName: ${{ steps.config.outputs.web_projectName }}
+      web_testDirectory: ${{ steps.config.outputs.web_testDirectory }}
+      web_testProjectName: ${{ steps.config.outputs.web_testProjectName }}
       # SQL
       sql_shortName: ${{ steps.config.outputs.sql_shortName }}
       sql_rootDirectory: ${{ steps.config.outputs.sql_rootDirectory }}
