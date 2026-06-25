@@ -197,5 +197,5 @@ INSERT INTO [Travel].[Destinations] (DestinationTypeId, name, state, latitude, l
 (3, 'Joseph R. Biden Jr. Presidential Library and Museum', 'Delaware', 39.7391, -75.5398, '46 (NARA) Planned Delaware presidential center announced for President Joe Biden.')
 
 Print 'Showing Results'
-Select * From LocationTypes
-Select dt.Name as DestType, d.* From Destinations d INNER JOIN DestinationTypes dt ON d.DestinationTypeId = dt.Id
+Select * From [Travel].[LocationTypes]
+Select dt.Name as DestType, d.* From [Travel].[Destinations] d INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id
