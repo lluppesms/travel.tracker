@@ -1,6 +1,10 @@
+extern alias AzureIdentity;
+
 using TravelTracker.Data;
 using TravelTracker.Helpers;
 using TravelTracker.Services;
+using DefaultAzureCredential = AzureIdentity::Azure.Identity.DefaultAzureCredential;
+using DefaultAzureCredentialOptions = AzureIdentity::Azure.Identity.DefaultAzureCredentialOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 

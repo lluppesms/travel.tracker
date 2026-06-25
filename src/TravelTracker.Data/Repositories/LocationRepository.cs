@@ -1,13 +1,8 @@
 namespace TravelTracker.Data.Repositories;
 
-public class LocationRepository : ILocationRepository
+public class LocationRepository(TravelTrackerDbContext context) : ILocationRepository
 {
-    private readonly TravelTrackerDbContext _context;
-
-    public LocationRepository(TravelTrackerDbContext context)
-    {
-        _context = context;
-    }
+    private readonly TravelTrackerDbContext _context = context;
 
     public async Task<Location?> GetByIdAsync(int id, int userId)
     {
@@ -85,7 +80,7 @@ public class LocationRepository : ILocationRepository
         return location;
     }
 
-    public async Task<Location> UpdateAsync(Location location)
+    public async Task<Location?> UpdateAsync(Location location)
     {
         try
         {
@@ -146,11 +141,12 @@ public class LocationRepository : ILocationRepository
         {
             try
             {
-                location.Tags = JsonSerializer.Deserialize<List<string>>(location.TagsJson) ?? new List<string>();
+                location.Tags = JsonSerializer.Deserialize<List<string>>(location.TagsJson) ?? [];
             }
             catch
             {
-                location.Tags = new List<string>();
+                location.Tags = []
+;
             }
         }
     }

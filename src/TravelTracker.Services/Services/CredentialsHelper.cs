@@ -1,10 +1,16 @@
-﻿namespace TravelTracker.Services.Services;
+﻿extern alias AzureIdentity;
+
+using Microsoft.Extensions.Configuration;
+using DefaultAzureCredential = AzureIdentity::Azure.Identity.DefaultAzureCredential;
+using DefaultAzureCredentialOptions = AzureIdentity::Azure.Identity.DefaultAzureCredentialOptions;
+
+namespace TravelTracker.Services.Services;
 
 public static class CredentialsHelper
 {
     public static DefaultAzureCredential GetCredentials(IConfiguration configuration)
     {
-        return GetCredentials(configuration["VisualStudioTenantId"], configuration["UserAssignedManagedIdentityClientId"]);
+        return GetCredentials(configuration["VisualStudioTenantId"] ?? string.Empty, configuration["UserAssignedManagedIdentityClientId"] ?? string.Empty);
     }
 
     public static DefaultAzureCredential GetCredentials()
@@ -12,12 +18,12 @@ public static class CredentialsHelper
         return GetCredentials(string.Empty, string.Empty);
     }
 
-    public static DefaultAzureCredential GetCredentials(string visualStudioTenantId)
+    public static DefaultAzureCredential GetCredentials(string? visualStudioTenantId)
     {
         return GetCredentials(visualStudioTenantId, string.Empty);
     }
 
-    public static DefaultAzureCredential GetCredentials(string visualStudioTenantId, string userAssignedManagedIdentityClientId)
+    public static DefaultAzureCredential GetCredentials(string? visualStudioTenantId, string? userAssignedManagedIdentityClientId)
     {
         if (!string.IsNullOrEmpty(visualStudioTenantId))
         {

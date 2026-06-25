@@ -7,6 +7,6 @@ public interface ILocationRepository
     Task<IEnumerable<Location>> GetByDateRangeAsync(int userId, DateTime startDate, DateTime endDate);
     Task<IEnumerable<Location>> GetByStateAsync(int userId, string state);
     Task<Location> CreateAsync(Location location);
-    Task<Location> UpdateAsync(Location location);
+    Task<Location?> UpdateAsync(Location location);
     Task DeleteAsync(int id, int userId);
 }

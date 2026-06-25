@@ -1,31 +1,24 @@
 using System.Text.Json;
+using Azure.AI.Extensions.OpenAI;
 using Azure.AI.Projects;
-using Azure.AI.Projects.OpenAI;
+//using Azure.AI.Projects.OpenAI;
 using OpenAI.Responses;
 
 namespace TravelTracker.Services.Services;
 
-public class LocationLookupService : ILocationLookupService
+public class LocationLookupService(
+    IOptions<AzureAIFoundrySettings> settings,
+    IConfiguration configuration,
+    LocationLookupAPIService apiFallback,
+    ILogger<LocationLookupService> logger) : ILocationLookupService
 {
-    private readonly AzureAIFoundrySettings _settings;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger<LocationLookupService> _logger;
-    private readonly LocationLookupAPIService _apiFallback;
+    private readonly AzureAIFoundrySettings _settings = settings.Value;
+    private readonly IConfiguration _configuration = configuration;
+    private readonly ILogger<LocationLookupService> _logger = logger;
+    private readonly LocationLookupAPIService _apiFallback = apiFallback;
 
     public bool IsConfigured => !string.IsNullOrEmpty(_settings.ProjectEndpoint)
                              && !string.IsNullOrEmpty(_settings.AgentName);
-
-    public LocationLookupService(
-        IOptions<AzureAIFoundrySettings> settings,
-        IConfiguration configuration,
-        LocationLookupAPIService apiFallback,
-        ILogger<LocationLookupService> logger)
-    {
-        _settings = settings.Value;
-        _configuration = configuration;
-        _apiFallback = apiFallback;
-        _logger = logger;
-    }
 
     public async Task<LocationLookupResult> LookupLocationAsync(string name, string address, string city, string state, string zipCode)
     {
@@ -48,7 +41,7 @@ public class LocationLookupService : ILocationLookupService
             var agent = new AgentReference(_settings.AgentName, _settings.AgentVersion);
             _logger.LogInformation("Using AI Foundry agent '{AgentName}' version '{AgentVersion}' at endpoint '{Endpoint}'",
                 _settings.AgentName, _settings.AgentVersion, _settings.ProjectEndpoint);
-            var responseClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agent, null);
+            var responseClient = projectClient.ProjectOpenAIClient.GetProjectResponsesClientForAgent(agent, null);
 
             var queryParts = new[] { name, address, city, state, zipCode }
                 .Where(s => !string.IsNullOrWhiteSpace(s));

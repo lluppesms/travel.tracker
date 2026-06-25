@@ -17,4 +17,4 @@ global using TravelTracker.Data.Repositories;
 global using TravelTracker.Services.Interfaces;
 global using Microsoft.Extensions.Options;
 global using Azure.AI.Projects;
-global using Azure.AI.Projects.OpenAI;
+//global using Azure.AI.Projects.OpenAI;

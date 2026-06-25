@@ -53,14 +53,14 @@ public class LocationService(
                 location.Latitude,
                 location.Longitude,
                 message);
-            return null;
+            return new Location();
         }
     }
 
     public async Task<Location> UpdateLocationAsync(Location location)
     {
         await ValidateLocationAsync(location);
-        return await _locationRepository.UpdateAsync(location);
+        return await _locationRepository.UpdateAsync(location) ?? new Location();
     }
 
     public async Task DeleteLocationAsync(int id, int userId)
