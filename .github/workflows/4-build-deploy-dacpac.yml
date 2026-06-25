@@ -1,0 +1,92 @@
+# ------------------------------------------------------------------------------------------------------------------------
+# GHA Workflow to build and deploy SQL Database Objects (DACPAC)
+# ------------------------------------------------------------------------------------------------------------------------
+name: 4.build.deploy.dacpac
+run-name: '4. Build and Deploy DACPAC using ENV ${{ inputs.deployEnvironment }} ${{vars.INSTANCE_NUMBER}} by @${{ github.actor }}'
+on:
+  workflow_dispatch:
+    inputs:
+      deployEnvironment:
+        description: Environment
+        default: 'dev' 
+        type: environment
+      loginAccountType:
+        description: 'Login Account Type'
+        required: true
+        default: 'SVC_PRINCIPAL'
+        type: choice
+        options:
+          - 'SVC_PRINCIPAL'
+          - 'LOCAL_SQL'
+      dacpacAction:
+        description: DACPAC Action
+        required: true
+        default: 'build-deploy'
+        type: choice
+        options:
+          - 'build-deploy'
+          - 'build-only'
+      createDefaultData:
+        description: Create Default Data?
+        type: boolean
+        default: true
+
+# ------------------------------------------------------------------------------------------------------------------------
+jobs:
+  # ----------------------------------------------------------------------------------------------------
+  # Load Project Configuration
+  # ----------------------------------------------------------------------------------------------------
+  load-config:
+    name: Load Project Config
+    uses: ./.github/workflows/template-load-config.yml
+    secrets: inherit
+
+  # ----------------------------------------------------------------------------------------------------
+  # Build DACPAC
+  # ----------------------------------------------------------------------------------------------------
+  build:
+    name: Build
+    uses: ./.github/workflows/template-dacpac-build.yml
+    if: ${{ inputs.dacpacAction == 'build-deploy' || inputs.dacpacAction == 'build-only' }}
+    needs: load-config
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      appFolderName: '${{ needs.load-config.outputs.sql_rootDirectory }}'
+      appSolutionName: '${{ needs.load-config.outputs.sql_solutionName }}'
+      appProjectName: '${{ needs.load-config.outputs.sql_projectName }}'
+      listFilesAfterBuild: true
+    secrets: inherit
+
+  # ----------------------------------------------------------------------------------------------------
+  # Deploy DACPAC
+  # ----------------------------------------------------------------------------------------------------
+  deploy:
+    name: 'Deploy Database ${{vars.INSTANCE_NUMBER}}'
+    needs: [load-config, build]
+    uses: ./.github/workflows/template-dacpac-deploy.yml
+    if: ${{ inputs.dacpacAction == 'build-deploy' }}
+    permissions:
+      id-token: write  
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      artifactName: 'dacpac'
+      appProjectName: ${{ needs.load-config.outputs.sql_projectName }}
+      loginAccountType: ${{ inputs.loginAccountType }}
+    secrets: inherit
+
+  # ----------------------------------------------------------------------------------------------------
+  # Deploy Default Data
+  # ----------------------------------------------------------------------------------------------------
+  run-sql:
+    name: Deploy default data
+    uses: ./.github/workflows/template-run-sql.yml
+    needs: [load-config, deploy]
+    if: ${{ inputs.createDefaultData }}
+    permissions:
+      id-token: write  
+    with:
+      envCode: ${{ inputs.deployEnvironment }}
+      sqlFolderName: '${{ needs.load-config.outputs.sql_rootDirectory }}/Patch'
+      sqlFileName: 'InsertDefaultData.sql'
+      loginAccountType: 'SVC_PRINCIPAL'
+    secrets: inherit

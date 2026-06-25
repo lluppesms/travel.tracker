@@ -15,7 +15,7 @@ on:
       listFilesBeforeDeploy:
         required: false
         type: boolean
-        default: false
+        default: true
   
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
@@ -24,47 +24,25 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.envCode }}
+
     env:
       artifactName: webapp
       generatedAppEnvName: "${{ inputs.envCode == 'prod' && format('{0}', vars.APP_NAME) || format('{0}{1}-{2}', vars.APP_NAME, vars.INSTANCE_NUMBER, inputs.envCode) }}"
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v6
-
     - name: Download build artifacts
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v8
       with:
         name: ${{ env.artifactName }}
 
-    - name: List Files After Build
+    - name: List Files Before Deploy
       if: inputs.listFilesBeforeDeploy == true
       run: 
         tree ${{ github.action_path }}
       continue-on-error: true
   
-    - name: Create Runtime Variables
-      id: vars
-      shell: bash
-      run: |
-        readonly rundatetime=$(date +'%Y-%m-%dT%H:%M:%SZ')
-        echo "rundatetime=$rundatetime" >> $GITHUB_OUTPUT
-        readonly rundate=$(date +'%Y.%m.%d')
-        echo "rundate=$rundate" >> $GITHUB_OUTPUT
-        readonly commitbranch=$(echo ${GITHUB_REF#refs/heads/})
-        echo "commitbranch=$commitbranch" >> $GITHUB_OUTPUT
-        readonly commitsha=${GITHUB_SHA::6}
-        echo "commitsha=$commitsha" >> $GITHUB_OUTPUT
-      continue-on-error: true
-
-    - name: Put Build Details in buildinfo.json
-      shell: bash
-      run: |
-        echo -e -n "{\"buildDate\":\"${{ steps.vars.outputs.rundatetime }}\",\"buildNumber\":\"${{ steps.vars.outputs.rundate }}.${{ github.run_number }}\",\"buildId\":\"${{ github.run_id }}.${{ github.run_attempt }}\",\"run_id\":\"${{ github.run_id }}\",\"run_attempt\":\"${{ github.run_attempt }}\",\"run_number\":\"${{ github.run_number }}\",\"branchName\":\"${{ steps.vars.outputs.commitbranch }}\",\"commitHash\":\"${{ steps.vars.outputs.commitsha }}\"}" > ${{ github.action_path }}wwwroot\buildinfo.json
-      continue-on-error: true
-
-    - name: Azure Login (Reusable Action)
-      uses: ./.github/actions/login-action
+    - name: Login to Azure using OIDC
+      uses: azure/login@v2
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -74,7 +52,7 @@ jobs:
       uses: Azure/webapps-deploy@v2
       with:
         app-name: ${{ env.generatedAppEnvName }}
-        package: .
+        package: '.'
 
     - name: Logout and cleanup
       shell: bash

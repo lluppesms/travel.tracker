@@ -2,7 +2,7 @@
 # GHA Workflow to Scan Bicep on a schedule
 # ------------------------------------------------------------------------------------------------------------------------
 name: 7.scan.code.scheduled
-run-name: '7 - Scheduled Scan Code'
+run-name: '7. Scheduled Scan Code'
 
 on:
   workflow_dispatch:
@@ -13,7 +13,11 @@ on:
         type: boolean
       runGHASScan:
         description: Run GitHub Advanced Security Scan
-        default: false
+        default: true
+        type: boolean
+      runSBOM:
+        description: Run SBOM Report Generator
+        default: true
         type: boolean
   # push:
   #   branches: [ "main" ]
@@ -25,6 +29,7 @@ on:
     # - cron: '0 3 * * 1-5'
     # # run this once a month on the 1st day of the month even if no pushes or PRs
     - cron: '0 0 1 * *'
+    
 # ------------------------------------------------------------------------------------------------------------------------
 permissions:
   id-token: write
@@ -44,5 +49,6 @@ jobs:
     uses: ./.github/workflows/template-scan-code.yml
     secrets: inherit
     with:
-      runMSDevSecOpsScan: ${{ inputs.runMSDevSecOpsScan || true }}
-      runGHASScan: ${{ inputs.runGHASScan || true }}
+      runMSDevSecOpsScan: ${{ inputs.runMSDevSecOpsScan }}
+      runGHASScan: ${{ inputs.runGHASScan }}
+      runSBOM: ${{ inputs.runSBOM }}
