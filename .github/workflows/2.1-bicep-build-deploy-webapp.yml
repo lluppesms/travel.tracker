@@ -76,7 +76,7 @@ jobs:
   # ------------------------------------------------------------------------------------------------------------------------
   create-infra:
     name: Create Infra ${{ inputs.deployEnvironment }}
-    uses: ./.github/workflows/template-create-infra.yml
+    uses: ./.github/workflows/template-bicep-deploy.yml
     if: inputs.runCreateInfra || inputs.runBuildDeploy
     secrets: inherit
     with:

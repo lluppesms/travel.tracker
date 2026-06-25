@@ -66,7 +66,7 @@ jobs:
    - `scan-codeql.yml`: Code quality scanning (scheduled)
 
 2. **Template Workflows**: Reusable components
-   - `template-create-infra.yml`: Infrastructure deployment
+   - `template-bicep-deploy.yml`: Infrastructure deployment
    - `template-webapp-build.yml`: Web application build
    - `template-webapp-deploy.yml`: Web application deployment
    - `template-scan-code.yml`: Security scanning
@@ -79,7 +79,7 @@ jobs:
 
 ### 1. Infrastructure Deployment Workflows
 - **Purpose**: Deploy Azure resources using Bicep templates
-- **Key Workflows**: `bicep-only.yml`, `template-create-infra.yml`
+- **Key Workflows**: `bicep-only.yml`, `template-bicep-deploy.yml`
 - **Features**:
   - Parameterized environment selection
   - Bicep template and parameter file inputs
@@ -295,7 +295,7 @@ on:
 
 jobs:
   deploy-infra:
-    uses: ./.github/workflows/template-create-infra.yml
+    uses: ./.github/workflows/template-bicep-deploy.yml
     with:
       envCode: ${{ inputs.environmentName }}
       templatePath: './infra/Bicep/'
@@ -328,7 +328,7 @@ jobs:
 
   deploy-infrastructure:
     needs: security-scan
-    uses: ./.github/workflows/template-create-infra.yml
+    uses: ./.github/workflows/template-bicep-deploy.yml
     with:
       envCode: ${{ inputs.environmentName || 'dev' }}
     secrets: inherit
