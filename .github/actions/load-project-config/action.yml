@@ -11,6 +11,23 @@ name: 'Load config/projects.yml'
 description: 'Loads project configurations from .github/config/projects.yml'
 
 outputs:
+  # Web project
+  web_shortName:
+    description: 'Web project short name'
+    value: ${{ steps.load.outputs.web_shortName }}
+  web_rootDirectory:
+    description: 'Web project root directory'
+    value: ${{ steps.load.outputs.web_rootDirectory }}
+  web_projectName:
+    description: 'Web project name'
+    value: ${{ steps.load.outputs.web_projectName }}
+  web_testDirectory:
+    description: 'Web test directory'
+    value: ${{ steps.load.outputs.web_testDirectory }}
+  web_testProjectName:
+    description: 'Web test project name'
+    value: ${{ steps.load.outputs.web_testProjectName }}
+  
   # SQL project
   sql_shortName:
     description: 'SQL project short name'

@@ -13,10 +13,10 @@ on:
         description: Environment
         default: 'dev' 
         type: environment
-      runSecurityScan:
-        description: Run Security Scan
-        default: false
+      createResourceGroup:
+        description: Create Resource Group?
         type: boolean
+        default: true
       runCreateInfra:
         description: Deploy Bicep
         default: true
@@ -28,13 +28,17 @@ on:
         options:
           - create
           - whatIf
-      createResourceGroup:
-        description: Create Resource Group?
+      runBuild:
+        description: Build Web App
+        default: true
         type: boolean
+      runDeploy:
+        description: Deploy Web App
         default: true
-      runBuildDeploy:
-        description: Build and Deploy App
-        default: true
+        type: boolean
+      runSecurityScan:
+        description: Run Security Scan
+        default: false
         type: boolean
       runSmokeTest:
         description: Run Smoke Tests
@@ -58,12 +62,19 @@ permissions:
   pages: write
   security-events: write
   checks: write
-  issues: read
-  pull-requests: read
+  issues: write
+  pull-requests: write
   packages: read
 
 # ------------------------------------------------------------------------------------------------------------------------
 jobs:
+  # ------------------------------------------------------------------------------------------------------------------------
+  load-config:
+    name: Load Project Config
+    uses: ./.github/workflows/template-load-config.yml
+    secrets: inherit
+
+  # ------------------------------------------------------------------------------------------------------------------------
   scan-code:
     name: Scan Source Code
     uses: ./.github/workflows/template-scan-code.yml
@@ -71,57 +82,57 @@ jobs:
     if: inputs.runSecurityScan
     with:
       runMSDevSecOpsScan: ${{ inputs.runSecurityScan }}
-      runGHASScan: false
+      runGHASScan: ${{ inputs.runSecurityScan }}
 
   # ------------------------------------------------------------------------------------------------------------------------
   create-infra:
     name: Create Infra ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-bicep-deploy.yml
-    if: inputs.runCreateInfra || inputs.runBuildDeploy
     secrets: inherit
     with:
+      runCreateInfra: ${{ inputs.runCreateInfra }}
       envCode: ${{ inputs.deployEnvironment }}
       templatePath: './infra/Bicep/'
       templateFile: 'main.bicep'
       parameterFile: 'main.bicepparam'
       parameterFileReplaceTokens: 'true'
+      deploymentType: 'webapp'
       requestorName: ${{ github.actor }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
 
 # ------------------------------------------------------------------------------------------------------------------------
-  build-app:
+  build-web-app:
     name: Build WebApp
     uses: ./.github/workflows/template-webapp-build.yml
-    if: inputs.runBuildDeploy|| inputs.runSmokeTest
-    needs: create-infra
+    if: inputs.runBuild || inputs.runDeploy
+    needs: [load-config, create-infra]
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
-      rootDirectory: '${{ vars.APP_PROJECT_FOLDER_NAME }}'
-      projectName: '${{ vars.APP_PROJECT_NAME }}'
-      testDirectory: '${{ vars.APP_TEST_FOLDER_NAME }}'
-      testProjectName: '${{ vars.APP_TEST_PROJECT_NAME }}'
+      rootDirectory: '${{ needs.load-config.outputs.web_rootDirectory }}'
+      projectName: '${{ needs.load-config.outputs.web_projectName }}'
+      testDirectory: '${{ needs.load-config.outputs.web_testDirectory }}'
+      testProjectName: '${{ needs.load-config.outputs.web_testProjectName }}'
       testApplication: true
       listFilesAfterBuild: true
 
 # ------------------------------------------------------------------------------------------------------------------------
-  deploy-app:
+  deploy-web-app:
     name: Deploy WebApp ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-webapp-deploy.yml
-    if: inputs.runBuildDeploy || inputs.runSmokeTest
-    needs: build-app
+    if: inputs.runDeploy
+    needs: build-web-app
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}
 
-      
 # ------------------------------------------------------------------------------------------------------------------------
   run-smoke-test:
     name: Smoke Test ${{ inputs.deployEnvironment }}
     uses: ./.github/workflows/template-smoke-test.yml
     if: inputs.runSmokeTest
-    needs: deploy-app
+    needs: deploy-web-app
     secrets: inherit
     with:
       envCode: ${{ inputs.deployEnvironment }}

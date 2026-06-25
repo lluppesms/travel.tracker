@@ -6,7 +6,13 @@
 #   jobs:
 #     load-config:
 #       uses: ./.github/workflows/template-load-config.yml
-#     build:
+#     build-web:
+#       needs: load-config
+#       uses: ./.github/workflows/template-webapp-build.yml
+#       with:
+#         rootDirectory: ${{ needs.load-config.outputs.web_rootDirectory }}
+#         projectName: ${{ needs.load-config.outputs.web_projectName }}
+#     build-dacpac:
 #       needs: load-config
 #       uses: ./.github/workflows/template-dacpac-build.yml
 #       with:
@@ -15,6 +21,14 @@
 # ------------------------------------------------------------------------------------------------------------------------
 
 projects:
+  # Web Application (Blazor)
+  web:
+    shortName: 'web'
+    rootDirectory: 'src/TravelTracker'
+    projectName: 'TravelTracker'
+    testDirectory: 'src/TravelTracker.Tests'
+    testProjectName: 'TravelTracker.Tests'
+
   # SQL Database Project
   sql:
     shortName: 'sql'
