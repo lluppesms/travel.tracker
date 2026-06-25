@@ -17,10 +17,6 @@ param deploymentType string = 'webapp'  // ['webapp', 'containerapp', 'functiona
 @description('Deploy only website infrastructure (skip SQL and Function resources).')
 param websiteOnly bool = false
 
-@description('Optional Object ID of the Azure DevOps service principal to grant AcrPush on the Container Registry')
-// param pipelineServicePrincipalObjectId string = ''
-// param storageSku string = 'Standard_LRS'
-
 param servicePlanName string = ''
 param servicePlanResourceGroupName string = '' // if using an existing service plan in a different resource group
 
