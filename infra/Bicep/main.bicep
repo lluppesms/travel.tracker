@@ -88,7 +88,7 @@ var existingServicePlanRgNameEffective = empty(trim(servicePlanResourceGroupName
 var existingSqlServerNameEffective = empty(trim(existingSqlServerName)) || contains(existingSqlServerName, '#{') ? '' : trim(existingSqlServerName)
 var existingSqlDatabaseNameEffective = empty(trim(existingSqlDatabaseName)) || contains(existingSqlDatabaseName, '#{') ? '' : trim(existingSqlDatabaseName)
 var existingSqlServerRgNameEffective = empty(trim(existingSqlServerResourceGroupName)) || contains(existingSqlServerResourceGroupName, '#{') ? '' : trim(existingSqlServerResourceGroupName)
-var commonTags = {         
+var commonTags = {
   LastDeployed: runDateTime
   Application: appName
   Environment: environmentCode
@@ -114,6 +114,7 @@ module resourceNames 'resourcenames.bicep' = {
     instanceNumber: instanceNumber
   }
 }
+
 // --------------------------------------------------------------------------------
 module logAnalyticsWorkspaceModule './modules/monitor/loganalyticsworkspace.bicep' = {
   name: 'logAnalytics${deploymentSuffix}'
