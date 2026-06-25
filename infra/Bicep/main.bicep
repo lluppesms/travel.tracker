@@ -18,9 +18,8 @@ param deploymentType string = 'webapp'  // ['webapp', 'containerapp', 'functiona
 param websiteOnly bool = false
 
 @description('Optional Object ID of the Azure DevOps service principal to grant AcrPush on the Container Registry')
-param pipelineServicePrincipalObjectId string = ''
-param storageSku string = 'Standard_LRS'
-param webSiteSku string = 'B1'
+// param pipelineServicePrincipalObjectId string = ''
+// param storageSku string = 'Standard_LRS'
 
 param servicePlanName string = ''
 param servicePlanResourceGroupName string = '' // if using an existing service plan in a different resource group
@@ -99,7 +98,7 @@ var useSqlDataSource = toUpper(appDataSource) == 'SQL' && !websiteOnly
 var webAppConnectionString = useSqlDataSource ? sqlDbModule!.outputs.identityConnectionString : ''
 var deploymentTypeNormalized = toLower(deploymentType)
 var deployWebAppEffective = contains(['webapp', 'all'], deploymentTypeNormalized)
-var deployWebsiteEffective = deployWebAppEffective || deployContainerAppEffective
+var deployWebsiteEffective = deployWebAppEffective
 var keyVaultApplicationUserObjectIds = deployWebsiteEffective
   ? concat(
       deployWebAppEffective ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ] : [])
@@ -209,12 +208,12 @@ module keyVaultModule './modules/security/keyvault.bicep' = {
   }
 }
 
-module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection.bicep' = if (deployFunctionEffective) {
+module keyVaultStorageSecret './modules/security/keyvaultsecretstorageconnection.bicep' = if (deployWebAppEffective) {
   name: 'keyVaultStorageSecret${deploymentSuffix}'
   params: {
     keyVaultName: keyVaultModule.outputs.name
     secretName: 'azurefilesconnectionstring'
-    storageAccountName: functionStorageModule!.outputs.name
+    storageAccountName: storageModule!.outputs.name
   }
 }
 
@@ -284,6 +283,5 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
 output SUBSCRIPTION_ID string = subscription().subscriptionId
 output RESOURCE_GROUP_NAME string = resourceGroupName
 output DEPLOYMENT_TYPE string = deploymentTypeNormalized
-output WEB_HOST_NAME string = deployWebAppEffective ? webSiteModule!.outputs.hostName : (deployContainerAppEffective ? containerAppModule!.outputs.fqdn : '')
-output WEB_URL string = deployWebAppEffective ? 'https://${webSiteModule!.outputs.hostName}' : (deployContainerAppEffective ? containerAppModule!.outputs.url : '')
-
+output WEB_HOST_NAME string = deployWebAppEffective ? webSiteModule!.outputs.hostName : ''
+output WEB_URL string = deployWebAppEffective ? 'https://${webSiteModule!.outputs.hostName}' : ''
