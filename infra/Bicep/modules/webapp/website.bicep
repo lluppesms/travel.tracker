@@ -4,9 +4,10 @@
 param webSiteName string = ''
 param location string = resourceGroup().location
 param appInsightsLocation string = resourceGroup().location
-param userAssignedIdentityId string = ''
 param environmentCode string = 'dev'
 param commonTags object = {}
+param managedIdentityId string
+param managedIdentityPrincipalId string
 
 @description('The workspace to store audit logs.')
 param workspaceId string = ''
@@ -16,11 +17,24 @@ param appServicePlanName string
 param appServicePlanResourceGroupName string = resourceGroup().name
 param webAppKind string = 'linux'
 
+@description('Custom application settings to merge with the base settings.')
+param customAppSettings object = {}
+
 // --------------------------------------------------------------------------------
 var templateTag = { TemplateFile: '~website.bicep'}
 var azdTag = environmentCode == 'azd' ? { 'azd-service-name': 'web' } : {}
 var tags = union(commonTags, templateTag)
 var webSiteTags = union(commonTags, templateTag, azdTag)
+
+// Base app settings that are always applied
+var baseAppSettings = {
+  APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsResource.properties.InstrumentationKey
+  APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsResource.properties.ConnectionString
+  ApplicationInsightsAgent_EXTENSION_VERSION: '~2'
+}
+
+// Merge base settings with custom settings
+var mergedAppSettings = union(baseAppSettings, customAppSettings)
 
 // --------------------------------------------------------------------------------
 var linuxFxVersion = webAppKind == 'linux' ? 'DOTNETCORE|10.0' : '' // 	The runtime stack of web app
@@ -50,15 +64,10 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   name: webSiteName
   location: location
   kind: 'app'
-  identity:{
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${userAssignedIdentityId}': {}
-    }
+  identity: {
+    type: 'SystemAssigned, UserAssigned'
+    userAssignedIdentities: { '${managedIdentityId}': {} }
   }
-  // identity: {
-  //   type: 'SystemAssigned'
-  // }
   tags: webSiteTags
   properties: {
     serverFarmId: appServiceResource.id
@@ -68,7 +77,9 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
+      alwaysOn: true
       remoteDebuggingEnabled: false
+      minimumElasticInstanceCount: 1
       appSettings: [
         { 
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
@@ -83,9 +94,17 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
   }
 }
 
+// App Settings Configuration - merges base settings with custom app settings
+resource webSiteAppSettingsConfig 'Microsoft.Web/sites/config@2024-11-01' = {
+  parent: webSiteResource
+  name: 'appsettings'
+  properties: mergedAppSettings
+}
+
 resource webSiteAppSettings 'Microsoft.Web/sites/config@2024-11-01' = {
   parent: webSiteResource
   name: 'logs'
+  dependsOn: [webSiteAppSettingsConfig]
   properties: {
     applicationLogs: {
       fileSystem: {
@@ -183,6 +202,8 @@ resource webSiteAuditLogging 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
 // output principalId string = webSiteResource.identity.principalId
 output name string = webSiteName
 output hostName string = webSiteResource.properties.defaultHostName
+output systemPrincipalId string = webSiteResource.identity.principalId
+output userManagedPrincipalId string = managedIdentityPrincipalId
 output appInsightsName string = appInsightsName
 output appInsightsKey string = appInsightsResource.properties.InstrumentationKey
 output appInsightsConnectionString string = appInsightsResource.properties.ConnectionString
