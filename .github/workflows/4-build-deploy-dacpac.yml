@@ -32,6 +32,18 @@ on:
         default: true
 
 # ------------------------------------------------------------------------------------------------------------------------
+permissions:
+  id-token: write
+  contents: write
+  actions: read
+  pages: write
+  security-events: write
+  checks: write
+  issues: write
+  pull-requests: write
+  packages: read
+
+# ------------------------------------------------------------------------------------------------------------------------
 jobs:
   # ----------------------------------------------------------------------------------------------------
   # Load Project Configuration
@@ -65,8 +77,9 @@ jobs:
     needs: [load-config, build]
     uses: ./.github/workflows/template-dacpac-deploy.yml
     if: ${{ inputs.dacpacAction == 'build-deploy' }}
-    permissions:
-      id-token: write  
+    # permissions:
+    #   id-token: write
+    #   contents: read
     with:
       envCode: ${{ inputs.deployEnvironment }}
       artifactName: 'dacpac'
@@ -82,8 +95,8 @@ jobs:
     uses: ./.github/workflows/template-run-sql.yml
     needs: [load-config, deploy]
     if: ${{ inputs.createDefaultData }}
-    permissions:
-      id-token: write  
+    # permissions:
+    #   id-token: write  
     with:
       envCode: ${{ inputs.deployEnvironment }}
       sqlFolderName: '${{ needs.load-config.outputs.sql_rootDirectory }}/Patch'

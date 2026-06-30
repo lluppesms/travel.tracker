@@ -4,7 +4,6 @@
 param appName string = ''
 param environmentCode string = 'azd'
 param instanceNumber string = '1'
-param functionStorageNameSuffix string = 'func'
 
 // --------------------------------------------------------------------------------
 var sanitizedEnvironment = toLower(environmentCode)
