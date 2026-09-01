@@ -25,6 +25,8 @@ if (!builder.Environment.IsProduction())
 // Add configuration
 builder.Services.Configure<SqlServerSettings>(builder.Configuration.GetSection("SqlServer"));
 builder.Services.Configure<AzureAIFoundrySettings>(builder.Configuration.GetSection("AzureAIFoundry"));
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+builder.Services.AddScoped<IRelativeDateResolver, RelativeDateResolver>();
 var config = builder.Configuration;
 // add config to scope
 builder.Services.AddSingleton<IConfiguration>(config);

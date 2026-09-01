@@ -62,7 +62,7 @@ The travel assistant surface is gated separately from the rest of the app. `Prog
 
 `src/TravelTracker.Data/` contains the EF Core context, configuration classes, domain models, repository interfaces, and SQL repository implementations. `TravelTrackerDbContext` exposes users, locations, location types, destinations, and destination types. Database objects use the `Travel` schema.
 
-`src/TravelTracker.Services/` contains business services for authentication, users, locations, location types, destinations, import/export, chatbot behavior, and location lookup. AI and lookup services can call Azure AI Foundry and public geocoding APIs, depending on configuration.
+`src/TravelTracker.Services/` contains business services for authentication, users, locations, location types, destinations, import/export, chatbot behavior, and location lookup. `IRelativeDateResolver` provides server-authoritative `today` and `yesterday` resolution using the registered `TimeProvider` and configured `TravelAssistant:TimeZoneId`; unsupported expressions require clarification and model-proposed dates must agree. AI and lookup services can call Azure AI Foundry and public geocoding APIs, depending on configuration.
 
 ### MCP hosts
 
