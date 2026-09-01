@@ -6,13 +6,13 @@ This folder contains the implementation-ready plan for replacing the Travel Trac
 
 - [Research findings](research-findings.md): verified SDK capabilities, golden-repository comparison, and current Travel Tracker constraints.
 - [Implementation plan](implementation-plan.md): requirements, architecture, file-level tasks, test matrix, rollout, and rollback criteria.
-- `rubber-duck-review.md`: independent review findings and plan corrections. This file is added after the first plan validation pass.
+- [Rubber-duck review](rubber-duck-review.md): independent findings, required corrections, and final readiness verdict.
 
 ## Recommended Outcome
 
 Use the Copilot SDK as an agent runtime over the existing Azure AI Foundry model through managed identity. Expose only explicit Travel Tracker tools from a restricted runtime. Keep authenticated user identity outside model arguments, and route all writes through an idempotent application action service.
 
-The first production release should require confirmation before a database write. A personal deployment may opt into automatic execution through configuration after the confirmation path, authorization checks, duplicate detection, and audit records have passed the acceptance suite.
+The first production release requires confirmation before every database write. Streaming, automatic execution, and MCP mutation are follow-up work after the authenticated confirmation path, duplicate prevention, and audit records pass the release gate.
 
 ## Scope
 

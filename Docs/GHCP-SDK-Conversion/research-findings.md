@@ -12,13 +12,13 @@ The repository already contains the domain operations needed for the example req
 - `LocationTools` exposes read-only MCP operations.
 - `Chat.razor` provides an authenticated chat UI.
 
-The missing layer is a restricted, authenticated application tool boundary that binds the current user on the server, validates and deduplicates proposed writes, records action state, and gives the UI a reliable confirmation contract.
+The missing layer is a restricted, authenticated application tool boundary that binds the current user on the server, validates and deduplicates proposed writes, stores an immutable executable command, records action state, and gives the UI a reliable confirmation contract.
 
 ## Sources Reviewed
 
-### Golden repositories
+### Reference repositories
 
-- `lluppesms/dadabase.demo`
+- Earlier Copilot SDK sample
   - `src/web/Website/Services/CopilotSdkChatService.cs`
   - `src/web/Website/Services/AgentFrameworkChatService.cs`
   - `src/web/Website/Helpers/AiServiceCollectionExtensions.cs`
@@ -51,12 +51,12 @@ The missing layer is a restricted, authenticated application tool boundary that 
 | Tools | `CopilotTool.DefineTool` exposes typed C# handlers with generated JSON schemas. | Wrap application services directly instead of giving the model generic HTTP access. |
 | Tool controls | Sessions support explicit tool lists, per-tool permission behavior, hooks, and permission handlers. | Run in empty mode and allow only Travel Tracker tools. |
 | Sessions | The client supports multiple sessions, session IDs, events, streaming, and disposal. | Share one runtime client, isolate sessions by authenticated user and thread, and serialize turns per session. |
-| Persistence | SDK sessions can persist state, but storage and scale-out ownership must be deliberate. | Disable SDK memory/session-store features in the first release and persist only application action records. |
+| Persistence | Disposing an SDK session preserves resumable data; permanent cleanup requires `DeleteSessionAsync`. | Disable memory/session-store features, delete ephemeral sessions on eviction, and persist only application action records. |
 | Telemetry | SDK telemetry can use OpenTelemetry and can optionally capture content. | Export timing and tool metadata, with content capture disabled by default. |
 
 ## Golden-Code Comparison
 
-The `dadabase.demo` conversion established a useful baseline:
+The earlier sample conversion established a useful baseline:
 
 1. Keep a small provider abstraction.
 2. Retain Agent Framework as a fallback.
@@ -86,15 +86,19 @@ The service returns a generated thread ID, but that ID is not connected to an AI
 
 ### Identity and authorization boundary
 
-Current APIs accept `userId` in routes or query strings and then validate it. Agent tools should not include `userId` in their schemas. The authenticated server context must bind user identity before the tool handler executes.
+Current APIs accept `userId` in routes or query strings and then validate it. The global API key can authorize any requested user, and `IHttpContextAccessor` is not a reliable identity source throughout a long-lived Blazor circuit. The assistant surface must require authentication, derive a principal from `HttpContext.User` for controllers or `AuthenticationStateProvider` for Blazor, map that principal to one internal user, and reject the global-key impersonation path. Agent tools must not include `userId` in their schemas.
 
 ### Duplicate and retry handling
 
-There is no durable agent action ID. A model retry, browser retry, or runtime reconnect could insert the same visit twice. The write workflow needs an idempotency key, a pending action record, duplicate detection, and an exactly-once commit path.
+There is no durable agent action ID. A model retry, browser retry, or runtime reconnect could insert the same visit twice. The write workflow needs a canonical idempotency key, an immutable versioned command payload, unique database constraints, and one transaction that claims the action, checks duplicates, inserts the location, and records completion.
 
 ### Relative dates
 
-The example contains `Yesterday`. The model must receive an authoritative current local date and timezone. The application must validate the resulting ISO date using `TimeProvider`; it must not rely on the model's unstated clock.
+The example contains `Yesterday`. The model must pass the original date expression to a deterministic application resolver backed by `TimeProvider`, `TimeZoneInfo`, and `DateOnly`. A model-proposed ISO date is advisory and must match the server result.
+
+### Place ambiguity
+
+The current public lookup requests one Nominatim result and optionally replaces its coordinates with Photon’s first result. It cannot distinguish a confident match from an ambiguous or conflicting match, and an exact Buffalo House query may return no result. The agent workflow needs multiple candidates, provider evidence, broader-query fallback, scoring, and explicit user selection when confidence is insufficient.
 
 ## Recommended Tool Boundary
 
@@ -104,10 +108,10 @@ The Copilot runtime should expose these initial custom tools:
 |---|---|---|---|---|
 | `search_user_locations` | Read | query, optional state/date range | user ID | Compact matching locations |
 | `get_location_types` | Read | none | none | Valid type names and descriptions |
-| `lookup_place` | Read | name, city, state, optional address/ZIP | none | Normalized address and coordinates with source/confidence |
-| `prepare_add_visited_location` | Prepare | place fields, type, ISO start/end dates, optional notes | user ID, thread ID, action ID, current time | Existing match, validation error, pending action, or auto-execution result |
+| `lookup_place` | Read | name, city, state, optional address/ZIP | none | Ranked candidates with opaque candidate IDs, provider evidence, and confidence |
+| `prepare_add_visited_location` | Prepare | selected candidate ID, place fields, type, original date expression, optional proposed ISO dates/notes | user ID, thread ID, action ID, current time | Existing match, validation error, or durable pending action |
 
-No generic SQL, shell, filesystem, arbitrary URL, or model-supplied-user tool should be exposed. The database commit should occur in application code through `ConfirmActionAsync`, or inside the prepare tool only when the explicitly configured personal-deployment policy permits automatic execution.
+No generic SQL, shell, filesystem, arbitrary URL, or model-supplied-user tool should be exposed. The first release commits only through provider-neutral application code after authenticated confirmation. SDK permission approval permits the prepare call; it never authorizes the later database commit.
 
 ## Example Request Walkthrough
 
@@ -117,19 +121,18 @@ For a prompt received on 2026-09-01 in `America/Chicago`:
 
 The expected orchestration is:
 
-1. The session prompt supplies current local date `2026-09-01`, timezone `America/Chicago`, and the instruction to convert relative dates to ISO dates.
+1. The session prompt supplies current local date `2026-09-01`, timezone `America/Chicago`, and instructs the model to preserve the original relative-date expression for server resolution.
 2. Copilot calls `get_location_types` and identifies `RV Park` as a valid exact type.
-3. Copilot calls `lookup_place` with the name, city `Duluth`, and state `MN`.
-4. The application returns normalized address, ZIP, latitude, and longitude from the public lookup service.
-5. Copilot calls `prepare_add_visited_location` with start date `2026-08-31` and normalized fields. It cannot supply a user ID.
-6. The application checks ownership context, required fields, duplicate visits, and location type; then records a pending action with an opaque ID and expiration.
-7. In confirmation mode, the chat UI displays the proposed location and Confirm/Cancel controls. Confirm executes the action exactly once through `ILocationService` and records the created location ID.
-8. In explicitly enabled automatic mode, the same action service commits immediately and returns the created location ID.
-9. The assistant reports success only when the application returns a persisted nonzero location ID.
+3. Copilot calls `lookup_place` with the name, city `Duluth`, and state `MN`. The resolver queries multiple candidates through configured providers, retries a broader query when necessary, and scores name/city/state agreement.
+4. The application returns one confident candidate or asks the user to choose among compact candidates. No write is prepared for an unresolved result.
+5. Copilot calls `prepare_add_visited_location` with the selected candidate, original expression `Yesterday`, proposed date `2026-08-31`, and normalized fields. It cannot supply a user ID.
+6. The application independently resolves `Yesterday` to `2026-08-31`, verifies the proposal, checks ownership, required fields, duplicates, and location type, then stores a versioned canonical command with an opaque action ID and expiration.
+7. The chat UI displays the proposed location and Confirm/Cancel controls. Confirmation loads the stored command, verifies its hash and ownership, and performs the action claim, duplicate check, location insert, and completion update in one SQL transaction.
+8. The assistant reports success only when the application returns a persisted nonzero location ID. Retries return the original result.
 
 ## Architectural Decision
 
-Use in-process Copilot custom tools backed by an SDK-independent application action service. Do not route the web app's own agent through its HTTP MCP server in the first release.
+Use in-process Copilot custom tools backed by an SDK-independent application action service and a provider-neutral confirmation service. Persist a versioned canonical command in the action ledger; a hash alone is not executable. Do not route the web app's own agent through its HTTP MCP server in the first release.
 
 This choice provides the shortest authorization path, avoids forwarding the shared API key, avoids accepting a model-provided user ID, reuses scoped services, and keeps business validation testable without the Copilot runtime. The existing MCP tools can later delegate to the same action service so external agents receive equivalent behavior without duplicating business rules.
 
@@ -139,3 +142,4 @@ This choice provides the shortest authorization path, avoids forwarding the shar
 - The golden repository validates Foundry completion and provider selection, not this repository's custom tools, confirmation UI, concurrent sessions, or idempotent writes.
 - Public geocoders can return an incorrect first match. A low-confidence or ambiguous result must be confirmed and never auto-executed.
 - A single in-process runtime is suitable for the first deployment. Scale-out requires sticky routing or a separately hosted Copilot runtime and distributed session coordination.
+- `CopilotClientOptions.BaseDirectory` controls `COPILOT_HOME` state, not the published runtime-binary path. The deployment must validate both a writable ephemeral home and executable Linux runtime assets.
