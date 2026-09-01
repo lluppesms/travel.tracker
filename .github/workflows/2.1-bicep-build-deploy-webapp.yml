@@ -21,6 +21,10 @@ on:
         description: Deploy Bicep
         default: true
         type: boolean
+      addRoleAssignments:
+        description: Add Role Assignments
+        type: boolean
+        default: true
       bicepDeploymentMode:
         description: Bicep Mode
         default: create
@@ -100,6 +104,7 @@ jobs:
       requestorName: ${{ github.actor }}
       createResourceGroup: ${{ inputs.createResourceGroup }}
       bicepDeploymentMode: ${{ inputs.bicepDeploymentMode }}
+      addRoleAssignments: ${{ inputs.addRoleAssignments }}
 
 # ------------------------------------------------------------------------------------------------------------------------
   build-web-app:

@@ -41,6 +41,8 @@ param sqlAdminPassword string = ''
 param existingSqlServerName string = ''
 param existingSqlDatabaseName string = ''
 param existingSqlServerResourceGroupName string = ''
+param existingLogAnalyticsWorkspaceName string = ''
+param existingLogAnalyticsWorkspaceResourceGroupName string = ''
 
 param adInstance string = environment().authentication.loginEndpoint // 'https://login.microsoftonline.com/'
 param adDomain string = ''
@@ -54,6 +56,19 @@ param adminUserList string = ''
 @allowed(['JSON', 'SQL'])
 param appDataSource string = 'JSON'
 param appSwaggerEnabled string = 'true'
+
+@description('AI service provider used by the web application. "CopilotSDK" or "AgentFramework"')
+param aiServiceProvider string = ''
+
+param azureOpenAIChatEndpoint string = ''
+param azureOpenAIChatDeploymentName string = ''
+param azureOpenAIChatApiKey string = ''
+param azureOpenAIChatMaxTokens string = ''
+param azureOpenAIChatTemperature string = ''
+param azureOpenAIChatTopP string = ''
+param azureOpenAIImageEndpoint string = ''
+param azureOpenAIImageDeploymentName string = ''
+param azureOpenAIImageApiKey string = ''
 
 @secure()
 param azureMapsSubscriptionKey string = ''
@@ -71,6 +86,9 @@ param azureAIFoundryAgentVersion string = ''
 @description('Add Role Assignments for the user assigned identity?')
 param addRoleAssignments bool = true
 
+@description('Create a separate user-assigned managed identity. When false, each resource uses its own system-assigned identity.')
+param createUserAssignedIdentity bool = false
+
 @description('Add this Admin User Id to KeyVault Access')
 param adminUserId string = ''
 
@@ -84,6 +102,10 @@ var existingServicePlanRgNameEffective = empty(trim(servicePlanResourceGroupName
 var existingSqlServerNameEffective = empty(trim(existingSqlServerName)) || contains(existingSqlServerName, '#{') ? '' : trim(existingSqlServerName)
 var existingSqlDatabaseNameEffective = empty(trim(existingSqlDatabaseName)) || contains(existingSqlDatabaseName, '#{') ? '' : trim(existingSqlDatabaseName)
 var existingSqlServerRgNameEffective = empty(trim(existingSqlServerResourceGroupName)) || contains(existingSqlServerResourceGroupName, '#{') ? '' : trim(existingSqlServerResourceGroupName)
+var existingLogAnalyticsWorkspaceNameEffective = empty(trim(existingLogAnalyticsWorkspaceName)) || contains(existingLogAnalyticsWorkspaceName, '#{') ? '' : trim(existingLogAnalyticsWorkspaceName)
+var existingLogAnalyticsWorkspaceRgNameEffective = empty(trim(existingLogAnalyticsWorkspaceResourceGroupName)) || contains(existingLogAnalyticsWorkspaceResourceGroupName, '#{') ? '' : trim(existingLogAnalyticsWorkspaceResourceGroupName)
+var effectiveManagedIdentityId = createUserAssignedIdentity ? identity!.outputs.managedIdentityId : ''
+var effectiveManagedIdentityPrincipalId = createUserAssignedIdentity ? identity!.outputs.managedIdentityPrincipalId : ''
 var commonTags = {
   LastDeployed: runDateTime
   Application: appName
@@ -116,6 +138,8 @@ module logAnalyticsWorkspaceModule './modules/monitor/loganalyticsworkspace.bice
   name: 'logAnalytics${deploymentSuffix}'
   params: {
     logAnalyticsWorkspaceName: resourceNames.outputs.logAnalyticsWorkspaceName
+    existingLogAnalyticsWorkspaceName: existingLogAnalyticsWorkspaceNameEffective
+    existingLogAnalyticsWorkspaceResourceGroupName: existingLogAnalyticsWorkspaceRgNameEffective
     location: location
     commonTags: commonTags
   }
@@ -152,7 +176,7 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
     adAdminUserId: sqlAdminLoginUserId
     adAdminUserSid: sqlAdminLoginUserSid
     adAdminTenantId: sqlAdminLoginTenantId
-    userAssignedIdentityResourceId: identity.outputs.managedIdentityId
+    userAssignedIdentityResourceId: effectiveManagedIdentityId
     sqlAdminUser:sqlAdminUser
     sqlAdminPassword: sqlAdminPassword
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
@@ -161,7 +185,7 @@ module sqlDbModule './modules/database/sqlserver.bicep' = {
 }
 
 // --------------------------------------------------------------------------------
-module identity './modules/iam/identity.bicep' = {
+module identity './modules/iam/identity.bicep' = if (createUserAssignedIdentity) {
   name: 'appIdentity${deploymentSuffix}'
   params: {
     identityName: resourceNames.outputs.userAssignedIdentityName
@@ -169,10 +193,10 @@ module identity './modules/iam/identity.bicep' = {
   }
 }
 
-module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments) {
+module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAssignments && createUserAssignedIdentity) {
   name: 'appRoleAssignments${deploymentSuffix}'
   params: {
-    identityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    identityPrincipalId: identity!.outputs.managedIdentityPrincipalId
     principalType: 'ServicePrincipal'
     storageAccountName: storageModule.outputs.name
     keyVaultName:  keyVaultModule.outputs.name
@@ -196,7 +220,7 @@ module keyVaultModule './modules/security/keyvault.bicep' = {
     location: location
     commonTags: commonTags
     keyVaultOwnerUserId: adminUserId
-    adminUserObjectIds: [ identity.outputs.managedIdentityPrincipalId ]
+    adminUserObjectIds: createUserAssignedIdentity ? [ identity!.outputs.managedIdentityPrincipalId ] : []
     applicationUserObjectIds: keyVaultApplicationUserObjectIds
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     publicNetworkAccess: 'Enabled'
@@ -239,8 +263,8 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
     commonTags: commonTags
     environmentCode: environmentCode
     webAppKind: webAppKind
-    managedIdentityId: identity.outputs.managedIdentityId
-    managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
+    managedIdentityId: effectiveManagedIdentityId
+    managedIdentityPrincipalId: effectiveManagedIdentityPrincipalId
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     appServicePlanName: appServicePlanModule!.outputs.name
     appServicePlanResourceGroupName: appServicePlanModule!.outputs.resourceGroupName
@@ -257,6 +281,17 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
       AppSettings__DataSource: appDataSource
       AppSettings__ApiKey: webApiKey
       AppSettings__AdminUserList: adminUserList
+      AppSettings__AiServiceProvider: aiServiceProvider
+      AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
+      AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
+      AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
+      AppSettings__AzureOpenAI__Chat__MaxTokens: azureOpenAIChatMaxTokens
+      AppSettings__AzureOpenAI__Chat__Temperature: azureOpenAIChatTemperature
+      AppSettings__AzureOpenAI__Chat__TopP: azureOpenAIChatTopP
+      AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
+      AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
+      AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
+      AppSettings__BlobStorageAccountName: storageModule.outputs.name
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
       AzureAD__TenantId: adTenantId

@@ -1,0 +1,7 @@
+{
+    "dotnet.defaultSolution": "src\\DadABase.Web\\DadABase.Web.sln",
+    "omnisharp.dotNetCliPaths": [
+        "C:\\Users\\lyleluppes\\.azurelogicapps\\dependencies\\DotNetSDK"
+    ],
+    "azureFunctions.projectSubpath": "src\\function\\Function"
+}

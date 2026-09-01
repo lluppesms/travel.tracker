@@ -47,7 +47,6 @@ jobs:
       name: ${{ inputs.envCode }}
     permissions:
       id-token: write
-      contents: read
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -107,7 +106,7 @@ jobs:
           Get-ChildItem -Path "${{ inputs.sqlFolderName }}" -Recurse -ErrorAction SilentlyContinue
 
       # - name: Azure Login
-      #   uses: azure/login@v2
+      #   uses: azure/login@v3
       #   with:
       #     creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Azure Login (Reusable Action)
