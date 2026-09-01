@@ -1,220 +1,95 @@
-# DadABase Deployment - Quick Reference
+# Travel Tracker Deployment Quick Reference
 
-## Quick Start Commands
+## Build and Test
 
-### App Service Deployment (Traditional)
-
-```bash
-# Deploy infrastructure and code
-az deployment group create \
-  --resource-group rg-dadabase-dev \
-  --template-file infra/Bicep/main.bicep \
-  --parameters deploymentType=webapp appName=dadabase environmentCode=dev
+```powershell
+dotnet restore .\src\TravelTracker.sln
+dotnet build .\src\TravelTracker.sln -c Release
+dotnet test .\src\TravelTracker.Tests\TravelTracker.Tests.csproj -c Release
 ```
 
-### Container Apps Deployment (Modern)
+## Deploy App Service Infrastructure
 
-```bash
-# Deploy infrastructure
-az deployment group create \
-  --resource-group rg-dadabase-dev \
-  --template-file infra/Bicep/main.bicep \
-  --parameters deploymentType=containerapp appName=dadabase environmentCode=dev
+```powershell
+$resourceGroup = "rg-travel-tracker-dev"
+$location = "centralus"
+$appName = "traveltracker"
 
-# Build and push image
-ACR_NAME=$(az acr list --resource-group rg-dadabase-dev --query "[0].name" -o tsv)
-az acr build --registry $ACR_NAME --image dadabase-web:latest --file src/web/Dockerfile src/web
-
-# Update container app
-CONTAINER_APP=$(az containerapp list -g rg-dadabase-dev --query "[0].name" -o tsv)
-az containerapp update --name $CONTAINER_APP --resource-group rg-dadabase-dev \
-  --image $ACR_NAME.azurecr.io/dadabase-web:latest
+az group create --name $resourceGroup --location $location
+az deployment group create `
+  --resource-group $resourceGroup `
+  --template-file .\infra\Bicep\main.bicep `
+  --parameters appName=$appName environmentCode=dev deploymentType=webapp
 ```
 
-## CI/CD Workflows
+## Publish the Web App
 
-### GitHub Actions
+```powershell
+dotnet publish .\src\TravelTracker\TravelTracker.csproj -c Release -o .\publish
+```
 
-- App Service: `.github/workflows/3-bicep-build-deploy-webapp.yml` (Deploy to Azure App Service)
-- Container Apps: `.github/workflows/3.1-bicep-build-deploy-containerapp.yml` (Deploy to Azure Container Apps)
+Use the repository CI/CD templates to package and deploy the publish output.
 
-### Azure DevOps Pipeline Templates
+## GitHub Actions
 
-- App Service: `.azdo/pipelines/2.1-bicep-build-deploy-webapp.yml` (Deploy to Azure App Service)
-- Container Apps: `.azdo/pipelines/2.2-bicep-build-deploy-containerapp.yml` (Deploy to Azure Container Apps)
-- Function App: `.azdo/pipelines/3-bicep-build-deploy-function.yml` (Deploy Azure Functions)
+| Purpose | Workflow |
+| --- | --- |
+| Infrastructure only | `.github/workflows/1-deploy-bicep.yml` |
+| Infrastructure, build, and App Service deploy | `.github/workflows/2.1-bicep-build-deploy-webapp.yml` |
+| DACPAC build and deploy | `.github/workflows/4-build-deploy-dacpac.yml` |
+| SQL script execution | `.github/workflows/5-run-sql-script.yml` |
+| Pull-request build and scan | `.github/workflows/6-pr-scan-build.yml` |
+| Security scan and SBOM | `.github/workflows/7-scan-code.yml` |
+
+## Azure DevOps
+
+| Purpose | Pipeline |
+| --- | --- |
+| Infrastructure and App Service | `.azdo/pipelines/infra-and-webapp-pipeline.yml` |
+| Infrastructure only | `.azdo/pipelines/infra-only-pipeline.yml` |
+| Build web app | `.azdo/pipelines/build-webapp-only-pipeline.yml` |
+| Deploy an existing web artifact | `.azdo/pipelines/deploy-webapp-only-pipeline.yml` |
+| Pull-request validation | `.azdo/pipelines/pr-pipeline.yml` |
+| Security scan | `.azdo/pipelines/scan-pipeline.yml` |
 
 ## Key Files
 
-### Infrastructure (Bicep)
+- `infra/Bicep/main.bicep`: main resource composition
+- `infra/Bicep/main.bicepparam`: shared deployment parameters
+- `infra/Bicep/resourcenames.bicep`: Azure resource naming
+- `infra/Bicep/modules/webapp/`: App Service modules
+- `src/TravelTracker/TravelTracker.csproj`: web project
+- `src/TravelTracker.Tests/TravelTracker.Tests.csproj`: test project
+- `src/sql.database/sql.database.sqlproj`: DACPAC project
+- `.github/CreateGitHubSecrets.md`: GitHub credentials and variables
 
-- `infra/Bicep/main.bicep` - Main infrastructure template (supports both types)
-- `infra/Bicep/resourcenames.bicep` - Resource naming conventions
-- `infra/Bicep/modules/webapp/` - App Service modules
-- `infra/Bicep/modules/container/containerregistry.bicep` - Azure Container Registry
-- `infra/Bicep/modules/container/containerappenvironment.bicep` - Container Apps Environment
-- `infra/Bicep/modules/container/containerapp.bicep` - Container App instance
-
-### Docker
-
-- `src/web/Dockerfile` - Multi-stage production Dockerfile
-- `src/web/.dockerignore` - Files excluded from Docker build
-
-### GitHub Actions Workflows
-
-- `.github/workflows/template-containerapp-build.yml` - Build and push Docker image
-- `.github/workflows/template-containerapp-deploy.yml` - Deploy to Container Apps
-- `.github/workflows/template-webapp-deploy.yml` - Deploy to App Service
-
-### Azure DevOps Pipelines
-
-- `.azdo/pipelines/pipes/templates/containerapp-build.yml` - Build and push Docker image
-
-## Parameter Files
-
-### Shared Parameter File
-
-- `main.bicepparam` - Shared parameters for all deployment modes (`webapp`, `containerapp`, `functionapp`, `all`) across GitHub Actions and Azure DevOps
-
-### Optional Shared Resource Reuse Parameters
-
-Use these optional parameters in `infra/Bicep/main.bicepparam` when you want to deploy into existing shared infrastructure instead of creating new resources:
-
-| Bicep parameter | CI/CD token | Purpose |
-|---|---|---|
-| `servicePlanName` | `EXISTING_SERVICEPLAN_NAME` | Reuse an existing App Service Plan for `webapp` deployments |
-| `servicePlanResourceGroupName` | `EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME` | Optional resource group for the existing App Service Plan; defaults to the current resource group when empty |
-| `existingSqlServerName` | `EXISTING_SQLSERVER_NAME` | Reuse an existing Azure SQL logical server |
-| `existingSqlDatabaseName` | `EXISTING_SQLDATABASE_NAME` | Reuse an existing Azure SQL database on that server |
-| `existingSqlServerResourceGroupName` | `EXISTING_SQLSERVER_RESOURCE_GROUP_NAME` | Optional resource group for the existing SQL server; defaults to the current resource group when empty |
-| `existingLogAnalyticsWorkspaceName` | `EXISTING_LOGANALYTICSWORKSPACE` | Reuse an existing Log Analytics Workspace instead of creating a new one |
-| `existingLogAnalyticsWorkspaceResourceGroupName` | `EXISTING_LOG_ANALYTICS_WORKSPACE_RESOURCE_GROUP_NAME` | Optional resource group for the existing Log Analytics Workspace; defaults to the current resource group when empty |
-
-Leave these values blank to keep the existing create-new behavior. SQL reuse is enabled only when both `existingSqlServerName` and `existingSqlDatabaseName` are supplied. Log Analytics reuse is enabled when `existingLogAnalyticsWorkspaceName` is supplied and optionally `existingLogAnalyticsWorkspaceResourceGroupName` when it lives in a different resource group.
-
-### Optional Deployment Control Parameters
-
-| Bicep parameter | CI/CD token | Default | Purpose |
-|---|---|---|---|
-| `createUserAssignedIdentity` | `CREATE_USER_ASSIGNED_IDENTITY` | `false` | When `true`, creates a dedicated user-assigned managed identity shared across resources. When `false` (default), each resource uses its own system-assigned identity for Key Vault, storage, and database access. |
-
-## Environment Variables
-
-Both deployment types require these environment variables:
-
-```bash
-# Database
-AppSettings__DefaultConnection="SQL connection string"
-
-# Azure OpenAI
-AppSettings__AzureOpenAI__Chat__Endpoint="https://..."
-AppSettings__AzureOpenAI__Chat__DeploymentName="gpt-4"
-
-# Authentication
-AzureAD__TenantId="..."
-AzureAD__ClientId="..."
-
-# Application Insights
-APPLICATIONINSIGHTS_CONNECTION_STRING="..."
-```
-
-## Deployment Decision Tree
+## Required Application Settings
 
 ```text
-Need to deploy DadABase?
-│
-├─ Want simplicity and .NET-native workflow?
-│  └─ Use App Service
-│
-├─ Want containers and scale-to-zero?
-│  └─ Use Container Apps
-│
-├─ Existing App Service plan to share?
-│  └─ Use App Service
-│
-└─ Variable/unpredictable traffic?
-   └─ Use Container Apps
+SqlServer__ConnectionString
+AzureAd__TenantId
+AzureAd__ClientId
+AzureMaps__SubscriptionKey
+AzureAIFoundry__Endpoint
+AzureAIFoundry__DeploymentName
+ApiKey
 ```
 
-## Cost Estimates
+Only SQL configuration is required for repository and service registration. Authentication, maps, AI, and API-key features require their corresponding settings.
 
-- App Service (B1): ~$13/month (always running)
-- Container Apps: ~$5-10/month (can scale to zero)
-- Excludes SQL, Storage, and other shared resources
+## Deployment Limitations
 
-## Common Issues and Solutions
+- The verified hosting target is Azure App Service.
+- The repository has no Container Apps modules or Dockerfile.
+- The repository has no Azure Functions project.
+- Smoke-test workflows reference a missing `playwright/` directory and require repair before use.
 
-### App Service Issues
+## Useful Diagnostics
 
-Issue: Deployment slot swaps not working  
-Solution: Ensure `WEBSITE_SWAP_WARMUP_PING_PATH` is set.
-
-Issue: Cold start performance  
-Solution: Enable `Always On` or upgrade to a higher tier.
-
-### Container Apps Issues
-
-Issue: Image pull authentication failed  
-Solution: Verify managed identity has AcrPull role on the registry.
-
-Issue: Container fails to start  
-Solution: Check logs with `az containerapp logs show` and verify environment variables are set correctly.
-
-## Monitoring and Logs
-
-### App Service Monitoring
-
-```bash
-# Stream logs
-az webapp log tail --name $APP_NAME --resource-group $RG_NAME
-
-# View Application Insights
-az monitor app-insights query \
-  --app $APP_INSIGHTS_NAME \
-  --analytics-query "requests | where timestamp > ago(1h)" \
-  --resource-group $RG_NAME
+```powershell
+az webapp log tail --name <web-app-name> --resource-group <resource-group>
+az deployment group list --resource-group <resource-group> --output table
+az deployment group show --resource-group <resource-group> --name <deployment-name>
 ```
 
-### Container Apps Monitoring
-
-```bash
-# View console logs
-az containerapp logs show \
-  --name $CONTAINER_APP_NAME \
-  --resource-group $RG_NAME \
-  --follow
-
-# View system logs
-az containerapp logs show \
-  --name $CONTAINER_APP_NAME \
-  --resource-group $RG_NAME \
-  --type system
-```
-
-## Switching Deployment Types
-
-To switch between App Service and Container Apps:
-
-1. Update Bicep parameter: `deploymentType='webapp'` or `'containerapp'`
-2. Redeploy infrastructure
-3. Deploy application using the appropriate workflow
-
-Note: Both deployment types can coexist in the same resource group, but you will pay for both.
-
-## URLs
-
-After deployment, your application will be available at:
-
-- App Service: `https://{appname}-{env}.azurewebsites.net`
-- Container Apps: `https://{appname}-{env}.{region}.azurecontainerapps.io`
-
-## Support
-
-For detailed documentation, see:
-
-- [Deployment_Options.md](Deployment_Options.md) - Comprehensive deployment guide
-- [Bicep Instructions](../.github/instructions/bicep-instructions.md) - Infrastructure overview
-
----
-
-Last Updated: June 2026
+Swagger is available at `/api/swagger` after a successful application startup.

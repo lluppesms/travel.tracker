@@ -4,7 +4,7 @@
 
 A Software Bill of Materials (SBOM) is a machine-readable inventory of all software components, libraries, and dependencies included in an application. SBOMs are increasingly required for compliance, supply-chain security, and vulnerability management — especially in regulated industries and government contracts.
 
-This document describes how SBOM generation is implemented in the DadABase project for both **GitHub Actions** and **Azure DevOps**.
+This document describes how SBOM generation is implemented in the Travel Tracker project for both **GitHub Actions** and **Azure DevOps**.
 
 ---
 
@@ -40,7 +40,7 @@ Two formats are widely adopted:
 | **SPDX** (Software Package Data Exchange) | Linux Foundation standard; ISO/IEC 5962:2021 |
 | **CycloneDX** | OWASP standard; strongly typed XML/JSON; popular in DevSecOps tooling |
 
-The DadABase pipelines generate SBOM output in **SPDX JSON** format by default, which is the format natively supported by GitHub's Dependency Graph.
+The Travel Tracker pipelines generate SBOM output in **SPDX JSON** format by default, which is the format natively supported by GitHub's Dependency Graph.
 
 ---
 
@@ -177,9 +177,9 @@ In `7-scan-code.yml`:
 |-----------|---------|-------------|
 | `environmentName` | `DEV` | Deployment environment name |
 | `continueOnSBOMError` | `true` | Continue pipeline if SBOM generation fails |
-| `packageName` | `DadABase` | SBOM package name field |
+| `packageName` | `TravelTracker` | SBOM package name field |
 | `packageVersion` | `1.0.0` | SBOM package version field |
-| `packageSupplier` | `DadABase` | SBOM supplier/organization field |
+| `packageSupplier` | `Travel Tracker` | SBOM supplier/organization field |
 
 ### Example: Calling the SBOM Job Template Directly from a Stage
 
