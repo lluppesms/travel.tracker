@@ -36,7 +36,7 @@ param existingLogAnalyticsWorkspaceResourceGroupName = '#{EXISTING_LOG_ANALYTICS
 
 param adminUserId = '#{KEYVAULT_OWNER_USERID}#'
 
-param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
+// param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
 
 param aiServiceProvider = '#{AI_SERVICE_PROVIDER}#'
 param azureOpenAIChatEndpoint = '#{OPENAI_CHAT_ENDPOINT}#'
