@@ -80,7 +80,7 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
       linuxFxVersion: linuxFxVersion
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
-      alwaysOn: true
+      alwaysOn: false
       remoteDebuggingEnabled: false
       minimumElasticInstanceCount: 1
       appSettings: [
