@@ -1,3 +1,5 @@
+using TravelTracker.Services.Models;
+
 namespace TravelTracker.Services.Services;
 
 public class ChatbotService : IChatbotService
@@ -71,15 +73,24 @@ public class ChatbotService : IChatbotService
         }
     }
 
-    public async Task<(string message, DateTimeOffset? latestMessageDate, string threadId)> GetChatResponseAsync(string userMessage, int userId, string? threadId = null, DateTimeOffset? lastMessageDate = null)
+    public async Task<ChatTurnResult> GetChatResponseAsync(
+        string userMessage,
+        int userId,
+        string? threadId = null,
+        DateTimeOffset? lastMessageDate = null,
+        CancellationToken cancellationToken = default)
     {
+        var effectiveThreadId = threadId ?? Guid.NewGuid().ToString();
+
         if (string.IsNullOrWhiteSpace(userMessage))
         {
-            return ("Please provide a message.", lastMessageDate, threadId ?? string.Empty);
+            return ChatTurnResult.Failure(ChatErrorCodes.InvalidRequest, "Please provide a message.", effectiveThreadId);
         }
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var contextData = string.Empty;
             // Gather domain context from our data sources
             if (previousContextData != string.Empty && previousUserId == userId.ToString())
@@ -100,10 +111,14 @@ public class ChatbotService : IChatbotService
             // Re-initialize agent with fresh context each time
             if (!InitializeAgent(enhancedInstructions))
             {
-                return ("The Chatbot is not configured properly. Please configure the Azure AI Foundry settings in the application settings!", lastMessageDate, threadId ?? string.Empty);
+                _logger.LogError("Chatbot agent could not be initialized for user {UserId}", userId);
+                return ChatTurnResult.Failure(
+                    ChatErrorCodes.ProviderUnavailable,
+                    "The travel assistant is not available right now. Please try again later.",
+                    effectiveThreadId);
             }
 
-            var response = await _chatAgent!.RunAsync(userMessage);
+            var response = await _chatAgent!.RunAsync(userMessage, cancellationToken: cancellationToken);
             var messageContent = response.ToString()?.Trim() ?? string.Empty;
 
             if (string.IsNullOrEmpty(messageContent))
@@ -111,14 +126,19 @@ public class ChatbotService : IChatbotService
                 messageContent = "I didn't generate a response this time. Please try rephrasing your question.";
             }
 
-            var now = DateTimeOffset.UtcNow;
-            return (messageContent, now, threadId ?? Guid.NewGuid().ToString());
+            return ChatTurnResult.Success(messageContent, effectiveThreadId, DateTimeOffset.UtcNow);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing chatbot request");
-            var msg = $"I've encountered an error processing your request to {_settings.Endpoint}. Please try again later. {ex.Message}";
-            return (msg, lastMessageDate, threadId ?? string.Empty);
+            _logger.LogError(ex, "Error processing chatbot request for user {UserId}", userId);
+            return ChatTurnResult.Failure(
+                ChatErrorCodes.ProviderUnavailable,
+                "I encountered a problem processing your request. Please try again later.",
+                effectiveThreadId);
         }
     }
 

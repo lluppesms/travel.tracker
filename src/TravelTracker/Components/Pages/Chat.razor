@@ -1,12 +1,17 @@
 @page "/chat"
 @using System.Net.Http.Json
+@using System.Security.Claims
 @using Microsoft.AspNetCore.Authorization
 @using Newtonsoft.Json
+@using TravelTracker.Services
 @using TravelTracker.Services.Interfaces
+@using TravelTracker.Services.Models
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IChatbotService ChatbotService
-@inject IAuthenticationService AuthService
+@inject ICurrentTravelUserResolver CurrentUserResolver
+@inject TravelAssistantReadiness Readiness
+@inject ILogger<Chat> Logger
 @inject IJSRuntime JSRuntime
 @attribute [Authorize]
 
@@ -19,6 +24,18 @@
             <p class="text-muted">Ask me anything about your travels, locations, or national parks!</p>
         </div>
     </div>
+
+    @if (!Readiness.IsReady)
+    {
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="alert alert-warning" role="alert">
+                    <strong>The travel assistant is not configured.</strong>
+                    <div>Chat is unavailable until an administrator completes the setup.</div>
+                </div>
+            </div>
+        </div>
+    }
 
     <div class="row mt-3">
         <div class="col-md-12">
@@ -78,10 +95,10 @@
                        placeholder="Type your message here..."
                        @bind="currentMessage"
                        @onkeypress="HandleKeyPress"
-                       disabled="@isLoading" />
+                       disabled="@(isLoading || !Readiness.IsReady)" />
                 <button class="btn btn-primary"
                         @onclick="SendMessage"
-                        disabled="@(isLoading || string.IsNullOrWhiteSpace(currentMessage))">
+                        disabled="@(isLoading || !Readiness.IsReady || string.IsNullOrWhiteSpace(currentMessage))">
                     @if (isLoading)
                     {
                         <span class="spinner-border spinner-border-sm me-1" role="status"></span>
@@ -102,6 +119,9 @@
 </div>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
     private List<ChatMessage> messages = new();
     private string currentMessage = string.Empty;
     private bool isLoading = false;
@@ -113,6 +133,13 @@
         public string Content { get; set; } = string.Empty;
         public bool IsUser { get; set; }
         public DateTime Timestamp { get; set; }
+    }
+
+    private async Task<ClaimsPrincipal?> GetPrincipalAsync()
+    {
+        if (AuthenticationStateTask is null) { return null; }
+        var authenticationState = await AuthenticationStateTask;
+        return authenticationState.User;
     }
 
     private async Task HandleKeyPress(KeyboardEventArgs e)
@@ -128,6 +155,22 @@
         if (string.IsNullOrWhiteSpace(currentMessage) || isLoading)
             return;
 
+        if (!Readiness.IsReady)
+        {
+            // Failure entries are configuration key names only; they are logged, never rendered.
+            Logger.LogWarning(
+                "Travel assistant is not configured; missing configuration: {MissingConfigurationKeys}",
+                string.Join(", ", Readiness.Failures));
+            currentMessage = string.Empty;
+            messages.Add(new ChatMessage
+            {
+                Content = "The travel assistant is not configured.",
+                IsUser = false,
+                Timestamp = DateTime.UtcNow
+            });
+            return;
+        }
+
         var userMessage = currentMessage.Trim();
         currentMessage = string.Empty;
 
@@ -139,31 +182,44 @@
         });
 
         isLoading = true;
-        
+
         // Force UI update immediately to show loading state
         await InvokeAsync(StateHasChanged);
         await Task.Delay(1); // Small delay to ensure UI updates
-        
+
         try
         {
-            var userId = AuthService.GetCurrentUserInternalId();
-            var (message, latestDate, threadId) = await ChatbotService.GetChatResponseAsync(userMessage, userId, currentThreadId, latestMessageDate);
+            var principal = await GetPrincipalAsync();
+            var userContext = await CurrentUserResolver.ResolveAsync(principal);
 
-            latestMessageDate = latestDate;
-            currentThreadId = threadId;
+            if (userContext is null)
+            {
+                messages.Add(new ChatMessage
+                {
+                    Content = "You need to be signed in to use the travel assistant.",
+                    IsUser = false,
+                    Timestamp = DateTime.UtcNow
+                });
+                return;
+            }
+
+            var result = await ChatbotService.GetChatResponseAsync(userMessage, userContext.UserId, currentThreadId, latestMessageDate);
+
+            latestMessageDate = result.LatestMessageDate;
+            currentThreadId = result.ThreadId;
 
             messages.Add(new ChatMessage
             {
-                Content = message,
+                Content = result.Message,
                 IsUser = false,
-                Timestamp = latestDate?.UtcDateTime ?? DateTime.UtcNow
+                Timestamp = result.LatestMessageDate?.UtcDateTime ?? DateTime.UtcNow
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             messages.Add(new ChatMessage
             {
-                Content = $"Error: {ex.Message}",
+                Content = "Something went wrong processing your message. Please try again later.",
                 IsUser = false,
                 Timestamp = DateTime.UtcNow
             });
@@ -186,13 +242,5 @@
         {
             // Ignore JS interop errors
         }
-    }
-
-    private class ChatResponseDto
-    {
-        public string Message { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
-        public string ThreadId { get; set; } = string.Empty;
-        public DateTimeOffset? LatestMessageDate { get; set; }
     }
 }

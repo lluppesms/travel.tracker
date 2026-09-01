@@ -130,11 +130,11 @@ Enable DI scope/build validation in tests and development startup.
 
 | Task | Description | Completed | Date |
 |---|---|---|---|
-| TASK-001 | Add `TravelAssistantOptions` with provider, model, Foundry URL, token scope, `COPILOT_HOME`, timezone, limits, and `WriteMode = Confirm`. Reject `AutoExecute`, unknown providers, missing authentication, missing SQL action storage, or incomplete selected-provider settings at startup. | | |
-| TASK-002 | Add `ChatTurnResult`, `ChatActionSummary`, `ToolStatus`, and stable error-code models. Replace the tuple return in `IChatbotService` with `Task<ChatTurnResult>`; keep confirmation outside that provider interface. | | |
-| TASK-003 | Add asynchronous `ICurrentTravelUserResolver`. Controllers resolve from `HttpContext.User`; Blazor resolves from `AuthenticationStateProvider`. Add `[Authorize]` to all assistant endpoints and prohibit the global API key from selecting another user on this surface. | | |
-| TASK-004 | Add provider registration with the documented lifetime matrix. Select `ChatbotService` or `CopilotChatbotService`; enable `ValidateScopes` and `ValidateOnBuild` in tests and development. | | |
-| TASK-005 | Update the fallback service, controller, and tests to the structured contract. Remove endpoint/exception details from user responses and reject mismatched legacy query user IDs. | | |
+| TASK-001 | Add `TravelAssistantOptions` with provider, model, Foundry URL, token scope, `COPILOT_HOME`, timezone, limits, and `WriteMode = Confirm`. Reject `AutoExecute`, unknown providers, missing authentication, missing SQL action storage, or incomplete selected-provider settings at startup. | ✅ | 2026-09-01 |
+| TASK-002 | Add `ChatTurnResult`, `ChatActionSummary`, `ToolStatus`, and stable error-code models. Replace the tuple return in `IChatbotService` with `Task<ChatTurnResult>`; keep confirmation outside that provider interface. | ✅ | 2026-09-01 |
+| TASK-003 | Add asynchronous `ICurrentTravelUserResolver`. Controllers resolve from `HttpContext.User`; Blazor resolves from `AuthenticationStateProvider`. Add `[Authorize]` to all assistant endpoints and prohibit the global API key from selecting another user on this surface. | ✅ | 2026-09-01 |
+| TASK-004 | Add provider registration with the documented lifetime matrix. Select `ChatbotService` or `CopilotChatbotService`; enable `ValidateScopes` and `ValidateOnBuild` in tests and development. | ✅ | 2026-09-01 |
+| TASK-005 | Update the fallback service, controller, and tests to the structured contract. Remove endpoint/exception details from user responses and reject mismatched legacy query user IDs. | ✅ | 2026-09-01 |
 
 Completion criteria: authentication is mandatory; the global key cannot impersonate a user; scope validation passes; both providers resolve; fallback tests pass; invalid configuration fails startup without exposing secrets.
 

@@ -1,12 +1,26 @@
 extern alias AzureIdentity;
 
+using TravelTracker.Authentication;
 using TravelTracker.Data;
+using TravelTracker.Extensions;
 using TravelTracker.Helpers;
 using TravelTracker.Services;
+using TravelTracker.Services.Configuration;
 using DefaultAzureCredential = AzureIdentity::Azure.Identity.DefaultAzureCredential;
 using DefaultAzureCredentialOptions = AzureIdentity::Azure.Identity.DefaultAzureCredentialOptions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Validate DI lifetimes at build time so a singleton can never capture a scoped service.
+// Enabled in tests and development (TASK-004); production keeps the default provider behavior.
+if (!builder.Environment.IsProduction())
+{
+    builder.Host.UseDefaultServiceProvider((context, options) =>
+    {
+        options.ValidateScopes = true;
+        options.ValidateOnBuild = true;
+    });
+}
 
 // Add configuration
 builder.Services.Configure<SqlServerSettings>(builder.Configuration.GetSection("SqlServer"));
@@ -15,9 +29,48 @@ var config = builder.Configuration;
 // add config to scope
 builder.Services.AddSingleton<IConfiguration>(config);
 
+// Travel assistant registration (REQ-002, OPS-008, SEC-004).
+// The application deliberately keeps running locally when SQL Server or Azure AD are absent (see the
+// warnings printed further below), so those prerequisites are enforced for the ASSISTANT SURFACE ONLY.
+// When the prerequisites are satisfied the TravelAssistant options are validated with ValidateOnStart,
+// so AutoExecute, an unknown provider, or incomplete provider settings fail startup. When they are not,
+// the assistant is not registered and startup reports the missing configuration KEY names only.
+var assistantPrerequisiteFailures = ChatProviderServiceCollectionExtensions.GetAssistantPrerequisiteFailures(builder.Configuration);
+var travelAssistantEnabled = assistantPrerequisiteFailures.Count == 0;
+
+// Single source of truth for the SQL connection string, shared with the assistant prerequisite check.
+var sqlConnectionString = AssistantConnectionStrings.Resolve(builder.Configuration);
+var sqlConfigured = !string.IsNullOrWhiteSpace(sqlConnectionString);
+
+if (travelAssistantEnabled)
+{
+    builder.Services.AddTravelAssistantOptions(builder.Configuration);
+}
+else
+{
+    builder.Services.Configure<TravelAssistantOptions>(builder.Configuration.GetSection(TravelAssistantOptions.SectionName));
+    Console.WriteLine("*******  Travel assistant disabled - required configuration is missing: *******");
+    foreach (var failure in assistantPrerequisiteFailures)
+    {
+        Console.WriteLine($"*******  {failure}");
+    }
+}
+
+builder.Services.AddTravelAssistantReadiness(travelAssistantEnabled, assistantPrerequisiteFailures);
+
+// CurrentTravelUserResolver depends on IUserService, which only exists when SQL is configured.
+if (sqlConfigured)
+{
+    builder.Services.AddTravelAssistantIdentity();
+}
+else
+{
+    builder.Services.AddUnavailableTravelAssistantIdentity();
+}
+
 // Add authentication only if Azure AD is configured
-var azureAdConfigured = !string.IsNullOrEmpty(builder.Configuration["AzureAd:TenantId"]) &&
-                        !string.IsNullOrEmpty(builder.Configuration["AzureAd:ClientId"]);
+var azureAdConfigured = !string.IsNullOrWhiteSpace(builder.Configuration[TravelAssistantOptionsValidator.AzureAdTenantIdKey]) &&
+                        !string.IsNullOrWhiteSpace(builder.Configuration[TravelAssistantOptionsValidator.AzureAdClientIdKey]);
 if (azureAdConfigured)
 {
     Console.WriteLine("Azure AD configured - enabling authentication");
@@ -48,7 +101,8 @@ if (azureAdConfigured)
 else
 {
     Console.WriteLine("Azure AD not configured - running without authentication");
-    builder.Services.AddAuthentication();
+    builder.Services.AddAuthentication(UnconfiguredAuthenticationHandler.SchemeName)
+        .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, UnconfiguredAuthenticationHandler>(UnconfiguredAuthenticationHandler.SchemeName, null);
     builder.Services.AddAuthorization();
 }
 
@@ -80,8 +134,7 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
 });
 
 // Add SQL Server Database Context
-var sqlConnectionString = builder.Configuration["SqlServer:ConnectionString"];
-if (!string.IsNullOrEmpty(sqlConnectionString))
+if (sqlConfigured)
 {
     var sqlConnectionObject = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(sqlConnectionString);
     var dataSource = $"SQL Server: {sqlConnectionObject.DataSource}, Database: {sqlConnectionObject.InitialCatalog}";
@@ -104,7 +157,6 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<IDataImportService, DataImportService>();
     builder.Services.AddScoped<IDataExportService, DataExportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
-    builder.Services.AddScoped<IChatbotService, ChatbotService>();
     builder.Services.AddScoped<IDestinationService, DestinationService>();
 
     // Register LocationLookupAPIService (public API fallback) with HttpClient
@@ -122,12 +174,19 @@ else
     Console.WriteLine("*******  Please configure SqlServer:ConnectionString *******");
 }
 
-if (!string.IsNullOrEmpty(builder.Configuration["AzureAIFoundry:Endpoint"]))
+// Provider selection happens in one place; Phase 3 adds CopilotChatbotService there.
+if (travelAssistantEnabled)
 {
-    var azureAIFoundryEndpoint = builder.Configuration["AzureAIFoundry:Endpoint"];
-    var azureAIFoundryApiKey = builder.Configuration["AzureAIFoundry:ApiKey"];
-    var azureAIFoundryDeploymentName = builder.Configuration["AzureAIFoundry:DeploymentName"];
-    Console.WriteLine($"Connecting to Azure AI Foundry at {azureAIFoundryEndpoint} with deployment {azureAIFoundryDeploymentName} and Key {azureAIFoundryApiKey?[..2]}...");
+    builder.Services.AddTravelAssistantChatProvider(builder.Configuration);
+}
+else
+{
+    builder.Services.AddDisabledTravelAssistantChatProvider();
+}
+
+if (!string.IsNullOrWhiteSpace(builder.Configuration["AzureAIFoundry:Endpoint"]))
+{
+    Console.WriteLine("Azure AI Foundry configured (AzureAIFoundry:Endpoint, AzureAIFoundry:DeploymentName, AzureAIFoundry:ApiKey)...");
 }
 else
 {
