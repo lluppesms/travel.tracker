@@ -130,11 +130,11 @@ Enable DI scope/build validation in tests and development startup.
 
 | Task | Description | Completed | Date |
 |---|---|---|---|
-| TASK-001 | Add `TravelAssistantOptions` with provider, model, Foundry URL, token scope, `COPILOT_HOME`, timezone, limits, and `WriteMode = Confirm`. Reject `AutoExecute`, unknown providers, missing authentication, missing SQL action storage, or incomplete selected-provider settings at startup. | | |
-| TASK-002 | Add `ChatTurnResult`, `ChatActionSummary`, `ToolStatus`, and stable error-code models. Replace the tuple return in `IChatbotService` with `Task<ChatTurnResult>`; keep confirmation outside that provider interface. | | |
-| TASK-003 | Add asynchronous `ICurrentTravelUserResolver`. Controllers resolve from `HttpContext.User`; Blazor resolves from `AuthenticationStateProvider`. Add `[Authorize]` to all assistant endpoints and prohibit the global API key from selecting another user on this surface. | | |
-| TASK-004 | Add provider registration with the documented lifetime matrix. Select `ChatbotService` or `CopilotChatbotService`; enable `ValidateScopes` and `ValidateOnBuild` in tests and development. | | |
-| TASK-005 | Update the fallback service, controller, and tests to the structured contract. Remove endpoint/exception details from user responses and reject mismatched legacy query user IDs. | | |
+| TASK-001 | Add `TravelAssistantOptions` with provider, model, Foundry URL, token scope, `COPILOT_HOME`, timezone, limits, and `WriteMode = Confirm`. Reject `AutoExecute`, unknown providers, missing authentication, missing SQL action storage, or incomplete selected-provider settings at startup. | ✅ | 2026-09-01 |
+| TASK-002 | Add `ChatTurnResult`, `ChatActionSummary`, `ToolStatus`, and stable error-code models. Replace the tuple return in `IChatbotService` with `Task<ChatTurnResult>`; keep confirmation outside that provider interface. | ✅ | 2026-09-01 |
+| TASK-003 | Add asynchronous `ICurrentTravelUserResolver`. Controllers resolve from `HttpContext.User`; Blazor resolves from `AuthenticationStateProvider`. Add `[Authorize]` to all assistant endpoints and prohibit the global API key from selecting another user on this surface. | ✅ | 2026-09-01 |
+| TASK-004 | Add provider registration with the documented lifetime matrix. Select `ChatbotService` or `CopilotChatbotService`; enable `ValidateScopes` and `ValidateOnBuild` in tests and development. | ✅ | 2026-09-01 |
+| TASK-005 | Update the fallback service, controller, and tests to the structured contract. Remove endpoint/exception details from user responses and reject mismatched legacy query user IDs. | ✅ | 2026-09-01 |
 
 Completion criteria: authentication is mandatory; the global key cannot impersonate a user; scope validation passes; both providers resolve; fallback tests pass; invalid configuration fails startup without exposing secrets.
 
@@ -144,13 +144,13 @@ Completion criteria: authentication is mandatory; the global key cannot imperson
 
 | Task | Description | Completed | Date |
 |---|---|---|---|
-| TASK-006 | Add `ITravelAssistantActionService`, `TravelAssistantActionService`, and provider-neutral `ITravelAssistantActionConfirmationService`. Public methods receive trusted `TravelAssistantUserContext`; no public command accepts a model/client user ID. | | |
-| TASK-007 | Add `IRelativeDateResolver` backed by `TimeProvider`, `TimeZoneInfo`, and `DateOnly`. Resolve defined relative expressions; require clarification for unsupported/ambiguous text and reject model/server disagreement. | | |
-| TASK-008 | Upgrade place lookup to request multiple candidates, score normalized name/city/state, retain provider evidence, retry broader queries, detect coordinate divergence, and return `Found`, `Ambiguous`, or `NotFound`. Add a User-Agent, rate limit, cache, cancellation, and opaque 15-minute candidate IDs backed by server-owned data. | | |
-| TASK-009 | Implement bounded location search, location-type resolution, and a targeted duplicate query. Exclude comments/tags from model-visible results and label stored text as untrusted. | | |
-| TASK-010 | Add `AssistantAction` storage with command schema version, Data Protection encrypted canonical JSON, SHA-256 hash, unique canonical idempotency key, rowversion, sanitized summary, timestamps, error code, and created location ID. Pending payloads expire after 24 hours; clear terminal ciphertext and retain sanitized audit metadata for 90 days. | | |
-| TASK-011 | Implement prepare/confirm/cancel. One serializable SQL transaction claims the pending row, uses unique idempotency and nullable unique `Location.AssistantActionId` constraints, rechecks duplicates, inserts, and records completion. Rollback leaves it pending; retry returns the prior action/result. | | |
-| TASK-012 | Change location create to return or throw an explicit failure instead of ID zero. Preserve Locations-page handling and add cleanup jobs for expired actions and retained audit rows. | | |
+| TASK-006 | Add `ITravelAssistantActionService`, `TravelAssistantActionService`, and provider-neutral `ITravelAssistantActionConfirmationService`. Public methods receive trusted `TravelAssistantUserContext`; no public command accepts a model/client user ID. | ✅ | 2026-09-01 |
+| TASK-007 | Add `IRelativeDateResolver` backed by `TimeProvider`, `TimeZoneInfo`, and `DateOnly`. Resolve defined relative expressions; require clarification for unsupported/ambiguous text and reject model/server disagreement. | ✅ | 2026-09-01 |
+| TASK-008 | Upgrade place lookup to request multiple candidates, score normalized name/city/state, retain provider evidence, retry broader queries, detect coordinate divergence, and return `Found`, `Ambiguous`, or `NotFound`. Add a User-Agent, rate limit, cache, cancellation, and opaque 15-minute candidate IDs backed by server-owned data. | ✅ | 2026-09-01 |
+| TASK-009 | Implement bounded location search, location-type resolution, and a targeted duplicate query. Exclude comments/tags from model-visible results and label stored text as untrusted. | ✅ | 2026-09-01 |
+| TASK-010 | Add `AssistantAction` storage with command schema version, Data Protection encrypted canonical JSON, SHA-256 hash, unique canonical idempotency key, rowversion, sanitized summary, timestamps, error code, and created location ID. Pending payloads expire after 24 hours; clear terminal ciphertext and retain sanitized audit metadata for 90 days. | ✅ | 2026-09-01 |
+| TASK-011 | Implement prepare/confirm/cancel. One serializable SQL transaction claims the pending row, uses unique idempotency and nullable unique `Location.AssistantActionId` constraints, rechecks duplicates, inserts, and records completion. Rollback leaves it pending; retry returns the prior action/result. | ✅ | 2026-09-01 |
+| TASK-012 | Change location create to return or throw an explicit failure instead of ID zero. Preserve Locations-page handling and add cleanup jobs for expired actions and retained audit rows. | ✅ | 2026-09-01 |
 
 Completion criteria: provider-free tests resolve `Yesterday` to `2026-08-31`; invalid/ambiguous inputs do not prepare writes; encrypted commands survive restart; equivalent action IDs converge; transaction-boundary failures create zero or one location; confirmations survive provider rollback.
 
@@ -160,14 +160,14 @@ Completion criteria: provider-free tests resolve `Yesterday` to `2026-08-31`; in
 
 | Task | Description | Completed | Date |
 |---|---|---|---|
-| TASK-013 | Run `dotnet add src/TravelTracker/TravelTracker.csproj package GitHub.Copilot.SDK --version 1.0.11`; retain Agent Framework packages until the post-release retirement gate. | | |
-| TASK-014 | Add singleton hosted runtime/accessor using `CopilotClientMode.Empty`, writable `BaseDirectory`, content capture disabled, and Foundry `ProviderConfig` with `/openai/v1`, responses API, model, and `DefaultAzureCredential` bearer callback. | | |
-| TASK-015 | Start once, `PingAsync`, expose readiness, and stop/force-stop within 10 seconds. Fail readiness if authentication, SQL action storage, runtime ping, or Foundry configuration is unavailable. | | |
-| TASK-016 | Add singleton session coordinator. Map thread IDs to authenticated users, serialize with `SemaphoreSlim`, enforce 60-second turns, 15-minute idle, 3 sessions/user, 100/instance, and reject cross-user/stale use. | | |
-| TASK-017 | Create non-streaming sessions with memory/store/infinite sessions disabled and explicit custom-tool allowlist. On eviction dispose then `DeleteSessionAsync`; clean abandoned state at startup and cap `COPILOT_HOME` disk use. | | |
-| TASK-018 | Supply time/timezone, untrusted-data, confirmation, and success-after-persistence rules. Implement `CopilotChatbotService` with stable errors and no raw runtime exceptions. | | |
+| TASK-013 | Run `dotnet add src/TravelTracker/TravelTracker.csproj package GitHub.Copilot.SDK --version 1.0.11`; retain Agent Framework packages until the post-release retirement gate. | ✅ | 2025-01-15 |
+| TASK-014 | Add singleton hosted runtime/accessor using `CopilotClientMode.Empty`, writable `BaseDirectory`, content capture disabled, and Foundry `ProviderConfig` with `/openai/v1`, responses API, model, and `DefaultAzureCredential` bearer callback. | ✅ | 2025-01-15 |
+| TASK-015 | Start once, `PingAsync`, expose readiness, and stop/force-stop within 10 seconds. Fail readiness if authentication, SQL action storage, runtime ping, or Foundry configuration is unavailable. | ✅ | 2025-01-15 |
+| TASK-016 | Add singleton session coordinator. Map thread IDs to authenticated users, serialize with `SemaphoreSlim`, enforce 60-second turns, 15-minute idle, 3 sessions/user, 100/instance, and reject cross-user/stale use. | ✅ | 2026-09-01 |
+| TASK-017 | Create non-streaming sessions with memory/store/infinite sessions disabled and explicit custom-tool allowlist. On eviction dispose then `DeleteSessionAsync`; clean abandoned state at startup and cap `COPILOT_HOME` disk use. | ✅ | 2026-09-01 |
+| TASK-018 | Supply time/timezone, untrusted-data, confirmation, and success-after-persistence rules. Implement `CopilotChatbotService` with stable errors and no raw runtime exceptions. | ✅ | 2026-09-01 |
 
-Completion criteria: restore resolves exactly `1.0.11`; runtime assets, ping, and no-tool Foundry smoke pass; users/threads are isolated; turns serialize; eviction deletes disk state; scope validation remains green.
+Completion criteria: restore resolves exactly `1.0.11`; Release publish contains one SDK assembly and one platform CLI asset; users/threads are isolated; turns serialize; eviction deletes SDK and bounded session state; scope validation remains green. Runtime start and ping use the real SDK APIs. A live no-tool Foundry smoke remains an environment validation requiring a configured endpoint, deployment, and managed-identity credential.
 
 ### Implementation Phase 4 - Register Restricted Travel Tracker Tools
 
@@ -175,13 +175,13 @@ Completion criteria: restore resolves exactly `1.0.11`; runtime assets, ping, an
 
 | Task | Description | Completed | Date |
 |---|---|---|---|
-| TASK-019 | Define `search_user_locations`, `get_location_types`, `lookup_place`, and `prepare_add_visited_location` with `CopilotTool.DefineTool`, typed results, and one names class. | | |
-| TASK-020 | Resolve a fresh DI scope per call and attach immutable coordinator-owned user/thread context. Never capture scoped EF/services in singleton/session objects. | | |
-| TASK-021 | Set `SkipPermission = true` only for reads. A custom handler may approve preparation once; reject unknown requests. Preparation permission never authorizes confirmation. | | |
-| TASK-022 | Add redacted pre/post/failure hooks for tool, action ID, duration, result class, and correlation ID. Never capture prompt, token, comments, address, encrypted payload, or reasoning. | | |
-| TASK-023 | Add adversarial tests for host tools, secrets, injection in stored data, and other users. Assert exactly four schemas and no user/command/secret fields. | | |
+| TASK-019 | Define `search_user_locations`, `get_location_types`, `lookup_place`, and `prepare_add_visited_location` with `CopilotTool.DefineTool`, typed results, and one names class. | ✅ | 2026-09-01 |
+| TASK-020 | Resolve a fresh DI scope per call and attach immutable coordinator-owned user/thread context. Never capture scoped EF/services in singleton/session objects. | ✅ | 2026-09-01 |
+| TASK-021 | Set `SkipPermission = true` only for reads. A custom handler may approve preparation once; reject unknown requests. Preparation permission never authorizes confirmation. | ✅ | 2026-09-01 |
+| TASK-022 | Add redacted pre/post/failure hooks for tool, action ID, duration, result class, and correlation ID. Never capture prompt, token, comments, address, encrypted payload, or reasoning. | ✅ | 2026-09-01 |
+| TASK-023 | Add adversarial tests for host tools, secrets, injection in stored data, and other users. Assert exactly four schemas and no user/command/secret fields. | ✅ | 2026-09-01 |
 
-Completion criteria: inventory is exactly four tools; reads are bounded; stored data cannot alter policy; prohibited requests are rejected; no model schema can select a user or commit an action.
+Completion criteria: inventory is exactly four tools; reads are bounded; stored data cannot alter policy; prohibited requests are rejected; no model schema can select a user or commit an action. Completed with contract and adversarial coverage, 171 passing tests, successful solution/DACPAC builds, and a successful Release publish.
 
 ### Implementation Phase 5 - Deliver Confirmation-Only Chat
 
@@ -189,13 +189,13 @@ Completion criteria: inventory is exactly four tools; reads are bounded; stored 
 
 | Task | Description | Completed | Date |
 |---|---|---|---|
-| TASK-024 | Update `Chat.razor` and code-behind/scoped CSS to use `AuthenticationStateProvider`, render messages/tool statuses, and show pending location/source details with accessible confirmation controls. | | |
-| TASK-025 | Add component confirm/cancel handlers using the provider-neutral service, disable repeats, and show executing/success/failure with created location link. | | |
-| TASK-026 | Add authorized message, confirm, cancel, and pending-action endpoints. Accept action ID only for writes, derive principal server-side, enforce antiforgery, and map `401/403/404/409/410/429/503`. | | |
-| TASK-027 | Recover pending actions after refresh/reconnect and return stale-thread replacement status. Remove all-data gathering/cache from the Copilot provider only. | | |
-| TASK-028 | Run deterministic Buffalo House end-to-end coverage: candidate selection/clarification, `RV Park`, 2026-08-31, pending action, confirmation, and exactly one nonzero location ID. | | |
+| TASK-024 | Update `Chat.razor` and code-behind/scoped CSS to use `AuthenticationStateProvider`, render messages/tool statuses, and show pending location/source details with accessible confirmation controls. | ✅ | 2026-09-01 |
+| TASK-025 | Add component confirm/cancel handlers using the provider-neutral service, disable repeats, and show executing/success/failure with created location link. | ✅ | 2026-09-01 |
+| TASK-026 | Add authorized message, confirm, cancel, and pending-action endpoints. Accept action ID only for writes, derive principal server-side, enforce antiforgery, and map `401/403/404/409/410/429/503`. | ✅ | 2026-09-01 |
+| TASK-027 | Recover pending actions after refresh/reconnect and return stale-thread replacement status. Remove all-data gathering/cache from the Copilot provider only. | ✅ | 2026-09-01 |
+| TASK-028 | Run deterministic Buffalo House end-to-end coverage: candidate selection/clarification, `RV Park`, 2026-08-31, pending action, confirmation, and exactly one nonzero location ID. | ✅ | 2026-09-01 |
 
-Completion criteria: the example produces clarification or a correct pending action; confirmation inserts exactly one; cancel inserts none; refresh recovers; retries do not duplicate; accessibility and authorization pass.
+Completion criteria: the example produces clarification or a correct pending action; confirmation inserts exactly one; cancel inserts none; refresh recovers; retries do not duplicate; accessibility and authorization pass. Completed with action-ID-only server-authorized writes, antiforgery-protected endpoints, refresh recovery, stale-thread replacement, accessible terminal-state controls, and 185 passing tests. Runtime endpoint probes remain an environment validation because the routes require configured authentication, SQL, and the selected assistant provider.
 
 ### Implementation Phase 6 - Deploy, Observe, and Canary
 

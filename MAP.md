@@ -56,11 +56,13 @@ Microsoft Entra ID authentication is enabled only when both `AzureAd:TenantId` a
 
 The SQL-backed repositories and application services are registered only when `SqlServer:ConnectionString` is non-empty. There is no implemented JSON repository fallback in the current web startup path.
 
+The travel assistant surface is gated separately from the rest of the app. `Program.cs` enables `ValidateScopes` and `ValidateOnBuild` outside Production, and uses `ChatProviderServiceCollectionExtensions` (`src/TravelTracker/Extensions/`) to check assistant prerequisites (`AzureAd:TenantId`, `AzureAd:ClientId`, and the SQL connection string resolved by `AssistantConnectionStrings.Resolve`, which accepts `SqlServer:ConnectionString` or `ConnectionStrings:DefaultConnection`). When they are satisfied, `AddTravelAssistantOptions` validates the `TravelAssistant` configuration section at startup and `AddTravelAssistantChatProvider` selects the chat provider from `TravelAssistant:Provider` (`AgentFramework` today; `CopilotSDK` fails fast until it ships). When they are missing, a key-only warning is written, `DisabledChatbotService` is registered so the assistant reports `provider_unavailable` instead of a dependency injection error, and unrelated pages continue to run. `ICurrentPrincipalAccessor` and `ICurrentTravelUserResolver` are always registered as scoped services, using `UnavailableTravelUserResolver` when SQL is absent because `IUserService` does not exist on that path. Assistant entry points check `TravelAssistantReadiness` before identity, so a disabled assistant returns `provider_unavailable` rather than a misleading authentication failure. When Entra ID is not configured, `UnconfiguredAuthenticationHandler` (`src/TravelTracker/Authentication/`) is the default scheme and returns a plain `401` instead of an unhandled challenge exception.
+
 ### Data and services
 
 `src/TravelTracker.Data/` contains the EF Core context, configuration classes, domain models, repository interfaces, and SQL repository implementations. `TravelTrackerDbContext` exposes users, locations, location types, destinations, and destination types. Database objects use the `Travel` schema.
 
-`src/TravelTracker.Services/` contains business services for authentication, users, locations, location types, destinations, import/export, chatbot behavior, and location lookup. AI and lookup services can call Azure AI Foundry and public geocoding APIs, depending on configuration.
+`src/TravelTracker.Services/` contains business services for authentication, users, locations, location types, destinations, import/export, chatbot behavior, and location lookup. `IRelativeDateResolver` provides server-authoritative `today` and `yesterday` resolution using the registered `TimeProvider` and configured `TravelAssistant:TimeZoneId`; unsupported expressions require clarification and model-proposed dates must agree. AI and lookup services can call Azure AI Foundry and public geocoding APIs, depending on configuration.
 
 ### MCP hosts
 
@@ -138,7 +140,7 @@ Read current project files for exact package versions.
 
 The checked-in values are local defaults or placeholders. Store real credentials in User Secrets, environment variables, GitHub/Azure DevOps secret stores, or Azure Key Vault. `DefaultAzureCredential` is used for Azure identity, with `VisualStudioTenantId` supported as a local tenant override.
 
-Infrastructure parameters under `infra/Bicep/` cover App Service, Azure SQL, Key Vault, storage, monitoring, SignalR, managed identity, Azure Maps, Entra ID, and AI settings. The current composition deploys App Service for `deploymentType` values `webapp` and `all`; comments mentioning container or function deployment are not backed by active modules in this repository.
+Infrastructure parameters under `infra/Bicep/` cover App Service, Azure SQL, Key Vault, storage, monitoring, SignalR, managed identity, Azure Maps, Entra ID, and AI settings. The current composition deploys App Service for `deploymentType` values `webapp` and `all`; comments mentioning container or function deployment are not backed by active modules in this repository. Phase 6 adds one-worker App Service configuration, `Confirm`-only Travel Assistant settings, and an optional cross-subscription Foundry resource-group role-assignment module for a user-assigned identity. `.github/CreateGitHubSecrets.md` documents every GitHub secret/variable token consumed by `infra/Bicep/main.bicepparam` (including the Phase 6 Travel Assistant, Foundry RBAC, OpenAI, and Azure Maps tokens) and is kept in sync whenever new tokens are added.
 
 ## 7. Testing
 
@@ -178,6 +180,8 @@ The Azure DevOps readme contains copied setup values and should be verified agai
 ## 10. SQL and Data Operations
 
 `src/sql.database/sql.database.sqlproj` is the deployment schema authority. Objects under `src/sql.database/Travel/` define the `Travel` schema. Use its pre/post-deployment scripts and DACPAC workflows for deployed schema changes.
+
+`src/sql.database/sql.database.sqlproj` is pinned to `Microsoft.Build.Sql` 2.0.0 for current Visual Studio SSDT task compatibility. `src/sql.database/Directory.Build.props` sets runtime-specific intermediate output (`obj/$(MSBuildRuntimeType)/`) so command-line and Visual Studio/MSBuild builds do not overwrite each other's restore assets.
 
 The root `Database/` directory contains older manual scripts, comparison files, and source data. Do not assume those files supersede the SQL project.
 
@@ -225,6 +229,58 @@ For source, infrastructure, workflow, test, or Copilot-customization changes:
 - `infra/Bicep/main.bicep` accepts deployment-type labels beyond App Service, but active deployment composition currently creates the web app only for `webapp` and `all`.
 - Entra ID is optional at startup, while SQL configuration is effectively required for the registered application services.
 - Historical reports describe planned phases and may lag current code. Verify claims against source before updating status.
+
+## 14.1. Copilot SDK 1.0.11 Integration Status
+
+**Phase 2: Durable Action Boundary (Completed)**
+
+- Provider-neutral assistant reads and writes are owned by `ITravelAssistantActionService` and `ITravelAssistantActionConfirmationService`. Every public operation requires a trusted `TravelAssistantUserContext`; model-visible contracts cannot select a user.
+- Place lookup now returns ranked `Found`, `Ambiguous`, or `NotFound` candidates with provider evidence, broader-query fallback, coordinate-divergence detection, cancellation, a one-second public-provider rate limit, bounded caching, and opaque 15-minute candidate IDs.
+- Assistant location search is limited to 25 compact records and excludes comments/tags. Location-type resolution is case-insensitive and reports ambiguity instead of guessing. Duplicate checks use a targeted user/name/date/city/state query.
+- Pending create-location commands are stored in `Travel.AssistantActions` as versioned canonical JSON protected with ASP.NET Core Data Protection, a SHA-256 payload hash, canonical idempotency key, rowversion, sanitized summary, expiry, and retention metadata. The key ring persists under `TravelAssistant:DataProtectionKeysPath` or the machine-local Travel Tracker application-data directory.
+- Confirmation and cancellation use a serializable SQL transaction. Confirmation locks and validates the pending row, rechecks duplicates, inserts a location linked through unique nullable `Location.AssistantActionId`, and records the nonzero location ID. Retries return the prior result; rollback clears tracked state so failed writes remain pending.
+- Location creation now propagates failures and rejects a zero persisted ID. The Locations page preserves user-facing failure handling. A hosted cleanup service expires 24-hour pending commands, clears terminal ciphertext, and removes sanitized audit rows after 90 days.
+- Phase 2 coverage lives under `src/TravelTracker.Tests/Services/`; the EF mapping and DACPAC include the action ledger and idempotency constraints.
+
+**Phase 3: Session Coordination & Non-Streaming Chat (Completed)**
+
+- `GitHub.Copilot.SDK` is pinned directly to `1.0.11` in the web project. The services project retains a compile-only direct reference; excluding its runtime and build assets prevents duplicate CLI files during publish while the web project remains the single runtime-asset source.
+- `CopilotRuntimeAccessor` is the singleton SDK owner. It configures `CopilotClientMode.Empty`, a writable home directory, disabled content capture, and a Foundry OpenAI provider using `/openai/v1/`, the Responses API, the configured deployment, and a `DefaultAzureCredential` bearer-token callback. Phase 6 infrastructure keeps the first release in `Confirm` mode and configures one App Service worker because SDK runtime state is instance-local.
+- `CopilotRuntimeHostedService` performs abandoned-session cleanup before starting and pinging the real SDK runtime. It starts only when `CopilotSDK` is selected and assistant prerequisites are ready, and it uses graceful then forced shutdown.
+- `CopilotSessionCoordinator` owns a global thread namespace, deterministic non-identifying SDK session IDs, immutable user ownership, per-user and instance quotas, idle eviction, and atomic activity/turn tracking. It rejects unknown, stale, and cross-user thread requests; the provider-neutral chat service converts only an authenticated user's stale/unknown thread into a newly generated thread and reports `thread_replaced`.
+- Per-session `SemaphoreSlim` leases serialize turns. Queue waiting and the configured execution timeout are separate, and explicit deletion waits for an active turn before disposing the session and requesting SDK deletion.
+- Session configuration is non-streaming and disables infinite sessions, memory, the session store, configuration and instruction discovery, file hooks, host Git operations, skills, and embedding retrieval. Token and embedding caches are in memory, and `AvailableTools` contains only source-qualified custom travel tools.
+- `CopilotTravelToolFactory` creates a fresh asynchronous DI scope per invocation and binds trusted coordinator-owned user/thread context. The allowlist contains exactly `search_user_locations`, `get_location_types`, `lookup_place`, and `prepare_add_visited_location`; confirmation remains outside model control.
+- `CopilotChatbotService` implements the provider-neutral `IChatbotService`, sends through `SendAndWaitAsync`, supplies server-authoritative time/timezone context, and maps cancellation, stale-session, and runtime failures to stable responses without exposing exception text.
+- Startup cleanup is limited to `COPILOT_HOME/session-state`; size trimming preserves unrelated runtime-owned files. `TravelAssistant:MaxCopilotHomeBytes` defaults to 100 MB.
+- Focused Phase 3 tests cover session reuse and isolation, quotas, serialization, timeout behavior, hardening, eviction/deletion, cleanup scope, real provider flow through the SDK boundary, time context, and sanitized failures. Release publish verifies a single `GitHub.Copilot.SDK.dll` and platform-native Copilot CLI. A live Foundry smoke requires deployment-specific credentials and configuration.
+
+**Phase 4: Restricted Travel Tools (Completed)**
+
+- `CopilotTravelToolNames` is the canonical source for the exact four-tool inventory used by the SDK allowlist, factory, permission handler, hooks, and tests. No shell, filesystem, web-fetch, process, code-editing, or arbitrary host tool is exposed.
+- The three read tools skip SDK permission prompts. `prepare_add_visited_location` requires the custom deny-by-default permission handler, which returns an approve-once decision only for that preparation tool. It can create a pending action but cannot confirm or commit it.
+- Model-visible schemas exclude user identity, credentials, connection strings, authorization decisions, and canonical commands. The preparation schema validates ratings from 0 through 5; application services remain authoritative for all field, candidate, date, location-type, and ownership validation.
+- `get_location_types` returns at most 100 ordered name/description records. User location search remains capped at 25 compact records, and place lookup returns bounded opaque candidates.
+- Each invocation resolves and asynchronously disposes a fresh DI scope. Tool closures capture only immutable coordinator-owned `TravelAssistantUserContext` and thread ID, preventing model-selected or cross-user identity.
+- Pre-, post-, and failure hooks record only canonical tool name, correlation ID, elapsed duration, controlled result class, and a validated opaque action ID. Raw prompts, tool arguments/results, errors, tokens, comments, addresses, working directories, encrypted payloads, and reasoning are not logged.
+- Phase 4 tests under `src/TravelTracker.Tests/Services/` verify the exact inventory and safe schemas, permission metadata and unknown-request denial, immutable context, fresh scopes, injection text as inert data, redacted telemetry, validated action IDs, and bounded ordered location types.
+
+**Phase 5: Confirmation-Only Chat (Completed)**
+
+- `ChatbotController` preserves `POST /api/chatbot/message` and adds `GET /api/chatbot/pending-actions`, `POST /api/chatbot/actions/{actionId}/confirm`, and `POST /api/chatbot/actions/{actionId}/cancel`. The controller derives the trusted user from the authenticated principal, accepts only an opaque action ID for writes, validates antiforgery on all POST routes, and maps stable action failures to `403`, `404`, `409`, `410`, or `503`; message failures also preserve `401` and `429`.
+- `ITravelAssistantActionConfirmationService` exposes action-ID-only confirmation and cancellation for UI/API callers while retaining thread-bound overloads for internal validation. The implementation always verifies durable action ownership and derives the thread from the stored action when the caller does not supply an expected thread.
+- `CopilotChatbotService` processes a stale or unknown authenticated thread once on a new generated thread and returns `thread_replaced`. Successful turns query the durable ledger for the newest pending action in the effective thread and expose its sanitized confirmation summary. The non-streaming SDK handle currently returns response text only; the result/UI contracts can render provider-supplied tool statuses without capturing raw tool payloads.
+- `Chat.razor` resolves the authenticated user from the cascading authentication state, recovers all unexpired pending actions during initialization, renders assistant tool statuses and sanitized pending location/source summaries, and provides keyboard-operable confirmation controls. Buttons disable during execution and after terminal results; retryable persistence failures remain actionable. Successful confirmation links to `/locations`.
+- Chat styling is scoped in `Chat.razor.css`, uses existing light/dark theme variables, includes visible keyboard focus, and adapts message and action layouts for narrow viewports.
+- Phase 5 tests cover authorized principal binding, action-ID-only endpoint contracts and antiforgery metadata, stable status mappings, stale-thread replacement, pending-action propagation, recovery filtering, cancellation, transaction/idempotency behavior, and a deterministic Buffalo House prepare/recover/confirm flow resolving `RV Park` on `2026-08-31`. Repeated confirmation returns the same nonzero location ID and creates exactly one location.
+
+**Phase 6: Location Summary Context and Usage Diagnostics (Completed)**
+
+- `ILocationSummaryRepository`/`LocationSummaryRepository` (`src/TravelTracker.Data/Repositories/`) execute `[Travel].[usp_LocationSummary]` via raw ADO.NET on the shared `TravelTrackerDbContext` connection, keyed by username or email. All 7 result sets are read fresh on every turn (no caching) and flattened into `## SectionName` / `column=value` text blocks for prompt injection.
+- `CopilotChatbotService.GetChatResponseAsync` resolves the calling user through `IUserService.GetUserByIdAsync` (falling back to empty identity fields only if the user record is missing) and passes real `EntraIdUserId`/`Username`/`Email` into `TravelAssistantUserContext`. `BuildTurnPromptAsync` appends the location summary text (or a graceful "no data available" placeholder on lookup failure) into the server-authoritative context section of every prompt.
+- `ICopilotSessionHandle.SendAndWaitAsync` now returns `CopilotTurnResponse`, aggregating model call count and summed input/output/cache-read/cache-write tokens and AI Credits `Cost` from every `AssistantUsageEvent` the SDK raises during the turn (subscribed via `CopilotSession.On<AssistantUsageEvent>`). `CopilotSessionHandle` wraps the experimental `AssistantUsageData.Cost` API with a scoped `#pragma warning disable GHCP001`.
+- `ChatTurnResult`/`ChatUsageInfo` carry a `Usage` payload (wall-clock `DurationSeconds` from a `Stopwatch` around the SDK call, `TurnCount` from the existing session tracking, model call count, token sums, and total cost) through to `ChatbotController.ToChatResponse`, which maps it to the new `ChatUsageDto` on `ChatResponse`.
+- `Chat.razor` renders a `chat-usage-info` diagnostics line under each assistant reply (duration, turn count, input/output tokens, cache tokens when present, and AI Credits cost), styled in `Chat.razor.css` alongside the existing tool-status list.
 
 ## 15. High-Value References
 

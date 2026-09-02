@@ -71,13 +71,66 @@ public class LocationRepository(TravelTrackerDbContext context) : ILocationRepos
         return locations;
     }
 
-    public async Task<Location> CreateAsync(Location location)
+    public async Task<Location> CreateAsync(Location location, CancellationToken cancellationToken = default)
     {
         location.CreatedDate = DateTime.UtcNow;
         location.ModifiedDate = DateTime.UtcNow;
         _context.Locations.Add(location);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return location;
+    }
+
+    public async Task<IReadOnlyList<Location>> SearchForAssistantAsync(
+        int userId,
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedQuery = query.Trim();
+        var pattern = $"%{normalizedQuery}%";
+
+        return await _context.Locations
+            .AsNoTracking()
+            .Where(location => location.UserId == userId
+                && (EF.Functions.Like(location.Name, pattern)
+                    || EF.Functions.Like(location.LocationType, pattern)
+                    || EF.Functions.Like(location.City, pattern)
+                    || EF.Functions.Like(location.State, pattern)))
+            .OrderByDescending(location => location.StartDate)
+            .Take(limit)
+            .Select(location => new Location
+            {
+                Id = location.Id,
+                UserId = location.UserId,
+                Name = location.Name,
+                LocationType = location.LocationType,
+                City = location.City,
+                State = location.State,
+                StartDate = location.StartDate
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<Location?> FindDuplicateAsync(
+        int userId,
+        string name,
+        DateTime visitDate,
+        string? city,
+        string? state,
+        CancellationToken cancellationToken = default)
+    {
+        var dayStart = visitDate.Date;
+        var dayEnd = dayStart.AddDays(1);
+
+        return _context.Locations
+            .AsNoTracking()
+            .Where(location => location.UserId == userId
+                && location.Name == name
+                && location.StartDate >= dayStart
+                && location.StartDate < dayEnd)
+            .Where(location => string.IsNullOrEmpty(city) || location.City == city)
+            .Where(location => string.IsNullOrEmpty(state) || location.State == state)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<Location?> UpdateAsync(Location location)

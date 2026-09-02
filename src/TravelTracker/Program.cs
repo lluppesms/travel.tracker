@@ -1,23 +1,105 @@
 extern alias AzureIdentity;
 
+using TravelTracker.Authentication;
 using TravelTracker.Data;
+using TravelTracker.Extensions;
 using TravelTracker.Helpers;
 using TravelTracker.Services;
+using TravelTracker.Services.Configuration;
+using TravelTracker.Services.Interfaces;
+using TravelTracker.Services.Services;
+using Microsoft.AspNetCore.DataProtection;
 using DefaultAzureCredential = AzureIdentity::Azure.Identity.DefaultAzureCredential;
 using DefaultAzureCredentialOptions = AzureIdentity::Azure.Identity.DefaultAzureCredentialOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Validate DI lifetimes at build time so a singleton can never capture a scoped service.
+// Enabled in tests and development (TASK-004); production keeps the default provider behavior.
+if (!builder.Environment.IsProduction())
+{
+    builder.Host.UseDefaultServiceProvider((context, options) =>
+    {
+        options.ValidateScopes = true;
+        options.ValidateOnBuild = true;
+    });
+}
+
 // Add configuration
 builder.Services.Configure<SqlServerSettings>(builder.Configuration.GetSection("SqlServer"));
 builder.Services.Configure<AzureAIFoundrySettings>(builder.Configuration.GetSection("AzureAIFoundry"));
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+builder.Services.AddScoped<IRelativeDateResolver, RelativeDateResolver>();
+var dataProtectionBuilder = builder.Services.AddDataProtection()
+    .SetApplicationName("TravelTracker");
+var dataProtectionKeysPath = builder.Configuration["TravelAssistant:DataProtectionKeysPath"];
+var localApplicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+dataProtectionKeysPath = string.IsNullOrWhiteSpace(dataProtectionKeysPath)
+    ? Path.Combine(
+        string.IsNullOrWhiteSpace(localApplicationData)
+            ? builder.Environment.ContentRootPath
+            : localApplicationData,
+        "TravelTracker",
+        "DataProtection-Keys")
+    : dataProtectionKeysPath;
+dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+builder.Services.AddSingleton<IPlaceCandidateStore, PlaceCandidateStore>();
+builder.Services.AddSingleton<IPlaceLookupRateLimiter, PlaceLookupRateLimiter>();
+builder.Services.AddSingleton<ICopilotRuntimeAccessor, CopilotRuntimeAccessor>();
+builder.Services.AddSingleton<ICopilotTravelToolFactory, CopilotTravelToolFactory>();
 var config = builder.Configuration;
 // add config to scope
 builder.Services.AddSingleton<IConfiguration>(config);
 
+// Travel assistant registration (REQ-002, OPS-008, SEC-004).
+// The application deliberately keeps running locally when SQL Server or Azure AD are absent (see the
+// warnings printed further below), so those prerequisites are enforced for the ASSISTANT SURFACE ONLY.
+// When the prerequisites are satisfied the TravelAssistant options are validated with ValidateOnStart,
+// so AutoExecute, an unknown provider, or incomplete provider settings fail startup. When they are not,
+// the assistant is not registered and startup reports the missing configuration KEY names only.
+var assistantPrerequisiteFailures = ChatProviderServiceCollectionExtensions.GetAssistantPrerequisiteFailures(builder.Configuration);
+var travelAssistantEnabled = assistantPrerequisiteFailures.Count == 0;
+
+// Single source of truth for the SQL connection string, shared with the assistant prerequisite check.
+var sqlConnectionString = AssistantConnectionStrings.Resolve(builder.Configuration);
+var sqlConfigured = !string.IsNullOrWhiteSpace(sqlConnectionString);
+
+if (travelAssistantEnabled)
+{
+    builder.Services.AddTravelAssistantOptions(builder.Configuration);
+}
+else
+{
+    builder.Services.Configure<TravelAssistantOptions>(builder.Configuration.GetSection(TravelAssistantOptions.SectionName));
+    Console.WriteLine("*******  Travel assistant disabled - required configuration is missing: *******");
+    foreach (var failure in assistantPrerequisiteFailures)
+    {
+        Console.WriteLine($"*******  {failure}");
+    }
+}
+
+builder.Services.AddTravelAssistantReadiness(travelAssistantEnabled, assistantPrerequisiteFailures);
+
+// Health check service for readiness probes (TASK-015)
+builder.Services.AddScoped<ICopilotHealthCheckService, CopilotHealthCheckService>();
+
+// Session coordinator for Copilot SDK integration (TASK-016).
+builder.Services.AddSingleton<ICopilotSessionCoordinator, CopilotSessionCoordinator>();
+builder.Services.AddHostedService<CopilotRuntimeHostedService>();
+
+// CurrentTravelUserResolver depends on IUserService, which only exists when SQL is configured.
+if (sqlConfigured)
+{
+    builder.Services.AddTravelAssistantIdentity();
+}
+else
+{
+    builder.Services.AddUnavailableTravelAssistantIdentity();
+}
+
 // Add authentication only if Azure AD is configured
-var azureAdConfigured = !string.IsNullOrEmpty(builder.Configuration["AzureAd:TenantId"]) &&
-                        !string.IsNullOrEmpty(builder.Configuration["AzureAd:ClientId"]);
+var azureAdConfigured = !string.IsNullOrWhiteSpace(builder.Configuration[TravelAssistantOptionsValidator.AzureAdTenantIdKey]) &&
+                        !string.IsNullOrWhiteSpace(builder.Configuration[TravelAssistantOptionsValidator.AzureAdClientIdKey]);
 if (azureAdConfigured)
 {
     Console.WriteLine("Azure AD configured - enabling authentication");
@@ -48,7 +130,8 @@ if (azureAdConfigured)
 else
 {
     Console.WriteLine("Azure AD not configured - running without authentication");
-    builder.Services.AddAuthentication();
+    builder.Services.AddAuthentication(UnconfiguredAuthenticationHandler.SchemeName)
+        .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, UnconfiguredAuthenticationHandler>(UnconfiguredAuthenticationHandler.SchemeName, null);
     builder.Services.AddAuthorization();
 }
 
@@ -62,7 +145,7 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
         Console.WriteLine($"Overwriting tenant for managed identity credentials...");
         creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
         {
-            ExcludeEnvironmentCredential =false,
+            ExcludeEnvironmentCredential = false,
             ExcludeManagedIdentityCredential = false,
             TenantId = visualStudioTenantId
         });
@@ -72,7 +155,7 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
         Console.WriteLine($"Using default tenant for managed identity credentials...");
         creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
         {
-            ExcludeEnvironmentCredential =false,
+            ExcludeEnvironmentCredential = false,
             ExcludeManagedIdentityCredential = false
         });
     }
@@ -80,8 +163,7 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
 });
 
 // Add SQL Server Database Context
-var sqlConnectionString = builder.Configuration["SqlServer:ConnectionString"];
-if (!string.IsNullOrEmpty(sqlConnectionString))
+if (sqlConfigured)
 {
     var sqlConnectionObject = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(sqlConnectionString);
     var dataSource = $"SQL Server: {sqlConnectionObject.DataSource}, Database: {sqlConnectionObject.InitialCatalog}";
@@ -96,6 +178,8 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<ILocationTypeRepository, LocationTypeRepository>();
     builder.Services.AddScoped<IDestinationRepository, DestinationRepository>();
     builder.Services.AddScoped<IDestinationTypeRepository, DestinationTypeRepository>();
+    builder.Services.AddScoped<IAssistantActionRepository, AssistantActionRepository>();
+    builder.Services.AddScoped<ILocationSummaryRepository, LocationSummaryRepository>();
 
     // Add services
     builder.Services.AddScoped<ILocationService, LocationService>();
@@ -104,11 +188,16 @@ if (!string.IsNullOrEmpty(sqlConnectionString))
     builder.Services.AddScoped<IDataImportService, DataImportService>();
     builder.Services.AddScoped<IDataExportService, DataExportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
-    builder.Services.AddScoped<IChatbotService, ChatbotService>();
     builder.Services.AddScoped<IDestinationService, DestinationService>();
+    builder.Services.AddScoped<ITravelAssistantActionService, TravelAssistantActionService>();
+    builder.Services.AddScoped<ITravelAssistantActionConfirmationService, TravelAssistantActionConfirmationService>();
+    builder.Services.AddHostedService<AssistantActionCleanupHostedService>();
 
     // Register LocationLookupAPIService (public API fallback) with HttpClient
-    builder.Services.AddHttpClient<LocationLookupAPIService>();
+    builder.Services.AddHttpClient<LocationLookupAPIService>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(15);
+    });
 
     // Register LocationLookupService (uses Azure AI Foundry agent with API fallback)
     builder.Services.AddScoped<ILocationLookupService, LocationLookupService>();
@@ -122,12 +211,19 @@ else
     Console.WriteLine("*******  Please configure SqlServer:ConnectionString *******");
 }
 
-if (!string.IsNullOrEmpty(builder.Configuration["AzureAIFoundry:Endpoint"]))
+// Provider selection happens in one place; Phase 3 adds CopilotChatbotService there.
+if (travelAssistantEnabled)
 {
-    var azureAIFoundryEndpoint = builder.Configuration["AzureAIFoundry:Endpoint"];
-    var azureAIFoundryApiKey = builder.Configuration["AzureAIFoundry:ApiKey"];
-    var azureAIFoundryDeploymentName = builder.Configuration["AzureAIFoundry:DeploymentName"];
-    Console.WriteLine($"Connecting to Azure AI Foundry at {azureAIFoundryEndpoint} with deployment {azureAIFoundryDeploymentName} and Key {azureAIFoundryApiKey?[..2]}...");
+    builder.Services.AddTravelAssistantChatProvider(builder.Configuration);
+}
+else
+{
+    builder.Services.AddDisabledTravelAssistantChatProvider();
+}
+
+if (!string.IsNullOrWhiteSpace(builder.Configuration["AzureAIFoundry:Endpoint"]))
+{
+    Console.WriteLine("Azure AI Foundry configured (AzureAIFoundry:Endpoint, AzureAIFoundry:DeploymentName, AzureAIFoundry:ApiKey)...");
 }
 else
 {

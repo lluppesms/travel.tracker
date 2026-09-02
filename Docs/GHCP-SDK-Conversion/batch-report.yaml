@@ -1,0 +1,177 @@
+batch: ghcp-sdk-conversion-phase-2
+status: completed
+completed_at: 2026-09-01
+goal: GOAL-002
+required_endpoints: []
+completed_tasks:
+  - TASK-006
+  - TASK-007
+  - TASK-008
+  - TASK-009
+  - TASK-010
+  - TASK-011
+  - TASK-012
+outcomes:
+  - provider-neutral assistant action and confirmation contracts
+  - ranked and bounded place candidate lookup
+  - bounded user-location search and location-type resolution
+  - encrypted durable assistant action ledger
+  - serializable idempotent confirmation and cancellation
+  - explicit location-create failures
+  - expired-action and audit-retention cleanup
+validation:
+  - command: dotnet build .\src\TravelTracker.sln --no-restore
+    result: passed
+    warnings: 0
+    errors: 0
+  - command: dotnet build .\src\sql.database\sql.database.sqlproj --no-restore
+    result: passed
+    warnings: 0
+    errors: 0
+  - command: dotnet test .\src\TravelTracker.Tests\TravelTracker.Tests.csproj --no-build
+    result: passed
+    passed: 151
+    failed: 0
+    skipped: 0
+warnings: []
+---
+batch: ghcp-sdk-conversion-phase-3
+status: completed
+completed_at: 2026-09-01
+goal: GOAL-003
+required_endpoints: []
+completed_tasks:
+  - TASK-013
+  - TASK-014
+  - TASK-015
+  - TASK-016
+  - TASK-017
+  - TASK-018
+outcomes:
+  - singleton SDK 1.0.11 runtime lifecycle with real start, ping, stop, and force-stop
+  - managed-identity Foundry provider using the Responses API
+  - globally owned bounded sessions with serialized turns
+  - non-streaming capability-restricted session configuration
+  - scoped custom travel tools over the durable action boundary
+  - stable provider-neutral chat responses and sanitized failures
+  - abandoned-session cleanup and bounded session-state disk use
+  - compile-only services SDK reference with one authoritative publish asset source
+validation:
+  - command: dotnet test .\src\TravelTracker.Tests\TravelTracker.Tests.csproj --no-build
+    result: passed
+    passed: 162
+    failed: 0
+    skipped: 0
+  - command: dotnet publish .\src\TravelTracker\TravelTracker.csproj --no-restore -c Release
+    result: passed
+    verified_assets:
+      - GitHub.Copilot.SDK.dll
+      - runtimes/win-arm64/native/copilot.exe
+environment_validation:
+  foundry_no_tool_smoke: not_run
+  reason: requires a configured Foundry endpoint, deployment, and managed-identity credential
+warnings:
+  - Release compilation reports pre-existing nullable warnings in unrelated files.
+---
+batch: ghcp-sdk-conversion-phase-4
+status: completed
+completed_at: 2026-09-01
+goal: GOAL-004
+required_endpoints: []
+completed_tasks:
+  - TASK-019
+  - TASK-020
+  - TASK-021
+  - TASK-022
+  - TASK-023
+outcomes:
+  - exactly four canonical custom travel tools with typed model contracts
+  - immutable coordinator-owned user and thread binding with a fresh DI scope per invocation
+  - read-only permission bypass and approve-once preparation permission
+  - deny-by-default handling for unknown permission and tool requests
+  - redacted lifecycle hooks with correlation, duration, result class, and validated action ID
+  - adversarial coverage for unsafe schemas, host tools, secrets, injection text, and cross-user context
+  - ordered bounded location-type results and rating constraints aligned to application validation
+validation:
+  - command: dotnet build .\src\TravelTracker.sln --no-restore
+    result: passed
+    warnings: 0
+    errors: 0
+  - command: dotnet build .\src\sql.database\sql.database.sqlproj --no-restore
+    result: passed
+    warnings: 0
+    errors: 0
+  - command: dotnet test .\src\TravelTracker.Tests\TravelTracker.Tests.csproj --no-build
+    result: passed
+    passed: 171
+    failed: 0
+    skipped: 0
+  - command: dotnet publish .\src\TravelTracker\TravelTracker.csproj --no-restore -c Release
+    result: passed
+    verified_assets:
+      sdk_assembly_count: 1
+      platform_cli_count: 1
+  - command: editor diagnostics for Phase 4 files
+    result: passed
+    errors: 0
+warnings:
+  - Release compilation reports pre-existing nullable warnings in unrelated files.
+---
+batch: ghcp-sdk-conversion-phase-5
+status: completed
+completed_at: 2026-09-01
+goal: GOAL-005
+required_endpoints:
+  - method: POST
+    path: /api/chatbot/message
+    status: implemented
+  - method: GET
+    path: /api/chatbot/pending-actions
+    status: implemented
+  - method: POST
+    path: /api/chatbot/actions/{actionId}/confirm
+    status: implemented
+  - method: POST
+    path: /api/chatbot/actions/{actionId}/cancel
+    status: implemented
+completed_tasks:
+  - TASK-024
+  - TASK-025
+  - TASK-026
+  - TASK-027
+  - TASK-028
+outcomes:
+  - authenticated refresh recovery for unexpired pending actions
+  - accessible confirmation cards with executing, terminal, retryable-failure, and created-location states
+  - action-ID-only confirmation and cancellation with server-derived ownership
+  - antiforgery-protected message, confirmation, and cancellation routes
+  - stable HTTP mappings for authentication, authorization, conflicts, expiry, quotas, and provider availability
+  - stale-thread replacement with the user message processed once on a new thread
+  - newest pending-action propagation from successful Copilot turns
+  - deterministic Buffalo House preparation and idempotent confirmation
+validation:
+  - command: dotnet test .\src\TravelTracker.sln --no-restore
+    result: passed
+    passed: 185
+    failed: 0
+    skipped: 0
+  - command: dotnet build .\src\TravelTracker.sln --no-restore
+    result: passed
+    errors: 0
+  - command: dotnet build .\src\sql.database\sql.database.sqlproj --no-restore
+    result: passed
+    warnings: 0
+    errors: 0
+  - command: dotnet publish .\src\TravelTracker\TravelTracker.csproj -c Release --no-restore
+    result: passed
+    verified_assets:
+      sdk_assembly_count: 1
+      platform_cli_count: 1
+  - command: editor diagnostics for Phase 5 files
+    result: passed
+    errors: 0
+environment_validation:
+  authenticated_runtime_endpoint_probe: not_run
+  reason: requires configured Entra authentication, SQL, and a selected ready assistant provider
+warnings:
+  - Solution and Release compilation report pre-existing nullable warnings in unrelated files.

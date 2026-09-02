@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using TravelTracker.Services.Models;
 
 namespace TravelTracker.Services.Services;
 
@@ -31,30 +32,21 @@ public class LocationService(
         return await _locationRepository.GetByStateAsync(userId, state);
     }
 
-    public async Task<Location> CreateLocationAsync(Location location)
+    public async Task<Location> CreateLocationAsync(
+        Location location,
+        CancellationToken cancellationToken = default)
     {
-        try
+        ArgumentNullException.ThrowIfNull(location);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await ValidateLocationAsync(location);
+        var created = await _locationRepository.CreateAsync(location, cancellationToken);
+        if (created.Id <= 0)
         {
-            await ValidateLocationAsync(location);
-            return await _locationRepository.CreateAsync(location);
+            throw new InvalidOperationException("The location repository did not return a persisted location ID.");
         }
-        catch (Exception ex)
-        {
-            var message = ex.InnerException != null ? $"{ex.Message} {ex.InnerException.Message}" : ex.Message;
-            _logger.LogError(
-                ex,
-                "Failed to create location '{Name}' for user {UserId}. Type={Type}, City={City}, State={State}, Zip={Zip}, Latitude={Latitude}, Longitude={Longitude}. Details: {Details}",
-                location.Name,
-                location.UserId,
-                location.LocationType,
-                location.City,
-                location.State,
-                location.ZipCode,
-                location.Latitude,
-                location.Longitude,
-                message);
-            return new Location();
-        }
+
+        return created;
     }
 
     public async Task<Location> UpdateLocationAsync(Location location)
@@ -74,6 +66,67 @@ public class LocationService(
         return locations
             .GroupBy(l => l.State)
             .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    public async Task<IReadOnlyList<AssistantLocationSearchResult>> SearchForAssistantAsync(
+        int userId,
+        string query,
+        int limit = 25,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(userId));
+        }
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return [];
+        }
+
+        var boundedLimit = Math.Clamp(limit, 1, 25);
+        var locations = await _locationRepository.SearchForAssistantAsync(
+            userId,
+            query,
+            boundedLimit,
+            cancellationToken);
+
+        return locations.Select(location => new AssistantLocationSearchResult
+        {
+            LocationId = location.Id,
+            Name = location.Name,
+            LocationType = location.LocationType,
+            City = location.City,
+            State = location.State,
+            VisitDate = DateOnly.FromDateTime(location.StartDate)
+        }).ToArray();
+    }
+
+    public Task<Location?> FindDuplicateAsync(
+        int userId,
+        string name,
+        DateOnly visitDate,
+        string? city,
+        string? state,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(userId));
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("A location name is required.", nameof(name));
+        }
+
+        return _locationRepository.FindDuplicateAsync(
+            userId,
+            name.Trim(),
+            visitDate.ToDateTime(TimeOnly.MinValue),
+            string.IsNullOrWhiteSpace(city) ? null : city.Trim(),
+            string.IsNullOrWhiteSpace(state) ? null : state.Trim(),
+            cancellationToken);
     }
 
     private async Task ValidateLocationAsync(Location location)

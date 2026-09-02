@@ -25,6 +25,8 @@ param webSiteSku string = 'B1'
 param webStorageSku string = 'Standard_LRS'
 param webApiKey string = ''
 
+@description('Whether the App Service should remain loaded when idle.')
+param webAppAlwaysOn bool = false
 
 param sqlDatabaseName string = 'traveltracker'
 @allowed(['Basic','Standard','Premium','BusinessCritical','GeneralPurpose'])
@@ -60,6 +62,32 @@ param appSwaggerEnabled string = 'true'
 @description('AI service provider used by the web application. "CopilotSDK" or "AgentFramework"')
 param aiServiceProvider string = ''
 
+@description('Travel Assistant write policy. The first release supports Confirm only.')
+@allowed([
+  'Confirm'
+])
+param travelAssistantWriteMode string = 'Confirm'
+
+param travelAssistantModelDeploymentName string = ''
+param travelAssistantFoundryEndpoint string = ''
+param travelAssistantTokenScope string = ''
+param travelAssistantCopilotHome string = '/tmp/traveltracker-copilot'
+param travelAssistantTimeZoneId string = 'America/Chicago'
+param travelAssistantMaxPromptCharacters int = 4000
+param travelAssistantMaxTurnsPerSession int = 20
+param travelAssistantMaxToolResultCharacters int = 8000
+param travelAssistantMaxSessionsPerUser int = 3
+param travelAssistantMaxSessionsPerInstance int = 100
+param travelAssistantTurnTimeoutSeconds int = 60
+param travelAssistantSessionIdleTimeoutMinutes int = 15
+param travelAssistantMaxCopilotHomeBytes int = 104857600
+param travelAssistantPendingActionExpiryHours int = 24
+param travelAssistantCandidateExpiryMinutes int = 15
+param travelAssistantActionAuditRetentionDays int = 90
+param travelAssistantMaxLocationSearchResults int = 25
+param travelAssistantGeocodingMinimumIntervalMilliseconds int = 1000
+param travelAssistantDataProtectionKeysPath string = ''
+
 param azureOpenAIChatEndpoint string = ''
 param azureOpenAIChatDeploymentName string = ''
 param azureOpenAIChatApiKey string = ''
@@ -88,6 +116,12 @@ param addRoleAssignments bool = true
 
 @description('Create a separate user-assigned managed identity. When false, each resource uses its own system-assigned identity.')
 param createUserAssignedIdentity bool = false
+
+@description('Resource group containing the Foundry resource used by Copilot SDK. Leave empty to skip the Foundry role assignment.')
+param foundryResourceGroupName string = ''
+
+@description('Subscription containing the Foundry resource group.')
+param foundrySubscriptionId string = subscription().subscriptionId
 
 @description('Add this Admin User Id to KeyVault Access')
 param adminUserId string = ''
@@ -216,6 +250,15 @@ module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAs
   }
 }
 
+module foundryRoleAssignment './modules/iam/foundryroleassignment.bicep' = if (addRoleAssignments && createUserAssignedIdentity && !empty(trim(foundryResourceGroupName))) {
+  name: 'foundryRoleAssignment${deploymentSuffix}'
+  scope: resourceGroup(foundrySubscriptionId, foundryResourceGroupName)
+  params: {
+    identityPrincipalId: identity!.outputs.managedIdentityPrincipalId
+    foundrySubscriptionId: foundrySubscriptionId
+  }
+}
+
 // --------------------------------------------------------------------------------
 module keyVaultModule './modules/security/keyvault.bicep' = {
   name: 'keyVault${deploymentSuffix}'
@@ -272,6 +315,8 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
     workspaceId: logAnalyticsWorkspaceModule.outputs.id
     appServicePlanName: appServicePlanModule!.outputs.name
     appServicePlanResourceGroupName: appServicePlanModule!.outputs.resourceGroupName
+    numberOfWorkers: 1
+    alwaysOn: webAppAlwaysOn
 // In a Linux app service, any nested JSON app key like AppSettings:MyKey needs to be 
 // configured in App Service as AppSettings__MyKey for the key name. 
 // In other words, any : should be replaced by __ (double underscore).
@@ -286,15 +331,36 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
       AppSettings__ApiKey: webApiKey
       AppSettings__AdminUserList: adminUserList
       AppSettings__AiServiceProvider: aiServiceProvider
-      AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
-      AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
-      AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
-      AppSettings__AzureOpenAI__Chat__MaxTokens: azureOpenAIChatMaxTokens
-      AppSettings__AzureOpenAI__Chat__Temperature: azureOpenAIChatTemperature
-      AppSettings__AzureOpenAI__Chat__TopP: azureOpenAIChatTopP
-      AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
-      AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
-      AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
+      TravelAssistant__Provider: aiServiceProvider
+      TravelAssistant__WriteMode: travelAssistantWriteMode
+      TravelAssistant__ModelDeploymentName: travelAssistantModelDeploymentName
+      TravelAssistant__FoundryEndpoint: travelAssistantFoundryEndpoint
+      TravelAssistant__TokenScope: travelAssistantTokenScope
+      TravelAssistant__CopilotHome: travelAssistantCopilotHome
+      TravelAssistant__TimeZoneId: travelAssistantTimeZoneId
+      TravelAssistant__MaxPromptCharacters: string(travelAssistantMaxPromptCharacters)
+      TravelAssistant__MaxTurnsPerSession: string(travelAssistantMaxTurnsPerSession)
+      TravelAssistant__MaxToolResultCharacters: string(travelAssistantMaxToolResultCharacters)
+      TravelAssistant__MaxSessionsPerUser: string(travelAssistantMaxSessionsPerUser)
+      TravelAssistant__MaxSessionsPerInstance: string(travelAssistantMaxSessionsPerInstance)
+      TravelAssistant__TurnTimeoutSeconds: string(travelAssistantTurnTimeoutSeconds)
+      TravelAssistant__SessionIdleTimeoutMinutes: string(travelAssistantSessionIdleTimeoutMinutes)
+      TravelAssistant__MaxCopilotHomeBytes: string(travelAssistantMaxCopilotHomeBytes)
+      TravelAssistant__PendingActionExpiryHours: string(travelAssistantPendingActionExpiryHours)
+      TravelAssistant__CandidateExpiryMinutes: string(travelAssistantCandidateExpiryMinutes)
+      TravelAssistant__ActionAuditRetentionDays: string(travelAssistantActionAuditRetentionDays)
+      TravelAssistant__MaxLocationSearchResults: string(travelAssistantMaxLocationSearchResults)
+      TravelAssistant__GeocodingMinimumIntervalMilliseconds: string(travelAssistantGeocodingMinimumIntervalMilliseconds)
+      TravelAssistant__DataProtectionKeysPath: travelAssistantDataProtectionKeysPath
+      // AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
+      // AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
+      // AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
+      // AppSettings__AzureOpenAI__Chat__MaxTokens: azureOpenAIChatMaxTokens
+      // AppSettings__AzureOpenAI__Chat__Temperature: azureOpenAIChatTemperature
+      // AppSettings__AzureOpenAI__Chat__TopP: azureOpenAIChatTopP
+      // AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
+      // AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
+      // AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
       AppSettings__BlobStorageAccountName: storageModule.outputs.name
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
