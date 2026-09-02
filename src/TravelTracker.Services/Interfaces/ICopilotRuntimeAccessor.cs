@@ -1,3 +1,5 @@
+using GitHub.Copilot;
+
 namespace TravelTracker.Services.Interfaces;
 
 /// <summary>
@@ -11,11 +13,14 @@ public interface ICopilotRuntimeAccessor
     bool IsReady { get; }
 
     /// <summary>
-    /// Gets the underlying Copilot client for creating sessions and managing the runtime.
+    /// Creates an isolated SDK session.
     /// </summary>
-    /// <returns>The CopilotClient instance.</returns>
-    /// <exception cref="InvalidOperationException">If runtime is not ready.</exception>
-    object GetClient();
+    Task<ICopilotSessionHandle> CreateSessionAsync(
+        SessionConfig config,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Permanently deletes SDK session state.</summary>
+    Task DeleteSessionAsync(string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously starts the runtime once.

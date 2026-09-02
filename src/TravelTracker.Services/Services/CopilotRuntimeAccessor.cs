@@ -1,228 +1,172 @@
+using Azure.Core;
+using Azure.Identity;
 using GitHub.Copilot;
 using Microsoft.Extensions.Options;
-using System.Diagnostics;
-using Azure.Identity;
 
 namespace TravelTracker.Services.Services;
 
 /// <summary>
-/// Singleton hosted client for Copilot SDK 1.0.11.
-/// Creates and manages the CopilotClient with Foundry provider configuration.
-/// Empty client mode (no built-in tools), no content capture, writable BaseDirectory,
-/// and Foundry provider with OpenAI-compatible endpoint and managed identity auth.
+/// Owns the singleton Copilot SDK runtime and its Foundry provider configuration.
 /// </summary>
-public class CopilotRuntimeAccessor : ICopilotRuntimeAccessor, IAsyncDisposable
+public sealed class CopilotRuntimeAccessor(
+    ILogger<CopilotRuntimeAccessor> logger,
+    IOptionsMonitor<TravelAssistantOptions> assistantOptions,
+    DefaultAzureCredential credential) : ICopilotRuntimeAccessor, IAsyncDisposable
 {
-    private readonly ILogger<CopilotRuntimeAccessor> _logger;
-    private readonly IConfiguration _configuration;
-    private readonly IOptionsMonitor<TravelAssistantOptions> _assistantOptions;
+    private readonly SemaphoreSlim _gate = new(1, 1);
     private CopilotClient? _client;
-    private readonly SemaphoreSlim _clientSemaphore = new(1, 1);
-    private bool _started;
     private bool _disposed;
 
-    public bool IsReady => _client != null && _started && !_disposed;
-
-    public CopilotRuntimeAccessor(
-        ILogger<CopilotRuntimeAccessor> logger,
-        IConfiguration configuration,
-        IOptionsMonitor<TravelAssistantOptions> assistantOptions)
-    {
-        _logger = logger;
-        _configuration = configuration;
-        _assistantOptions = assistantOptions;
-    }
+    public bool IsReady { get; private set; }
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
-        if (_started || _disposed)
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (IsReady)
         {
             return;
         }
 
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _clientSemaphore.WaitAsync(cancellationToken);
-            try
+            if (IsReady)
             {
-                if (_started || _disposed)
-                {
-                    return;
-                }
-
-                _logger.LogInformation("Starting Copilot client...");
-
-                // Create options with Foundry configuration
-                var options = new CopilotClientOptions
-                {
-                    BaseDirectory = GetBaseDirectory(),
-                    LogLevel = CopilotLogLevel.Debug,
-                    Environment = new Dictionary<string, string>
-                    {
-                        ["COPILOT_PROVIDER"] = "foundry",
-                        ["COPILOT_API_ENDPOINT"] = _assistantOptions.CurrentValue.FoundryEndpoint ?? "",
-                        ["COPILOT_MODEL"] = _assistantOptions.CurrentValue.ModelDeploymentName ?? "",
-                        ["COPILOT_API_PATH"] = "/openai/v1",
-                    }
-                };
-
-                // Create the client
-                _client = new CopilotClient(options);
-
-                // Start the client
-                var startCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                startCts.CancelAfter(TimeSpan.FromSeconds(10));
-
-                await _client.StartAsync();
-
-                _started = true;
-                _logger.LogInformation("Copilot client started successfully.");
+                return;
             }
-            finally
+
+            var options = assistantOptions.CurrentValue;
+            Directory.CreateDirectory(options.CopilotHome);
+
+            _client = new CopilotClient(new CopilotClientOptions
             {
-                _clientSemaphore.Release();
-            }
+                Mode = CopilotClientMode.Empty,
+                BaseDirectory = options.CopilotHome,
+                SessionIdleTimeoutSeconds = options.SessionIdleTimeoutMinutes * 60,
+                LogLevel = CopilotLogLevel.Info,
+                Telemetry = new TelemetryConfig { CaptureContent = false }
+            });
+
+            await _client.StartAsync(cancellationToken).ConfigureAwait(false);
+            await _client.PingAsync("travel-tracker-readiness", cancellationToken).ConfigureAwait(false);
+            IsReady = true;
+            logger.LogInformation("Copilot SDK runtime started and responded to ping.");
         }
-        catch (OperationCanceledException)
+        catch
         {
-            _logger.LogError("Client startup timed out (10 seconds).");
+            IsReady = false;
+            if (_client is not null)
+            {
+                await _client.ForceStopAsync().ConfigureAwait(false);
+                _client = null;
+            }
+
             throw;
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.LogError(ex, "Failed to start Copilot client.");
-            throw;
+            _gate.Release();
         }
     }
 
-    public object GetClient()
+    public async Task<ICopilotSessionHandle> CreateSessionAsync(
+        SessionConfig config,
+        CancellationToken cancellationToken = default)
     {
-        if (!IsReady)
-        {
-            throw new InvalidOperationException("Copilot client is not ready.");
-        }
+        ArgumentNullException.ThrowIfNull(config);
+        var client = GetReadyClient();
+        var options = assistantOptions.CurrentValue;
+        var endpoint = options.FoundryEndpoint.TrimEnd('/') + "/openai/v1/";
 
-        return _client!;
+        config.Model = options.ModelDeploymentName;
+        config.Provider = new ProviderConfig
+        {
+            Type = "openai",
+            BaseUrl = endpoint,
+            WireApi = "responses",
+            ModelId = options.ModelDeploymentName,
+#pragma warning disable GHCP001 // Required SDK 1.0.11 managed-identity callback.
+            BearerTokenProvider = async _ =>
+            {
+                var token = await credential.GetTokenAsync(
+                    new TokenRequestContext([options.TokenScope]),
+                    CancellationToken.None).ConfigureAwait(false);
+                return token.Token;
+            }
+#pragma warning restore GHCP001
+        };
+
+        var session = await client.CreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
+        return new CopilotSessionHandle(session);
+    }
+
+    public async Task DeleteSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+        await GetReadyClient().DeleteSessionAsync(sessionId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<bool> PingAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsReady)
+        if (!IsReady || _client is null)
         {
-            _logger.LogWarning("Attempted to ping client that is not ready.");
             return false;
         }
 
         try
         {
-            var pingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            pingCts.CancelAfter(TimeSpan.FromSeconds(5));
-
-            // TODO: TASK-014 - Call actual health check on client if available
-            // For now, we consider the client healthy if it's started
-            
-            _logger.LogDebug("Copilot client ping successful.");
+            await _client.PingAsync("travel-tracker-readiness", cancellationToken).ConfigureAwait(false);
             return true;
         }
-        catch (OperationCanceledException)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogWarning("Client ping timed out.");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Client ping failed.");
+            logger.LogWarning(exception, "Copilot SDK runtime ping failed.");
+            IsReady = false;
             return false;
         }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        if (!_started || _disposed)
-        {
-            return;
-        }
-
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _clientSemaphore.WaitAsync(cancellationToken);
+            if (_client is null)
+            {
+                IsReady = false;
+                return;
+            }
+
             try
             {
-                if (_client == null)
-                {
-                    return;
-                }
-
-                _logger.LogInformation("Stopping Copilot client gracefully...");
-
-                var stopCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                stopCts.CancelAfter(TimeSpan.FromSeconds(10));
-
-                await _client.StopAsync();
-                
-                _logger.LogInformation("Copilot client stopped gracefully.");
+                await _client.StopAsync()
+                    .WaitAsync(TimeSpan.FromSeconds(10), cancellationToken)
+                    .ConfigureAwait(false);
             }
-            finally
+            catch (Exception exception) when (exception is TimeoutException or OperationCanceledException)
             {
-                _clientSemaphore.Release();
+                logger.LogWarning(exception, "Copilot SDK graceful stop did not complete; forcing shutdown.");
+                await _client.ForceStopAsync().ConfigureAwait(false);
             }
+
+            IsReady = false;
+            _client = null;
         }
-        catch (OperationCanceledException)
+        finally
         {
-            _logger.LogWarning("Client stop timed out (10 seconds), forcing stop...");
-            await ForceStopAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during graceful stop, forcing stop...");
-            await ForceStopAsync();
+            _gate.Release();
         }
     }
 
     public async Task ForceStopAsync()
     {
-        if (_client == null)
+        var client = _client;
+        IsReady = false;
+        _client = null;
+        if (client is not null)
         {
-            return;
+            await client.ForceStopAsync().ConfigureAwait(false);
         }
-
-        try
-        {
-            _logger.LogWarning("Force-stopping Copilot client...");
-            
-            // CopilotClient implements IAsyncDisposable
-            if (_client is IAsyncDisposable asyncDisposable)
-            {
-                await asyncDisposable.DisposeAsync();
-            }
-            
-            _client = null;
-            _started = false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during force stop.");
-        }
-    }
-
-    private string GetBaseDirectory()
-    {
-        var options = _assistantOptions.CurrentValue;
-        var copilotHome = options.CopilotHome;
-
-        if (string.IsNullOrWhiteSpace(copilotHome))
-        {
-            copilotHome = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "TravelTracker",
-                "copilot"
-            );
-        }
-
-        Directory.CreateDirectory(copilotHome);
-        _logger.LogInformation("Copilot home: {CopilotHome}", copilotHome);
-
-        return copilotHome;
     }
 
     public async ValueTask DisposeAsync()
@@ -233,9 +177,12 @@ public class CopilotRuntimeAccessor : ICopilotRuntimeAccessor, IAsyncDisposable
         }
 
         _disposed = true;
-        await ForceStopAsync();
-        _clientSemaphore?.Dispose();
+        await ForceStopAsync().ConfigureAwait(false);
+        _gate.Dispose();
     }
+
+    private CopilotClient GetReadyClient()
+        => IsReady && _client is not null
+            ? _client
+            : throw new InvalidOperationException("Copilot SDK runtime is not ready.");
 }
-
-

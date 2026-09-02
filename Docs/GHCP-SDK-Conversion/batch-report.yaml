@@ -34,3 +34,41 @@ validation:
     failed: 0
     skipped: 0
 warnings: []
+---
+batch: ghcp-sdk-conversion-phase-3
+status: completed
+completed_at: 2026-09-01
+goal: GOAL-003
+required_endpoints: []
+completed_tasks:
+  - TASK-013
+  - TASK-014
+  - TASK-015
+  - TASK-016
+  - TASK-017
+  - TASK-018
+outcomes:
+  - singleton SDK 1.0.11 runtime lifecycle with real start, ping, stop, and force-stop
+  - managed-identity Foundry provider using the Responses API
+  - globally owned bounded sessions with serialized turns
+  - non-streaming capability-restricted session configuration
+  - scoped custom travel tools over the durable action boundary
+  - stable provider-neutral chat responses and sanitized failures
+  - abandoned-session cleanup and bounded session-state disk use
+  - compile-only services SDK reference with one authoritative publish asset source
+validation:
+  - command: dotnet test .\src\TravelTracker.Tests\TravelTracker.Tests.csproj --no-build
+    result: passed
+    passed: 162
+    failed: 0
+    skipped: 0
+  - command: dotnet publish .\src\TravelTracker\TravelTracker.csproj --no-restore -c Release
+    result: passed
+    verified_assets:
+      - GitHub.Copilot.SDK.dll
+      - runtimes/win-arm64/native/copilot.exe
+environment_validation:
+  foundry_no_tool_smoke: not_run
+  reason: requires a configured Foundry endpoint, deployment, and managed-identity credential
+warnings:
+  - Release compilation reports pre-existing nullable warnings in unrelated files.

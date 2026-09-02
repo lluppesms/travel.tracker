@@ -95,7 +95,7 @@ public static class ChatProviderServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Single provider selection point. Phase 3 (TASK-018) adds the <c>CopilotSDK</c> registration here.
+    /// Single provider selection point.
     /// </summary>
     public static IServiceCollection AddTravelAssistantChatProvider(this IServiceCollection services, ChatProvider provider)
     {
@@ -108,12 +108,8 @@ public static class ChatProviderServiceCollectionExtensions
                 break;
 
             case ChatProvider.CopilotSDK:
-                // Phase 3 TASK-018 replaces this throw with:
-                //   services.AddScoped<IChatbotService, CopilotChatbotService>();
-                throw new OptionsValidationException(
-                    TravelAssistantOptions.SectionName,
-                    typeof(TravelAssistantOptions),
-                    [$"Chat provider '{nameof(ChatProvider.CopilotSDK)}' is not yet available; set {TravelAssistantOptions.SectionName}:Provider to '{nameof(ChatProvider.AgentFramework)}'."]);
+                services.AddScoped<IChatbotService, CopilotChatbotService>();
+                break;
 
             default:
                 throw new OptionsValidationException(

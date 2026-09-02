@@ -242,16 +242,16 @@ For source, infrastructure, workflow, test, or Copilot-customization changes:
 
 **Phase 3: Session Coordination & Non-Streaming Chat (Completed)**
 
-- **TASK-015 (CopilotHealthCheckService)**: Verified working from prior session. Validates SDK runtime accessibility via health endpoint.
-- **TASK-016 (CopilotSessionCoordinator)**: Session lifecycle management with turn serialization, per-user quota (3 sessions), instance quota (100), idle timeout (15 min). Implemented as singleton managing session acquisition, turn locking, and eviction.
-- **TASK-017 (Non-Streaming Sessions)**: Implemented via `SessionConfig` from GitHub.Copilot SDK. Sessions created with default config for isolated turn-based interaction.
-- **TASK-018 (CopilotChatbotService)**: Scoped chatbot service with turn locking, system context injection (current time/timezone), and three tools: SearchLocations, GetLocationTypes, LookupPlace. Turns are serialized across concurrent requests.
-
-**Key Implementation Details:**
-- `CopilotSessionCoordinator` (singleton) manages `Dictionary<int, HashSet<string>>` for per-user session IDs and `Dictionary<string, CopilotSessionInfo>` for active sessions.
-- `CopilotChatbotService` (scoped) acquires turn lock before each message, injects system context with server-authoritative time via `IRelativeDateResolver`, executes tools via SDK-provided execution context.
-- Turn lock (IAsyncDisposable `TurnLockReleaser`) ensures sequential tool execution and atomic turn state updates.
-- Session eviction calls `DisposeAsync()` on CopilotSession and `DeleteSessionAsync()` on CopilotClient, plus cleanup of disk state in COPILOT_HOME.
+- `GitHub.Copilot.SDK` is pinned directly to `1.0.11` in the web project. The services project retains a compile-only direct reference; excluding its runtime and build assets prevents duplicate CLI files during publish while the web project remains the single runtime-asset source.
+- `CopilotRuntimeAccessor` is the singleton SDK owner. It configures `CopilotClientMode.Empty`, a writable home directory, disabled content capture, and a Foundry OpenAI provider using `/openai/v1/`, the Responses API, the configured deployment, and a `DefaultAzureCredential` bearer-token callback.
+- `CopilotRuntimeHostedService` performs abandoned-session cleanup before starting and pinging the real SDK runtime. It starts only when `CopilotSDK` is selected and assistant prerequisites are ready, and it uses graceful then forced shutdown.
+- `CopilotSessionCoordinator` owns a global thread namespace, deterministic non-identifying SDK session IDs, immutable user ownership, per-user and instance quotas, idle eviction, and atomic activity/turn tracking. Unknown, stale, and cross-user thread requests are rejected rather than silently recreated.
+- Per-session `SemaphoreSlim` leases serialize turns. Queue waiting and the configured execution timeout are separate, and explicit deletion waits for an active turn before disposing the session and requesting SDK deletion.
+- Session configuration is non-streaming and disables infinite sessions, memory, the session store, configuration and instruction discovery, file hooks, host Git operations, skills, and embedding retrieval. Token and embedding caches are in memory, and `AvailableTools` contains only source-qualified custom travel tools.
+- `CopilotTravelToolFactory` creates a fresh asynchronous DI scope per invocation and binds trusted coordinator-owned user/thread context. The allowlist currently exposes location search, location-type resolution, place lookup, and preparation of a durable pending add-location action; confirmation remains outside model control.
+- `CopilotChatbotService` implements the provider-neutral `IChatbotService`, sends through `SendAndWaitAsync`, supplies server-authoritative time/timezone context, and maps cancellation, stale-session, and runtime failures to stable responses without exposing exception text.
+- Startup cleanup is limited to `COPILOT_HOME/session-state`; size trimming preserves unrelated runtime-owned files. `TravelAssistant:MaxCopilotHomeBytes` defaults to 100 MB.
+- Focused Phase 3 tests cover session reuse and isolation, quotas, serialization, timeout behavior, hardening, eviction/deletion, cleanup scope, real provider flow through the SDK boundary, time context, and sanitized failures. Release publish verifies a single `GitHub.Copilot.SDK.dll` and platform-native Copilot CLI. A live Foundry smoke requires deployment-specific credentials and configuration.
 
 ## 15. High-Value References
 

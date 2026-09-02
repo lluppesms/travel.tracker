@@ -31,3 +31,33 @@ verification:
     passed: 151
     failed: 0
     skipped: 0
+---
+checkpoint: tasks-to-implementation
+phase: 3
+goal: GOAL-003
+completed_at: 2026-09-01
+tasks:
+  - id: TASK-013
+    status: completed
+  - id: TASK-014
+    status: completed
+  - id: TASK-015
+    status: completed
+  - id: TASK-016
+    status: completed
+  - id: TASK-017
+    status: completed
+  - id: TASK-018
+    status: completed
+verification:
+  solution_build: passed
+  release_publish: passed
+  sdk_version: 1.0.11
+  runtime_assets:
+    sdk_assembly: present
+    platform_cli: present
+  tests:
+    passed: 162
+    failed: 0
+    skipped: 0
+  foundry_no_tool_smoke: requires_environment

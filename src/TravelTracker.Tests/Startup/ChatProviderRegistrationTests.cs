@@ -74,18 +74,16 @@ public class ChatProviderRegistrationTests
     }
 
     [Fact]
-    public void CopilotSdkProvider_FailsFastWithNonSecretMessage()
+    public void CopilotSdkProvider_RegistersCopilotChatbotService()
     {
         var configuration = BuildConfiguration("CopilotSDK");
         var services = BuildServices(configuration);
 
-        var exception = Assert.Throws<OptionsValidationException>(() => services.AddTravelAssistantChatProvider(configuration));
+        services.AddTravelAssistantChatProvider(configuration);
 
-        Assert.Contains("CopilotSDK", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("TravelAssistant:Provider", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("AgentFramework", exception.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("Server=", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("11111111", exception.Message, StringComparison.Ordinal);
+        var descriptor = services.Single(d => d.ServiceType == typeof(IChatbotService));
+        Assert.Equal(typeof(CopilotChatbotService), descriptor.ImplementationType);
+        Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime);
     }
 
     [Fact]

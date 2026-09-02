@@ -87,6 +87,10 @@ public class TravelAssistantOptionsValidator : IValidateOptions<TravelAssistantO
         AddPositiveLimitFailure(failures, options.TurnTimeoutSeconds, nameof(TravelAssistantOptions.TurnTimeoutSeconds));
         AddPositiveLimitFailure(failures, options.SessionIdleTimeoutMinutes, nameof(TravelAssistantOptions.SessionIdleTimeoutMinutes));
         AddPositiveLimitFailure(failures, options.PendingActionExpiryHours, nameof(TravelAssistantOptions.PendingActionExpiryHours));
+        if (options.MaxCopilotHomeBytes <= 0)
+        {
+            failures.Add($"{TravelAssistantOptions.SectionName}:{nameof(TravelAssistantOptions.MaxCopilotHomeBytes)} must be greater than zero.");
+        }
 
         if (options.MaxSessionsPerUser > options.MaxSessionsPerInstance)
         {

@@ -58,6 +58,9 @@ public class TravelAssistantOptions
 
     public int SessionIdleTimeoutMinutes { get; set; } = 15;
 
+    /// <summary>Maximum instance-local Copilot state usage before abandoned files are trimmed.</summary>
+    public long MaxCopilotHomeBytes { get; set; } = 100 * 1024 * 1024;
+
     /// <summary>Lifetime of an unconfirmed pending action before it expires.</summary>
     public int PendingActionExpiryHours { get; set; } = 24;
 

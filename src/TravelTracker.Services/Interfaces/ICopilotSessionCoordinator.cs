@@ -28,6 +28,7 @@ public interface ICopilotSessionCoordinator
     Task<CopilotSessionInfo> AcquireSessionAsync(
         TravelAssistantUserContext user,
         string threadId,
+        bool createIfMissing = true,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -46,7 +47,7 @@ public interface ICopilotSessionCoordinator
     /// <returns>Async disposable lock. Release to end the turn.</returns>
     /// <exception cref="CrossUserSessionException">Session belongs to different user.</exception>
     /// <exception cref="StaleSessionException">Session is idle > 15 minutes (evicted).</exception>
-    Task<IAsyncDisposable> AcquireTurnAsync(
+    Task<ICopilotTurnLease> AcquireTurnAsync(
         CopilotSessionInfo sessionInfo,
         TravelAssistantUserContext currentUser,
         CancellationToken cancellationToken = default);

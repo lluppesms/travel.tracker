@@ -9,7 +9,9 @@
     <PackageReference Include="Azure.AI.Projects" Version="2.0.1" />
     <PackageReference Include="Azure.Core" Version="1.53.0" Aliases="global,AzureIdentity" />
     <PackageReference Include="Azure.Identity" Version="1.21.0" Aliases="AzureIdentity" />
-    <PackageReference Include="GitHub.Copilot.SDK" Version="1.0.11" />
+    <PackageReference Include="GitHub.Copilot.SDK" Version="1.0.11">
+      <ExcludeAssets>runtime;build;buildTransitive</ExcludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.20.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.12" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />

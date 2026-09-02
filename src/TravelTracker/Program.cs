@@ -46,6 +46,7 @@ dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKe
 builder.Services.AddSingleton<IPlaceCandidateStore, PlaceCandidateStore>();
 builder.Services.AddSingleton<IPlaceLookupRateLimiter, PlaceLookupRateLimiter>();
 builder.Services.AddSingleton<ICopilotRuntimeAccessor, CopilotRuntimeAccessor>();
+builder.Services.AddSingleton<ICopilotTravelToolFactory, CopilotTravelToolFactory>();
 var config = builder.Configuration;
 // add config to scope
 builder.Services.AddSingleton<IConfiguration>(config);
@@ -82,9 +83,9 @@ builder.Services.AddTravelAssistantReadiness(travelAssistantEnabled, assistantPr
 // Health check service for readiness probes (TASK-015)
 builder.Services.AddScoped<ICopilotHealthCheckService, CopilotHealthCheckService>();
 
-// Session coordinator and chatbot service for Copilot SDK integration (TASK-016, TASK-018)
+// Session coordinator for Copilot SDK integration (TASK-016).
 builder.Services.AddSingleton<ICopilotSessionCoordinator, CopilotSessionCoordinator>();
-builder.Services.AddScoped<ICopilotChatbotService, CopilotChatbotService>();
+builder.Services.AddHostedService<CopilotRuntimeHostedService>();
 
 // CurrentTravelUserResolver depends on IUserService, which only exists when SQL is configured.
 if (sqlConfigured)

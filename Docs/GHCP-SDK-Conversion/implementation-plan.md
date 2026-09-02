@@ -163,11 +163,11 @@ Completion criteria: provider-free tests resolve `Yesterday` to `2026-08-31`; in
 | TASK-013 | Run `dotnet add src/TravelTracker/TravelTracker.csproj package GitHub.Copilot.SDK --version 1.0.11`; retain Agent Framework packages until the post-release retirement gate. | ✅ | 2025-01-15 |
 | TASK-014 | Add singleton hosted runtime/accessor using `CopilotClientMode.Empty`, writable `BaseDirectory`, content capture disabled, and Foundry `ProviderConfig` with `/openai/v1`, responses API, model, and `DefaultAzureCredential` bearer callback. | ✅ | 2025-01-15 |
 | TASK-015 | Start once, `PingAsync`, expose readiness, and stop/force-stop within 10 seconds. Fail readiness if authentication, SQL action storage, runtime ping, or Foundry configuration is unavailable. | ✅ | 2025-01-15 |
-| TASK-016 | Add singleton session coordinator. Map thread IDs to authenticated users, serialize with `SemaphoreSlim`, enforce 60-second turns, 15-minute idle, 3 sessions/user, 100/instance, and reject cross-user/stale use. | | |
-| TASK-017 | Create non-streaming sessions with memory/store/infinite sessions disabled and explicit custom-tool allowlist. On eviction dispose then `DeleteSessionAsync`; clean abandoned state at startup and cap `COPILOT_HOME` disk use. | | |
-| TASK-018 | Supply time/timezone, untrusted-data, confirmation, and success-after-persistence rules. Implement `CopilotChatbotService` with stable errors and no raw runtime exceptions. | | |
+| TASK-016 | Add singleton session coordinator. Map thread IDs to authenticated users, serialize with `SemaphoreSlim`, enforce 60-second turns, 15-minute idle, 3 sessions/user, 100/instance, and reject cross-user/stale use. | ✅ | 2026-09-01 |
+| TASK-017 | Create non-streaming sessions with memory/store/infinite sessions disabled and explicit custom-tool allowlist. On eviction dispose then `DeleteSessionAsync`; clean abandoned state at startup and cap `COPILOT_HOME` disk use. | ✅ | 2026-09-01 |
+| TASK-018 | Supply time/timezone, untrusted-data, confirmation, and success-after-persistence rules. Implement `CopilotChatbotService` with stable errors and no raw runtime exceptions. | ✅ | 2026-09-01 |
 
-Completion criteria: restore resolves exactly `1.0.11`; runtime assets, ping, and no-tool Foundry smoke pass; users/threads are isolated; turns serialize; eviction deletes disk state; scope validation remains green.
+Completion criteria: restore resolves exactly `1.0.11`; Release publish contains one SDK assembly and one platform CLI asset; users/threads are isolated; turns serialize; eviction deletes SDK and bounded session state; scope validation remains green. Runtime start and ping use the real SDK APIs. A live no-tool Foundry smoke remains an environment validation requiring a configured endpoint, deployment, and managed-identity credential.
 
 ### Implementation Phase 4 - Register Restricted Travel Tracker Tools
 

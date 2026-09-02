@@ -1,5 +1,3 @@
-using GitHub.Copilot;
-
 namespace TravelTracker.Services.Models;
 
 /// <summary>
@@ -7,6 +5,9 @@ namespace TravelTracker.Services.Models;
 /// </summary>
 public class CopilotSessionInfo
 {
+    private long _lastActivityUtcTicks;
+    private int _turnCount;
+
     /// <summary>
     /// Unique session identifier (per user, per thread).
     /// </summary>
@@ -25,21 +26,31 @@ public class CopilotSessionInfo
     /// <summary>
     /// The underlying Copilot SDK session object.
     /// </summary>
-    public required CopilotSession Session { get; init; }
+    public required ICopilotSessionHandle Session { get; init; }
 
     /// <summary>
     /// When the session was created (UTC).
     /// </summary>
-    public DateTime CreatedAtUtc { get; init; }
+    public DateTimeOffset CreatedAtUtc { get; init; }
 
     /// <summary>
     /// When the session was last used (UTC).
     /// Updated on every turn or interaction.
     /// </summary>
-    public DateTime LastActivityUtc { get; init; }
+    public DateTimeOffset LastActivityUtc
+    {
+        get => new(Interlocked.Read(ref _lastActivityUtcTicks), TimeSpan.Zero);
+        internal set => Interlocked.Exchange(ref _lastActivityUtcTicks, value.UtcTicks);
+    }
 
     /// <summary>
     /// Total turns (messages) in this session.
     /// </summary>
-    public int TurnCount { get; init; }
+    public int TurnCount => Volatile.Read(ref _turnCount);
+
+    internal void CompleteTurn(DateTimeOffset completedAtUtc)
+    {
+        LastActivityUtc = completedAtUtc;
+        Interlocked.Increment(ref _turnCount);
+    }
 }
