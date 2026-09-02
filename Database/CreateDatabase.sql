@@ -1,6 +1,6 @@
 /*
 =============================================================================
- Travel Tracker - Create Schema, Tables, and Stored Procedures
+Travel Tracker - Create Schema, Tables, and Stored Procedures
 =============================================================================
  Generated from the SQL project at src/sql.database.
  Objects are created in dependency order and each step is idempotent, so the
