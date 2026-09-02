@@ -153,8 +153,12 @@ var deployWebAppEffective = contains(['webapp', 'all'], deploymentTypeNormalized
 var deployWebsiteEffective = deployWebAppEffective
 var keyVaultApplicationUserObjectIds = deployWebsiteEffective
   ? concat(
-      deployWebAppEffective ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ] : [])
+      deployWebAppEffective ? [ webSiteModule!.outputs.systemPrincipalId ] : [])
   : [ identity.outputs.managedIdentityPrincipalId ]
+// var keyVaultApplicationUserObjectIds = deployWebsiteEffective
+//   ? concat(
+//       deployWebAppEffective ? [ webSiteModule!.outputs.userManagedPrincipalId, webSiteModule!.outputs.systemPrincipalId ] : [])
+//   : [ identity.outputs.managedIdentityPrincipalId ]
 // var resourceToken = toLower(uniqueString(resourceGroup().id, location))
 
 // --------------------------------------------------------------------------------
