@@ -228,6 +228,21 @@ For source, infrastructure, workflow, test, or Copilot-customization changes:
 - Entra ID is optional at startup, while SQL configuration is effectively required for the registered application services.
 - Historical reports describe planned phases and may lag current code. Verify claims against source before updating status.
 
+## 14.1. Copilot SDK 1.0.11 Integration Status
+
+**Phase 3: Session Coordination & Non-Streaming Chat (Completed)**
+
+- **TASK-015 (CopilotHealthCheckService)**: Verified working from prior session. Validates SDK runtime accessibility via health endpoint.
+- **TASK-016 (CopilotSessionCoordinator)**: Session lifecycle management with turn serialization, per-user quota (3 sessions), instance quota (100), idle timeout (15 min). Implemented as singleton managing session acquisition, turn locking, and eviction.
+- **TASK-017 (Non-Streaming Sessions)**: Implemented via `SessionConfig` from GitHub.Copilot SDK. Sessions created with default config for isolated turn-based interaction.
+- **TASK-018 (CopilotChatbotService)**: Scoped chatbot service with turn locking, system context injection (current time/timezone), and three tools: SearchLocations, GetLocationTypes, LookupPlace. Turns are serialized across concurrent requests.
+
+**Key Implementation Details:**
+- `CopilotSessionCoordinator` (singleton) manages `Dictionary<int, HashSet<string>>` for per-user session IDs and `Dictionary<string, CopilotSessionInfo>` for active sessions.
+- `CopilotChatbotService` (scoped) acquires turn lock before each message, injects system context with server-authoritative time via `IRelativeDateResolver`, executes tools via SDK-provided execution context.
+- Turn lock (IAsyncDisposable `TurnLockReleaser`) ensures sequential tool execution and atomic turn state updates.
+- Session eviction calls `DisposeAsync()` on CopilotSession and `DeleteSessionAsync()` on CopilotClient, plus cleanup of disk state in COPILOT_HOME.
+
 ## 15. High-Value References
 
 - [README.md](README.md): product overview and basic setup.

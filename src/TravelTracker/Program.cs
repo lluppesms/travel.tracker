@@ -6,6 +6,8 @@ using TravelTracker.Extensions;
 using TravelTracker.Helpers;
 using TravelTracker.Services;
 using TravelTracker.Services.Configuration;
+using TravelTracker.Services.Interfaces;
+using TravelTracker.Services.Services;
 using DefaultAzureCredential = AzureIdentity::Azure.Identity.DefaultAzureCredential;
 using DefaultAzureCredentialOptions = AzureIdentity::Azure.Identity.DefaultAzureCredentialOptions;
 
@@ -27,6 +29,7 @@ builder.Services.Configure<SqlServerSettings>(builder.Configuration.GetSection("
 builder.Services.Configure<AzureAIFoundrySettings>(builder.Configuration.GetSection("AzureAIFoundry"));
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddScoped<IRelativeDateResolver, RelativeDateResolver>();
+builder.Services.AddSingleton<ICopilotRuntimeAccessor, CopilotRuntimeAccessor>();
 var config = builder.Configuration;
 // add config to scope
 builder.Services.AddSingleton<IConfiguration>(config);
@@ -59,6 +62,13 @@ else
 }
 
 builder.Services.AddTravelAssistantReadiness(travelAssistantEnabled, assistantPrerequisiteFailures);
+
+// Health check service for readiness probes (TASK-015)
+builder.Services.AddScoped<ICopilotHealthCheckService, CopilotHealthCheckService>();
+
+// Session coordinator and chatbot service for Copilot SDK integration (TASK-016, TASK-018)
+builder.Services.AddSingleton<ICopilotSessionCoordinator, CopilotSessionCoordinator>();
+builder.Services.AddScoped<ICopilotChatbotService, CopilotChatbotService>();
 
 // CurrentTravelUserResolver depends on IUserService, which only exists when SQL is configured.
 if (sqlConfigured)
