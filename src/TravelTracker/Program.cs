@@ -8,6 +8,7 @@ using TravelTracker.Services;
 using TravelTracker.Services.Configuration;
 using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Services;
+using Microsoft.AspNetCore.DataProtection;
 using DefaultAzureCredential = AzureIdentity::Azure.Identity.DefaultAzureCredential;
 using DefaultAzureCredentialOptions = AzureIdentity::Azure.Identity.DefaultAzureCredentialOptions;
 
@@ -29,6 +30,21 @@ builder.Services.Configure<SqlServerSettings>(builder.Configuration.GetSection("
 builder.Services.Configure<AzureAIFoundrySettings>(builder.Configuration.GetSection("AzureAIFoundry"));
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddScoped<IRelativeDateResolver, RelativeDateResolver>();
+var dataProtectionBuilder = builder.Services.AddDataProtection()
+    .SetApplicationName("TravelTracker");
+var dataProtectionKeysPath = builder.Configuration["TravelAssistant:DataProtectionKeysPath"];
+var localApplicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+dataProtectionKeysPath = string.IsNullOrWhiteSpace(dataProtectionKeysPath)
+    ? Path.Combine(
+        string.IsNullOrWhiteSpace(localApplicationData)
+            ? builder.Environment.ContentRootPath
+            : localApplicationData,
+        "TravelTracker",
+        "DataProtection-Keys")
+    : dataProtectionKeysPath;
+dataProtectionBuilder.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+builder.Services.AddSingleton<IPlaceCandidateStore, PlaceCandidateStore>();
+builder.Services.AddSingleton<IPlaceLookupRateLimiter, PlaceLookupRateLimiter>();
 builder.Services.AddSingleton<ICopilotRuntimeAccessor, CopilotRuntimeAccessor>();
 var config = builder.Configuration;
 // add config to scope
@@ -128,7 +144,7 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
         Console.WriteLine($"Overwriting tenant for managed identity credentials...");
         creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
         {
-            ExcludeEnvironmentCredential =false,
+            ExcludeEnvironmentCredential = false,
             ExcludeManagedIdentityCredential = false,
             TenantId = visualStudioTenantId
         });
@@ -138,7 +154,7 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
         Console.WriteLine($"Using default tenant for managed identity credentials...");
         creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
         {
-            ExcludeEnvironmentCredential =false,
+            ExcludeEnvironmentCredential = false,
             ExcludeManagedIdentityCredential = false
         });
     }
@@ -161,6 +177,7 @@ if (sqlConfigured)
     builder.Services.AddScoped<ILocationTypeRepository, LocationTypeRepository>();
     builder.Services.AddScoped<IDestinationRepository, DestinationRepository>();
     builder.Services.AddScoped<IDestinationTypeRepository, DestinationTypeRepository>();
+    builder.Services.AddScoped<IAssistantActionRepository, AssistantActionRepository>();
 
     // Add services
     builder.Services.AddScoped<ILocationService, LocationService>();
@@ -170,9 +187,15 @@ if (sqlConfigured)
     builder.Services.AddScoped<IDataExportService, DataExportService>();
     builder.Services.AddScoped<ILocationTypeService, LocationTypeService>();
     builder.Services.AddScoped<IDestinationService, DestinationService>();
+    builder.Services.AddScoped<ITravelAssistantActionService, TravelAssistantActionService>();
+    builder.Services.AddScoped<ITravelAssistantActionConfirmationService, TravelAssistantActionConfirmationService>();
+    builder.Services.AddHostedService<AssistantActionCleanupHostedService>();
 
     // Register LocationLookupAPIService (public API fallback) with HttpClient
-    builder.Services.AddHttpClient<LocationLookupAPIService>();
+    builder.Services.AddHttpClient<LocationLookupAPIService>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(15);
+    });
 
     // Register LocationLookupService (uses Azure AI Foundry agent with API fallback)
     builder.Services.AddScoped<ILocationLookupService, LocationLookupService>();

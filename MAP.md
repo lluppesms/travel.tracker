@@ -230,6 +230,16 @@ For source, infrastructure, workflow, test, or Copilot-customization changes:
 
 ## 14.1. Copilot SDK 1.0.11 Integration Status
 
+**Phase 2: Durable Action Boundary (Completed)**
+
+- Provider-neutral assistant reads and writes are owned by `ITravelAssistantActionService` and `ITravelAssistantActionConfirmationService`. Every public operation requires a trusted `TravelAssistantUserContext`; model-visible contracts cannot select a user.
+- Place lookup now returns ranked `Found`, `Ambiguous`, or `NotFound` candidates with provider evidence, broader-query fallback, coordinate-divergence detection, cancellation, a one-second public-provider rate limit, bounded caching, and opaque 15-minute candidate IDs.
+- Assistant location search is limited to 25 compact records and excludes comments/tags. Location-type resolution is case-insensitive and reports ambiguity instead of guessing. Duplicate checks use a targeted user/name/date/city/state query.
+- Pending create-location commands are stored in `Travel.AssistantActions` as versioned canonical JSON protected with ASP.NET Core Data Protection, a SHA-256 payload hash, canonical idempotency key, rowversion, sanitized summary, expiry, and retention metadata. The key ring persists under `TravelAssistant:DataProtectionKeysPath` or the machine-local Travel Tracker application-data directory.
+- Confirmation and cancellation use a serializable SQL transaction. Confirmation locks and validates the pending row, rechecks duplicates, inserts a location linked through unique nullable `Location.AssistantActionId`, and records the nonzero location ID. Retries return the prior result; rollback clears tracked state so failed writes remain pending.
+- Location creation now propagates failures and rejects a zero persisted ID. The Locations page preserves user-facing failure handling. A hosted cleanup service expires 24-hour pending commands, clears terminal ciphertext, and removes sanitized audit rows after 90 days.
+- Phase 2 coverage lives under `src/TravelTracker.Tests/Services/`; the EF mapping and DACPAC include the action ledger and idempotency constraints.
+
 **Phase 3: Session Coordination & Non-Streaming Chat (Completed)**
 
 - **TASK-015 (CopilotHealthCheckService)**: Verified working from prior session. Validates SDK runtime accessibility via health endpoint.

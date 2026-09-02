@@ -60,4 +60,19 @@ public class TravelAssistantOptions
 
     /// <summary>Lifetime of an unconfirmed pending action before it expires.</summary>
     public int PendingActionExpiryHours { get; set; } = 24;
+
+    /// <summary>Lifetime of an opaque place candidate returned by the lookup boundary.</summary>
+    public int CandidateExpiryMinutes { get; set; } = 15;
+
+    /// <summary>Number of days sanitized terminal action audit records are retained.</summary>
+    public int ActionAuditRetentionDays { get; set; } = 90;
+
+    /// <summary>Maximum number of compact location search results exposed to the assistant.</summary>
+    public int MaxLocationSearchResults { get; set; } = 25;
+
+    /// <summary>Minimum interval between public geocoder requests.</summary>
+    public int GeocodingMinimumIntervalMilliseconds { get; set; } = 1000;
+
+    /// <summary>Optional durable Data Protection key-ring directory.</summary>
+    public string DataProtectionKeysPath { get; set; } = string.Empty;
 }

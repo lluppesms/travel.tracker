@@ -24,5 +24,6 @@
     <Build Include="Travel\Tables\DestinationTypes.sql" />
     <Build Include="Travel\Tables\Destinations.sql" />
     <Build Include="Travel\Tables\Users.sql" />
+    <Build Include="Travel\Tables\AssistantActions.sql" />
   </ItemGroup>
 </Project>

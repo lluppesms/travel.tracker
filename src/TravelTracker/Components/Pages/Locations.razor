@@ -740,7 +740,12 @@
             else
             {
                 var result = await LocationService.CreateLocationAsync(currentLocation);
-                successMessage = result == null ? "Location add failed!" : "Location added successfully!";
+                if (result.Id <= 0)
+                {
+                    throw new InvalidOperationException("The location was not persisted.");
+                }
+
+                successMessage = "Location added successfully!";
             }
 
             HideLocationForm();

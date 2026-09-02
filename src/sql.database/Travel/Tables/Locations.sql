@@ -9,6 +9,7 @@ CREATE TABLE [Travel].[Locations](
 	[Name] [nvarchar](200) NOT NULL,
 	[TripName] [nvarchar](200) NULL,
 	[LocationTypeId] [int] NULL,
+	[AssistantActionId] [uniqueidentifier] NULL,
 	[LocationType] [nvarchar](100) NOT NULL,
 	[Address] [nvarchar](300) NOT NULL,
 	[City] [nvarchar](100) NOT NULL,
@@ -48,10 +49,26 @@ CREATE NONCLUSTERED INDEX [IX_Locations_UserId] ON [Travel].[Locations]
 ([UserId] ASC)
 GO
 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_Locations_AssistantActionId] ON [Travel].[Locations]
+([AssistantActionId] ASC)
+WHERE [AssistantActionId] IS NOT NULL
+GO
+
+CREATE NONCLUSTERED INDEX [IX_Locations_UserId_StartDate_Name] ON [Travel].[Locations]
+([UserId] ASC, [StartDate] ASC, [Name] ASC)
+GO
+
 -- Foreign Keys
 ALTER TABLE [Travel].[Locations]  WITH CHECK ADD  CONSTRAINT [FK_Locations_LocationTypes_LocationTypeId] FOREIGN KEY([LocationTypeId])
 REFERENCES [Travel].[LocationTypes] ([Id])
 GO
 
 ALTER TABLE [Travel].[Locations] CHECK CONSTRAINT [FK_Locations_LocationTypes_LocationTypeId]
+GO
+
+ALTER TABLE [Travel].[Locations] WITH CHECK ADD CONSTRAINT [FK_Locations_AssistantActions_AssistantActionId]
+FOREIGN KEY([AssistantActionId]) REFERENCES [Travel].[AssistantActions] ([Id]) ON DELETE SET NULL
+GO
+
+ALTER TABLE [Travel].[Locations] CHECK CONSTRAINT [FK_Locations_AssistantActions_AssistantActionId]
 GO

@@ -1,6 +1,7 @@
 using Moq;
 using TravelTracker.Data.Models;
 using TravelTracker.Data.Repositories;
+using TravelTracker.Services.Models;
 using TravelTracker.Services.Services;
 
 namespace TravelTracker.Tests.Services;
@@ -125,5 +126,36 @@ public class LocationTypeServiceTests
         // Assert
         Assert.False(result);
         mockRepository.Verify(repo => repo.GetByNameAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ResolveLocationTypeAsync_WhenCaseDiffers_ReturnsExactConfiguredType()
+    {
+        var repository = new Mock<ILocationTypeRepository>();
+        repository.Setup(value => value.GetAllAsync())
+            .ReturnsAsync([new LocationType { Id = 1, Name = "RV Park" }]);
+        var service = new LocationTypeService(repository.Object);
+
+        var result = await service.ResolveLocationTypeAsync("rv park");
+
+        Assert.Equal(LocationTypeResolutionStatus.Found, result.Status);
+        Assert.Equal("RV Park", result.LocationType?.Name);
+    }
+
+    [Fact]
+    public async Task ResolveLocationTypeAsync_WhenPartialMatchesMultipleTypes_ReturnsAmbiguous()
+    {
+        var repository = new Mock<ILocationTypeRepository>();
+        repository.Setup(value => value.GetAllAsync())
+            .ReturnsAsync(
+            [
+                new LocationType { Id = 1, Name = "National Park" },
+                new LocationType { Id = 2, Name = "State Park" }
+            ]);
+        var service = new LocationTypeService(repository.Object);
+
+        var result = await service.ResolveLocationTypeAsync("Park");
+
+        Assert.Equal(LocationTypeResolutionStatus.Ambiguous, result.Status);
     }
 }

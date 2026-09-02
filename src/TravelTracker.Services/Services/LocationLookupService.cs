@@ -3,6 +3,7 @@ using Azure.AI.Extensions.OpenAI;
 using Azure.AI.Projects;
 //using Azure.AI.Projects.OpenAI;
 using OpenAI.Responses;
+using TravelTracker.Services.Models;
 
 namespace TravelTracker.Services.Services;
 
@@ -20,8 +21,15 @@ public class LocationLookupService(
     public bool IsConfigured => !string.IsNullOrEmpty(_settings.ProjectEndpoint)
                              && !string.IsNullOrEmpty(_settings.AgentName);
 
-    public async Task<LocationLookupResult> LookupLocationAsync(string name, string address, string city, string state, string zipCode)
+    public async Task<LocationLookupResult> LookupLocationAsync(
+        string name,
+        string address,
+        string city,
+        string state,
+        string zipCode,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         _logger.LogInformation(
             "LocationLookupService called with Name='{Name}', Address='{Address}', City='{City}', State='{State}', ZipCode='{ZipCode}'",
             name, address, city, state, zipCode);
@@ -29,7 +37,7 @@ public class LocationLookupService(
         if (!IsConfigured)
         {
             _logger.LogInformation("AI Foundry is not configured, using public API fallback.");
-            return await _apiFallback.LookupLocationAsync(name, address, city, state, zipCode);
+            return await _apiFallback.LookupLocationAsync(name, address, city, state, zipCode, cancellationToken);
         }
 
         try
@@ -52,12 +60,17 @@ public class LocationLookupService(
             _logger.LogInformation("AI Foundry prompt: {Prompt}", prompt);
 
             var response = await responseClient.CreateResponseAsync(prompt, null);
+            cancellationToken.ThrowIfCancellationRequested();
 
             var outputText = response.Value.GetOutputText();
 
             _logger.LogDebug("AI Foundry response: {Response}", outputText);
 
             return ParseAgentResponse(outputText);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -70,9 +83,19 @@ public class LocationLookupService(
                 state,
                 zipCode);
             _logger.LogWarning("AI lookup failed, falling back to public API lookup.");
-            return await _apiFallback.LookupLocationAsync(name, address, city, state, zipCode);
+            return await _apiFallback.LookupLocationAsync(name, address, city, state, zipCode, cancellationToken);
         }
     }
+
+    public Task<PlaceLookupResult> LookupPlaceAsync(
+        PlaceLookupRequest request,
+        CancellationToken cancellationToken = default) =>
+        _apiFallback.LookupPlaceAsync(request, cancellationToken);
+
+    public Task<PlaceCandidate?> ResolveCandidateAsync(
+        string candidateId,
+        CancellationToken cancellationToken = default) =>
+        _apiFallback.ResolveCandidateAsync(candidateId, cancellationToken);
 
     private static LocationLookupResult ParseAgentResponse(string responseText)
     {

@@ -27,6 +27,11 @@ public class Location
     [ForeignKey("LocationTypeId")]
     public LocationType? LocationTypeNavigation { get; set; }
 
+    public Guid? AssistantActionId { get; set; }
+
+    [ForeignKey(nameof(AssistantActionId))]
+    public AssistantAction? AssistantAction { get; set; }
+
     [MaxLength(100)]
     public string LocationType { get; set; } = string.Empty;
 

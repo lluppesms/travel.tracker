@@ -21,6 +21,24 @@ public class TravelTrackerDbContextSchemaTests
         AssertEntitySchema<LocationType>(context);
         AssertEntitySchema<Destination>(context);
         AssertEntitySchema<DestinationType>(context);
+        AssertEntitySchema<AssistantAction>(context);
+    }
+
+    [Fact]
+    public void Model_ConfiguresAssistantActionConcurrencyAndUniqueLocationLink()
+    {
+        var options = new DbContextOptionsBuilder<TravelTrackerDbContext>()
+            .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=TravelTrackerSchemaTests;Trusted_Connection=True;TrustServerCertificate=True")
+            .Options;
+
+        using var context = new TravelTrackerDbContext(options);
+        var action = context.Model.FindEntityType(typeof(AssistantAction));
+        var location = context.Model.FindEntityType(typeof(Location));
+
+        Assert.True(action!.FindProperty(nameof(AssistantAction.RowVersion))!.IsConcurrencyToken);
+        Assert.Contains(location!.GetIndexes(), index =>
+            index.IsUnique
+            && index.Properties.Single().Name == nameof(Location.AssistantActionId));
     }
 
     private static void AssertEntitySchema<TEntity>(TravelTrackerDbContext context)

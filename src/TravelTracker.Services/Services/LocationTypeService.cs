@@ -1,3 +1,5 @@
+using TravelTracker.Services.Models;
+
 namespace TravelTracker.Services.Services;
 
 public class LocationTypeService : ILocationTypeService
@@ -31,5 +33,55 @@ public class LocationTypeService : ILocationTypeService
 
         var locationType = await _locationTypeRepository.GetByNameAsync(name);
         return locationType != null;
+    }
+
+    public async Task<LocationTypeResolutionResult> ResolveLocationTypeAsync(
+        string name,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return new LocationTypeResolutionResult { Status = LocationTypeResolutionStatus.NotFound };
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var normalized = name.Trim();
+        var types = (await _locationTypeRepository.GetAllAsync()).ToArray();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var exact = types.SingleOrDefault(
+            type => string.Equals(type.Name, normalized, StringComparison.OrdinalIgnoreCase));
+        if (exact is not null)
+        {
+            return new LocationTypeResolutionResult
+            {
+                Status = LocationTypeResolutionStatus.Found,
+                LocationType = exact,
+                Matches = [exact.Name]
+            };
+        }
+
+        var partial = types
+            .Where(type => type.Name.Contains(normalized, StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains(type.Name, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(type => type.Name, StringComparer.OrdinalIgnoreCase)
+            .Take(5)
+            .ToArray();
+
+        return partial.Length switch
+        {
+            0 => new LocationTypeResolutionResult { Status = LocationTypeResolutionStatus.NotFound },
+            1 => new LocationTypeResolutionResult
+            {
+                Status = LocationTypeResolutionStatus.Found,
+                LocationType = partial[0],
+                Matches = [partial[0].Name]
+            },
+            _ => new LocationTypeResolutionResult
+            {
+                Status = LocationTypeResolutionStatus.Ambiguous,
+                Matches = partial.Select(type => type.Name).ToArray()
+            }
+        };
     }
 }
