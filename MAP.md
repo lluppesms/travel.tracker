@@ -181,6 +181,8 @@ The Azure DevOps readme contains copied setup values and should be verified agai
 
 `src/sql.database/sql.database.sqlproj` is the deployment schema authority. Objects under `src/sql.database/Travel/` define the `Travel` schema. Use its pre/post-deployment scripts and DACPAC workflows for deployed schema changes.
 
+`src/sql.database/sql.database.sqlproj` is pinned to `Microsoft.Build.Sql` 2.0.0 for current Visual Studio SSDT task compatibility. `src/sql.database/Directory.Build.props` sets runtime-specific intermediate output (`obj/$(MSBuildRuntimeType)/`) so command-line and Visual Studio/MSBuild builds do not overwrite each other's restore assets.
+
 The root `Database/` directory contains older manual scripts, comparison files, and source data. Do not assume those files supersede the SQL project.
 
 For a schema change:
