@@ -18,6 +18,16 @@ public interface ITravelAssistantActionService
         int limit = 25,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Gets the configured location types as compact model-visible records.
+    /// </summary>
+    /// <param name="user">Trusted authenticated user context.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The valid location type names and descriptions.</returns>
+    Task<IReadOnlyList<AssistantLocationTypeResult>> GetLocationTypesAsync(
+        TravelAssistantUserContext user,
+        CancellationToken cancellationToken = default);
+
     Task<LocationTypeResolutionResult> ResolveLocationTypeAsync(
         TravelAssistantUserContext user,
         string locationTypeName,

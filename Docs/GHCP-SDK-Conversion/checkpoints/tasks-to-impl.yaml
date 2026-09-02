@@ -61,3 +61,35 @@ verification:
     failed: 0
     skipped: 0
   foundry_no_tool_smoke: requires_environment
+---
+checkpoint: tasks-to-implementation
+phase: 4
+goal: GOAL-004
+completed_at: 2026-09-01
+tasks:
+  - id: TASK-019
+    status: completed
+    requirements: [REQ-005, REQ-006, REQ-009, REQ-011, SEC-001, SEC-002, SEC-003]
+  - id: TASK-020
+    status: completed
+    requirements: [REQ-004, SEC-004, OPS-002]
+  - id: TASK-021
+    status: completed
+    requirements: [SEC-006, SEC-011]
+  - id: TASK-022
+    status: completed
+    requirements: [SEC-010, SEC-011, OPS-005]
+  - id: TASK-023
+    status: completed
+    requirements: [SEC-001, SEC-002, SEC-003, SEC-004, SEC-006, SEC-009, SEC-010, SEC-011]
+verification:
+  solution_build: passed
+  dacpac_build: passed
+  release_publish: passed
+  tool_inventory_count: 4
+  sdk_assembly_count: 1
+  platform_cli_count: 1
+  tests:
+    passed: 171
+    failed: 0
+    skipped: 0

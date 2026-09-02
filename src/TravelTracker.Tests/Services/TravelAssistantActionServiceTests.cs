@@ -16,6 +16,47 @@ namespace TravelTracker.Tests.Services;
 public class TravelAssistantActionServiceTests
 {
     [Fact]
+    public async Task GetLocationTypesAsync_ReturnsOrderedBoundedModelSafeResults()
+    {
+        var types = new Mock<ILocationTypeService>();
+        types.Setup(service => service.GetAllLocationTypesAsync())
+            .ReturnsAsync(
+                Enumerable.Range(0, 101)
+                    .Reverse()
+                    .Select(index => new LocationType
+                    {
+                        Id = index + 1,
+                        Name = $"Type {index:D3}",
+                        Description = $"Description {index:D3}"
+                    }));
+        var service = CreateService(locationTypeService: types.Object);
+
+        var result = await service.GetLocationTypesAsync(
+            new TravelAssistantUserContext(7, "external", "User", "user@example.com"));
+
+        Assert.Equal(100, result.Count);
+        Assert.Equal("Type 000", result[0].Name);
+        Assert.Equal("Type 099", result[^1].Name);
+        Assert.Equal("Description 000", result[0].Description);
+    }
+
+    [Fact]
+    public async Task GetLocationTypesAsync_WhenCanceled_DoesNotQueryTypes()
+    {
+        var types = new Mock<ILocationTypeService>();
+        var service = CreateService(locationTypeService: types.Object);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.GetLocationTypesAsync(
+                new TravelAssistantUserContext(7, "external", "User", "user@example.com"),
+                cancellation.Token));
+
+        types.Verify(service => service.GetAllLocationTypesAsync(), Times.Never);
+    }
+
+    [Fact]
     public async Task PrepareAddLocationAsync_WhenEquivalentRequestRepeats_ReturnsSameEncryptedAction()
     {
         var user = new TravelAssistantUserContext(7, "external", "User", "user@example.com");
@@ -136,4 +177,17 @@ public class TravelAssistantActionServiceTests
             Score = 1,
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(15)
         };
+
+    private static TravelAssistantActionService CreateService(
+        ILocationTypeService? locationTypeService = null) =>
+        new(
+            Mock.Of<ILocationLookupService>(),
+            Mock.Of<ILocationService>(),
+            locationTypeService ?? Mock.Of<ILocationTypeService>(),
+            Mock.Of<IRelativeDateResolver>(),
+            Mock.Of<IAssistantActionRepository>(),
+            new EphemeralDataProtectionProvider(),
+            TimeProvider.System,
+            Options.Create(new TravelAssistantOptions()),
+            NullLogger<TravelAssistantActionService>.Instance);
 }

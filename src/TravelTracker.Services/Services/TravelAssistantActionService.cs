@@ -68,6 +68,27 @@ public sealed class TravelAssistantActionService : ITravelAssistantActionService
         return _locationService.SearchForAssistantAsync(user.UserId, query, boundedLimit, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<AssistantLocationTypeResult>> GetLocationTypesAsync(
+        TravelAssistantUserContext user,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var locationTypes = await _locationTypeService.GetAllLocationTypesAsync().ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return locationTypes
+            .OrderBy(locationType => locationType.Name, StringComparer.OrdinalIgnoreCase)
+            .Take(100)
+            .Select(locationType => new AssistantLocationTypeResult
+            {
+                Name = locationType.Name,
+                Description = locationType.Description
+            })
+            .ToArray();
+    }
+
     public Task<LocationTypeResolutionResult> ResolveLocationTypeAsync(
         TravelAssistantUserContext user,
         string locationTypeName,

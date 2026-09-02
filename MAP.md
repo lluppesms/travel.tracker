@@ -248,10 +248,20 @@ For source, infrastructure, workflow, test, or Copilot-customization changes:
 - `CopilotSessionCoordinator` owns a global thread namespace, deterministic non-identifying SDK session IDs, immutable user ownership, per-user and instance quotas, idle eviction, and atomic activity/turn tracking. Unknown, stale, and cross-user thread requests are rejected rather than silently recreated.
 - Per-session `SemaphoreSlim` leases serialize turns. Queue waiting and the configured execution timeout are separate, and explicit deletion waits for an active turn before disposing the session and requesting SDK deletion.
 - Session configuration is non-streaming and disables infinite sessions, memory, the session store, configuration and instruction discovery, file hooks, host Git operations, skills, and embedding retrieval. Token and embedding caches are in memory, and `AvailableTools` contains only source-qualified custom travel tools.
-- `CopilotTravelToolFactory` creates a fresh asynchronous DI scope per invocation and binds trusted coordinator-owned user/thread context. The allowlist currently exposes location search, location-type resolution, place lookup, and preparation of a durable pending add-location action; confirmation remains outside model control.
+- `CopilotTravelToolFactory` creates a fresh asynchronous DI scope per invocation and binds trusted coordinator-owned user/thread context. The allowlist contains exactly `search_user_locations`, `get_location_types`, `lookup_place`, and `prepare_add_visited_location`; confirmation remains outside model control.
 - `CopilotChatbotService` implements the provider-neutral `IChatbotService`, sends through `SendAndWaitAsync`, supplies server-authoritative time/timezone context, and maps cancellation, stale-session, and runtime failures to stable responses without exposing exception text.
 - Startup cleanup is limited to `COPILOT_HOME/session-state`; size trimming preserves unrelated runtime-owned files. `TravelAssistant:MaxCopilotHomeBytes` defaults to 100 MB.
 - Focused Phase 3 tests cover session reuse and isolation, quotas, serialization, timeout behavior, hardening, eviction/deletion, cleanup scope, real provider flow through the SDK boundary, time context, and sanitized failures. Release publish verifies a single `GitHub.Copilot.SDK.dll` and platform-native Copilot CLI. A live Foundry smoke requires deployment-specific credentials and configuration.
+
+**Phase 4: Restricted Travel Tools (Completed)**
+
+- `CopilotTravelToolNames` is the canonical source for the exact four-tool inventory used by the SDK allowlist, factory, permission handler, hooks, and tests. No shell, filesystem, web-fetch, process, code-editing, or arbitrary host tool is exposed.
+- The three read tools skip SDK permission prompts. `prepare_add_visited_location` requires the custom deny-by-default permission handler, which returns an approve-once decision only for that preparation tool. It can create a pending action but cannot confirm or commit it.
+- Model-visible schemas exclude user identity, credentials, connection strings, authorization decisions, and canonical commands. The preparation schema validates ratings from 0 through 5; application services remain authoritative for all field, candidate, date, location-type, and ownership validation.
+- `get_location_types` returns at most 100 ordered name/description records. User location search remains capped at 25 compact records, and place lookup returns bounded opaque candidates.
+- Each invocation resolves and asynchronously disposes a fresh DI scope. Tool closures capture only immutable coordinator-owned `TravelAssistantUserContext` and thread ID, preventing model-selected or cross-user identity.
+- Pre-, post-, and failure hooks record only canonical tool name, correlation ID, elapsed duration, controlled result class, and a validated opaque action ID. Raw prompts, tool arguments/results, errors, tokens, comments, addresses, working directories, encrypted payloads, and reasoning are not logged.
+- Phase 4 tests under `src/TravelTracker.Tests/Services/` verify the exact inventory and safe schemas, permission metadata and unknown-request denial, immutable context, fresh scopes, injection text as inert data, redacted telemetry, validated action IDs, and bounded ordered location types.
 
 ## 15. High-Value References
 

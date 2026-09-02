@@ -175,13 +175,13 @@ Completion criteria: restore resolves exactly `1.0.11`; Release publish contains
 
 | Task | Description | Completed | Date |
 |---|---|---|---|
-| TASK-019 | Define `search_user_locations`, `get_location_types`, `lookup_place`, and `prepare_add_visited_location` with `CopilotTool.DefineTool`, typed results, and one names class. | | |
-| TASK-020 | Resolve a fresh DI scope per call and attach immutable coordinator-owned user/thread context. Never capture scoped EF/services in singleton/session objects. | | |
-| TASK-021 | Set `SkipPermission = true` only for reads. A custom handler may approve preparation once; reject unknown requests. Preparation permission never authorizes confirmation. | | |
-| TASK-022 | Add redacted pre/post/failure hooks for tool, action ID, duration, result class, and correlation ID. Never capture prompt, token, comments, address, encrypted payload, or reasoning. | | |
-| TASK-023 | Add adversarial tests for host tools, secrets, injection in stored data, and other users. Assert exactly four schemas and no user/command/secret fields. | | |
+| TASK-019 | Define `search_user_locations`, `get_location_types`, `lookup_place`, and `prepare_add_visited_location` with `CopilotTool.DefineTool`, typed results, and one names class. | ✅ | 2026-09-01 |
+| TASK-020 | Resolve a fresh DI scope per call and attach immutable coordinator-owned user/thread context. Never capture scoped EF/services in singleton/session objects. | ✅ | 2026-09-01 |
+| TASK-021 | Set `SkipPermission = true` only for reads. A custom handler may approve preparation once; reject unknown requests. Preparation permission never authorizes confirmation. | ✅ | 2026-09-01 |
+| TASK-022 | Add redacted pre/post/failure hooks for tool, action ID, duration, result class, and correlation ID. Never capture prompt, token, comments, address, encrypted payload, or reasoning. | ✅ | 2026-09-01 |
+| TASK-023 | Add adversarial tests for host tools, secrets, injection in stored data, and other users. Assert exactly four schemas and no user/command/secret fields. | ✅ | 2026-09-01 |
 
-Completion criteria: inventory is exactly four tools; reads are bounded; stored data cannot alter policy; prohibited requests are rejected; no model schema can select a user or commit an action.
+Completion criteria: inventory is exactly four tools; reads are bounded; stored data cannot alter policy; prohibited requests are rejected; no model schema can select a user or commit an action. Completed with contract and adversarial coverage, 171 passing tests, successful solution/DACPAC builds, and a successful Release publish.
 
 ### Implementation Phase 5 - Deliver Confirmation-Only Chat
 

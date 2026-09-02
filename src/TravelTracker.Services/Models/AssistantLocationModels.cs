@@ -11,6 +11,18 @@ public sealed record AssistantLocationSearchResult
     public string TrustLabel { get; init; } = "untrusted_stored_text";
 }
 
+/// <summary>
+/// Compact model-visible representation of a configured location type.
+/// </summary>
+public sealed record AssistantLocationTypeResult
+{
+    /// <summary>Gets the configured location type name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>Gets the configured location type description.</summary>
+    public required string Description { get; init; }
+}
+
 public enum LocationTypeResolutionStatus
 {
     Found,

@@ -72,3 +72,47 @@ environment_validation:
   reason: requires a configured Foundry endpoint, deployment, and managed-identity credential
 warnings:
   - Release compilation reports pre-existing nullable warnings in unrelated files.
+---
+batch: ghcp-sdk-conversion-phase-4
+status: completed
+completed_at: 2026-09-01
+goal: GOAL-004
+required_endpoints: []
+completed_tasks:
+  - TASK-019
+  - TASK-020
+  - TASK-021
+  - TASK-022
+  - TASK-023
+outcomes:
+  - exactly four canonical custom travel tools with typed model contracts
+  - immutable coordinator-owned user and thread binding with a fresh DI scope per invocation
+  - read-only permission bypass and approve-once preparation permission
+  - deny-by-default handling for unknown permission and tool requests
+  - redacted lifecycle hooks with correlation, duration, result class, and validated action ID
+  - adversarial coverage for unsafe schemas, host tools, secrets, injection text, and cross-user context
+  - ordered bounded location-type results and rating constraints aligned to application validation
+validation:
+  - command: dotnet build .\src\TravelTracker.sln --no-restore
+    result: passed
+    warnings: 0
+    errors: 0
+  - command: dotnet build .\src\sql.database\sql.database.sqlproj --no-restore
+    result: passed
+    warnings: 0
+    errors: 0
+  - command: dotnet test .\src\TravelTracker.Tests\TravelTracker.Tests.csproj --no-build
+    result: passed
+    passed: 171
+    failed: 0
+    skipped: 0
+  - command: dotnet publish .\src\TravelTracker\TravelTracker.csproj --no-restore -c Release
+    result: passed
+    verified_assets:
+      sdk_assembly_count: 1
+      platform_cli_count: 1
+  - command: editor diagnostics for Phase 4 files
+    result: passed
+    errors: 0
+warnings:
+  - Release compilation reports pre-existing nullable warnings in unrelated files.

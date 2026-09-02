@@ -60,13 +60,10 @@ public sealed class CopilotSessionCoordinator(
             var sessionId = CreateSessionId(user.UserId, threadId);
             var config = CreateSessionConfig(sessionId);
             config.Tools = toolFactory.CreateTools(user, threadId);
-            config.AvailableTools =
-            [
-                "custom:search_user_locations",
-                "custom:resolve_location_type",
-                "custom:lookup_place",
-                "custom:prepare_add_visited_location"
-            ];
+            config.AvailableTools = CopilotTravelToolNames.All
+                .Select(toolName => $"custom:{toolName}")
+                .ToArray();
+            toolFactory.ConfigureSession(config);
             var handle = await runtimeAccessor.CreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
             var now = timeProvider.GetUtcNow();
             var session = new CopilotSessionInfo
