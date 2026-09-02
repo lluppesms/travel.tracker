@@ -82,6 +82,12 @@
                                         }
                                     </ul>
                                 }
+                                @if (msg.Usage is not null)
+                                {
+                                    <div class="chat-usage-info mt-2" aria-label="Assistant usage diagnostics">
+                                        @FormatUsage(msg.Usage)
+                                    </div>
+                                }
                             </div>
                         </div>
                     }
@@ -215,6 +221,7 @@
         public bool IsUser { get; set; }
         public DateTime Timestamp { get; set; }
         public IReadOnlyList<ToolStatus> ToolStatuses { get; set; } = [];
+        public ChatUsageInfo? Usage { get; set; }
     }
 
     private sealed class PendingActionViewModel(AssistantActionSummary action)
@@ -338,7 +345,8 @@
                 Content = result.Message,
                 IsUser = false,
                 Timestamp = result.LatestMessageDate?.UtcDateTime ?? DateTime.UtcNow,
-                ToolStatuses = result.ToolStatuses
+                ToolStatuses = result.ToolStatuses,
+                Usage = result.Usage
             });
 
             if (result.PendingAction is not null)
@@ -488,6 +496,32 @@
 
     private static string FormatUtcAsLocal(DateTime utcDateTime) =>
         DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc).ToLocalTime().ToString("g");
+
+    private static string FormatUsage(ChatUsageInfo usage)
+    {
+        var parts = new List<string>
+        {
+            $"⏱ {usage.DurationSeconds:0.0}s",
+            $"🔄 {usage.TurnCount} turn{(usage.TurnCount == 1 ? "" : "s")}"
+        };
+
+        if (usage.InputTokens is not null || usage.OutputTokens is not null)
+        {
+            parts.Add($"🔢 {usage.InputTokens ?? 0:N0} in / {usage.OutputTokens ?? 0:N0} out tokens");
+        }
+
+        if (usage.CacheReadTokens is > 0 || usage.CacheWriteTokens is > 0)
+        {
+            parts.Add($"💾 {usage.CacheReadTokens ?? 0:N0} cache read / {usage.CacheWriteTokens ?? 0:N0} cache write");
+        }
+
+        if (usage.TotalCost is not null)
+        {
+            parts.Add($"💳 {usage.TotalCost:0.####} AI Credits");
+        }
+
+        return string.Join(" · ", parts);
+    }
 
     private async Task ScrollToBottom()
     {

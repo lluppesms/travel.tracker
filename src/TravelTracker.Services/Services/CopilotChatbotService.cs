@@ -1,4 +1,9 @@
+using System.Diagnostics;
+
 using Microsoft.Extensions.Options;
+
+using TravelTracker.Data.Repositories;
+using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Models;
 
 namespace TravelTracker.Services.Services;
@@ -9,6 +14,8 @@ namespace TravelTracker.Services.Services;
 public sealed class CopilotChatbotService(
     ICopilotSessionCoordinator sessionCoordinator,
     ITravelAssistantActionService actionService,
+    IUserService userService,
+    ILocationSummaryRepository locationSummaryRepository,
     IOptionsMonitor<TravelAssistantOptions> assistantOptions,
     ILogger<CopilotChatbotService> logger,
     TimeProvider timeProvider) : IChatbotService
@@ -33,7 +40,12 @@ public sealed class CopilotChatbotService(
                 effectiveThreadId);
         }
 
-        var user = new TravelAssistantUserContext(userId, string.Empty, string.Empty, string.Empty);
+        var appUser = await userService.GetUserByIdAsync(userId).ConfigureAwait(false);
+        var user = new TravelAssistantUserContext(
+            userId,
+            appUser?.EntraIdUserId ?? string.Empty,
+            appUser?.Username ?? string.Empty,
+            appUser?.Email ?? string.Empty);
         try
         {
             try
@@ -132,13 +144,17 @@ public sealed class CopilotChatbotService(
             user,
             cancellationToken).ConfigureAwait(false);
 
+        var prompt = await BuildTurnPromptAsync(userMessage, user, cancellationToken).ConfigureAwait(false);
+
         var timeout = TimeSpan.FromSeconds(assistantOptions.CurrentValue.TurnTimeoutSeconds);
-        var response = await session.Session.SendAndWaitAsync(
-            BuildTurnPrompt(userMessage),
+        var stopwatch = Stopwatch.StartNew();
+        var turnResponse = await session.Session.SendAndWaitAsync(
+            prompt,
             timeout,
             turn.CancellationToken).ConfigureAwait(false);
+        stopwatch.Stop();
 
-        if (string.IsNullOrWhiteSpace(response))
+        if (string.IsNullOrWhiteSpace(turnResponse.Content))
         {
             return ChatTurnResult.Failure(
                 ChatErrorCodes.ProviderUnavailable,
@@ -151,10 +167,21 @@ public sealed class CopilotChatbotService(
             .ConfigureAwait(false);
         var pendingAction = pendingActions.Count == 0 ? null : ToChatActionSummary(pendingActions[0]);
         var now = timeProvider.GetUtcNow();
+        var usage = new ChatUsageInfo
+        {
+            DurationSeconds = stopwatch.Elapsed.TotalSeconds,
+            TurnCount = session.TurnCount,
+            ModelCallCount = turnResponse.ModelCallCount,
+            InputTokens = turnResponse.InputTokens,
+            OutputTokens = turnResponse.OutputTokens,
+            CacheReadTokens = turnResponse.CacheReadTokens,
+            CacheWriteTokens = turnResponse.CacheWriteTokens,
+            TotalCost = turnResponse.TotalCost
+        };
 
         return threadReplaced
-            ? ChatTurnResult.ThreadReplaced(response.Trim(), threadId, now, pendingAction: pendingAction)
-            : ChatTurnResult.Success(response.Trim(), threadId, now, pendingAction: pendingAction);
+            ? ChatTurnResult.ThreadReplaced(turnResponse.Content.Trim(), threadId, now, pendingAction: pendingAction, usage: usage)
+            : ChatTurnResult.Success(turnResponse.Content.Trim(), threadId, now, pendingAction: pendingAction, usage: usage);
     }
 
     private static ChatActionSummary ToChatActionSummary(AssistantActionSummary action) =>
@@ -167,22 +194,53 @@ public sealed class CopilotChatbotService(
             ExpiresAt = new DateTimeOffset(DateTime.SpecifyKind(action.ExpiresAtUtc, DateTimeKind.Utc))
         };
 
-    private string BuildTurnPrompt(string userMessage)
+    private async Task<string> BuildTurnPromptAsync(
+        string userMessage,
+        TravelAssistantUserContext user,
+        CancellationToken cancellationToken)
     {
         var options = assistantOptions.CurrentValue;
         var timeZone = ResolveTimeZone(options.TimeZoneId);
         var localNow = TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), timeZone);
+        var locationSummary = await GetLocationSummaryAsync(user, cancellationToken).ConfigureAwait(false);
 
         return $"""
             Server-authoritative context:
             Current local date and time: {localNow:O}
             Time zone: {timeZone.Id}
 
+            Traveler data summary (authoritative; always current as of this turn):
+            {locationSummary}
+
             Untrusted user message:
             <user_message>
             {userMessage}
             </user_message>
             """;
+    }
+
+    private async Task<string> GetLocationSummaryAsync(TravelAssistantUserContext user, CancellationToken cancellationToken)
+    {
+        var userName = string.IsNullOrWhiteSpace(user.Email) ? user.DisplayName : user.Email;
+        if (string.IsNullOrWhiteSpace(userName))
+        {
+            return "(No traveler data summary available.)";
+        }
+
+        try
+        {
+            var summary = await locationSummaryRepository
+                .GetLocationSummaryTextAsync(userName, cancellationToken)
+                .ConfigureAwait(false);
+            return string.IsNullOrWhiteSpace(summary)
+                ? "(No traveler data summary available.)"
+                : summary;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(exception, "Unable to load location summary for user {UserId}.", user.UserId);
+            return "(No traveler data summary available.)";
+        }
     }
 
     private static TimeZoneInfo ResolveTimeZone(string timeZoneId)

@@ -179,6 +179,7 @@ if (sqlConfigured)
     builder.Services.AddScoped<IDestinationRepository, DestinationRepository>();
     builder.Services.AddScoped<IDestinationTypeRepository, DestinationTypeRepository>();
     builder.Services.AddScoped<IAssistantActionRepository, AssistantActionRepository>();
+    builder.Services.AddScoped<ILocationSummaryRepository, LocationSummaryRepository>();
 
     // Add services
     builder.Services.AddScoped<ILocationService, LocationService>();

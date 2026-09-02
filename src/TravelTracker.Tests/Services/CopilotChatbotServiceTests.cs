@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using TravelTracker.Data.Configuration;
+using TravelTracker.Data.Models;
 using TravelTracker.Data.Repositories;
 using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Models;
@@ -116,9 +117,17 @@ public class CopilotChatbotServiceTests
                     It.IsAny<string?>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync([]);
+            UserService
+                .Setup(service => service.GetUserByIdAsync(It.IsAny<int>()))
+                .ReturnsAsync(new User { Id = 7, Username = "traveler", Email = "traveler@example.com" });
+            LocationSummaryRepository
+                .Setup(repository => repository.GetLocationSummaryTextAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("## Locations_Visited\ncity=Somewhere");
             Service = new CopilotChatbotService(
                 coordinator,
                 ActionService.Object,
+                UserService.Object,
+                LocationSummaryRepository.Object,
                 monitor.Object,
                 NullLogger<CopilotChatbotService>.Instance,
                 TimeProvider.System);
@@ -126,6 +135,8 @@ public class CopilotChatbotServiceTests
 
         public RecordingSessionHandle Handle { get; } = new();
         public Mock<ITravelAssistantActionService> ActionService { get; } = new();
+        public Mock<IUserService> UserService { get; } = new();
+        public Mock<ILocationSummaryRepository> LocationSummaryRepository { get; } = new();
         public CopilotChatbotService Service { get; }
     }
 
@@ -135,12 +146,21 @@ public class CopilotChatbotServiceTests
         public string LastPrompt { get; private set; } = string.Empty;
         public Exception? Exception { get; set; }
 
-        public Task<string?> SendAndWaitAsync(string prompt, TimeSpan timeout, CancellationToken cancellationToken = default)
+        public Task<CopilotTurnResponse> SendAndWaitAsync(string prompt, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             LastPrompt = prompt;
             return Exception is null
-                ? Task.FromResult<string?>("Safe response")
-                : Task.FromException<string?>(Exception);
+                ? Task.FromResult(new CopilotTurnResponse
+                {
+                    Content = "Safe response",
+                    ModelCallCount = 1,
+                    InputTokens = 10,
+                    OutputTokens = 5,
+                    CacheReadTokens = 0,
+                    CacheWriteTokens = 0,
+                    TotalCost = 0.01
+                })
+                : Task.FromException<CopilotTurnResponse>(Exception);
         }
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;

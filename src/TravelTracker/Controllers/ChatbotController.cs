@@ -247,6 +247,19 @@ public class ChatbotController : ControllerBase
                 Date = result.PendingAction.Date,
                 TypeName = result.PendingAction.TypeName,
                 ExpiresAt = result.PendingAction.ExpiresAt
+            },
+        Usage = result.Usage is null
+            ? null
+            : new ChatUsageDto
+            {
+                DurationSeconds = result.Usage.DurationSeconds,
+                TurnCount = result.Usage.TurnCount,
+                ModelCallCount = result.Usage.ModelCallCount,
+                InputTokens = result.Usage.InputTokens,
+                OutputTokens = result.Usage.OutputTokens,
+                CacheReadTokens = result.Usage.CacheReadTokens,
+                CacheWriteTokens = result.Usage.CacheWriteTokens,
+                TotalCost = result.Usage.TotalCost
             }
     };
 }

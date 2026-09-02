@@ -274,6 +274,14 @@ For source, infrastructure, workflow, test, or Copilot-customization changes:
 - Chat styling is scoped in `Chat.razor.css`, uses existing light/dark theme variables, includes visible keyboard focus, and adapts message and action layouts for narrow viewports.
 - Phase 5 tests cover authorized principal binding, action-ID-only endpoint contracts and antiforgery metadata, stable status mappings, stale-thread replacement, pending-action propagation, recovery filtering, cancellation, transaction/idempotency behavior, and a deterministic Buffalo House prepare/recover/confirm flow resolving `RV Park` on `2026-08-31`. Repeated confirmation returns the same nonzero location ID and creates exactly one location.
 
+**Phase 6: Location Summary Context and Usage Diagnostics (Completed)**
+
+- `ILocationSummaryRepository`/`LocationSummaryRepository` (`src/TravelTracker.Data/Repositories/`) execute `[Travel].[usp_LocationSummary]` via raw ADO.NET on the shared `TravelTrackerDbContext` connection, keyed by username or email. All 7 result sets are read fresh on every turn (no caching) and flattened into `## SectionName` / `column=value` text blocks for prompt injection.
+- `CopilotChatbotService.GetChatResponseAsync` resolves the calling user through `IUserService.GetUserByIdAsync` (falling back to empty identity fields only if the user record is missing) and passes real `EntraIdUserId`/`Username`/`Email` into `TravelAssistantUserContext`. `BuildTurnPromptAsync` appends the location summary text (or a graceful "no data available" placeholder on lookup failure) into the server-authoritative context section of every prompt.
+- `ICopilotSessionHandle.SendAndWaitAsync` now returns `CopilotTurnResponse`, aggregating model call count and summed input/output/cache-read/cache-write tokens and AI Credits `Cost` from every `AssistantUsageEvent` the SDK raises during the turn (subscribed via `CopilotSession.On<AssistantUsageEvent>`). `CopilotSessionHandle` wraps the experimental `AssistantUsageData.Cost` API with a scoped `#pragma warning disable GHCP001`.
+- `ChatTurnResult`/`ChatUsageInfo` carry a `Usage` payload (wall-clock `DurationSeconds` from a `Stopwatch` around the SDK call, `TurnCount` from the existing session tracking, model call count, token sums, and total cost) through to `ChatbotController.ToChatResponse`, which maps it to the new `ChatUsageDto` on `ChatResponse`.
+- `Chat.razor` renders a `chat-usage-info` diagnostics line under each assistant reply (duration, turn count, input/output tokens, cache tokens when present, and AI Credits cost), styled in `Chat.razor.css` alongside the existing tool-status list.
+
 ## 15. High-Value References
 
 - [README.md](README.md): product overview and basic setup.

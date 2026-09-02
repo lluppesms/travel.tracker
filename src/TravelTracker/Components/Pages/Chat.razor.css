@@ -36,6 +36,11 @@
     color: var(--danger-color);
 }
 
+.chat-page .chat-usage-info {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
 .loading-indicator {
     background-color: var(--bg-tertiary);
     color: var(--text-primary);

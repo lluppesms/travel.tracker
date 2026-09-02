@@ -181,8 +181,8 @@ public class CopilotSessionCoordinatorTests
         public string SessionId { get; } = sessionId;
         public bool IsDisposed { get; private set; }
 
-        public Task<string?> SendAndWaitAsync(string prompt, TimeSpan timeout, CancellationToken cancellationToken = default)
-            => Task.FromResult<string?>("response");
+        public Task<CopilotTurnResponse> SendAndWaitAsync(string prompt, TimeSpan timeout, CancellationToken cancellationToken = default)
+            => Task.FromResult(new CopilotTurnResponse { Content = "response" });
 
         public ValueTask DisposeAsync()
         {
