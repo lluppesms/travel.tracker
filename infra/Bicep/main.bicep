@@ -352,15 +352,15 @@ module webSiteModule './modules/webapp/website.bicep' = if (deployWebAppEffectiv
       TravelAssistant__MaxLocationSearchResults: string(travelAssistantMaxLocationSearchResults)
       TravelAssistant__GeocodingMinimumIntervalMilliseconds: string(travelAssistantGeocodingMinimumIntervalMilliseconds)
       TravelAssistant__DataProtectionKeysPath: travelAssistantDataProtectionKeysPath
-      AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
-      AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
-      AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
-      AppSettings__AzureOpenAI__Chat__MaxTokens: azureOpenAIChatMaxTokens
-      AppSettings__AzureOpenAI__Chat__Temperature: azureOpenAIChatTemperature
-      AppSettings__AzureOpenAI__Chat__TopP: azureOpenAIChatTopP
-      AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
-      AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
-      AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
+      // AppSettings__AzureOpenAI__Chat__Endpoint: azureOpenAIChatEndpoint
+      // AppSettings__AzureOpenAI__Chat__DeploymentName: azureOpenAIChatDeploymentName
+      // AppSettings__AzureOpenAI__Chat__ApiKey: azureOpenAIChatApiKey
+      // AppSettings__AzureOpenAI__Chat__MaxTokens: azureOpenAIChatMaxTokens
+      // AppSettings__AzureOpenAI__Chat__Temperature: azureOpenAIChatTemperature
+      // AppSettings__AzureOpenAI__Chat__TopP: azureOpenAIChatTopP
+      // AppSettings__AzureOpenAI__Image__Endpoint: azureOpenAIImageEndpoint
+      // AppSettings__AzureOpenAI__Image__DeploymentName: azureOpenAIImageDeploymentName
+      // AppSettings__AzureOpenAI__Image__ApiKey: azureOpenAIImageApiKey
       AppSettings__BlobStorageAccountName: storageModule.outputs.name
       AzureAD__Instance: adInstance
       AzureAD__Domain: adDomain
