@@ -15,6 +15,15 @@ namespace TravelTracker.Services.Interfaces;
 public interface ITravelAssistantActionConfirmationService
 {
     /// <summary>
+    /// Confirms an action by opaque ID for the trusted authenticated user.
+    /// The server derives the action's thread binding from the durable action record.
+    /// </summary>
+    Task<ConfirmActionResult> ConfirmActionAsync(
+        TravelAssistantUserContext user,
+        string actionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Confirm a prepared location-add action and persist it to the database.
     /// The action must be pending, owned by the authenticated user, not expired, and not previously
     /// confirmed. The confirmation is idempotent: retry with the same action ID returns the prior
@@ -32,6 +41,7 @@ public interface ITravelAssistantActionConfirmationService
     /// recorded as failed).
     /// </summary>
     /// <param name="user">Trusted authenticated user context from the principal.</param>
+    /// <param name="threadId">Expected server-owned thread ID for internal thread-bound callers.</param>
     /// <param name="actionId">Opaque action ID from a prior <c>PrepareAddLocationAsync</c> call.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>
@@ -45,10 +55,20 @@ public interface ITravelAssistantActionConfirmationService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Cancels an action by opaque ID for the trusted authenticated user.
+    /// The server derives the action's thread binding from the durable action record.
+    /// </summary>
+    Task<CancelActionResult> CancelActionAsync(
+        TravelAssistantUserContext user,
+        string actionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Cancel a prepared location-add action without persisting a location.
     /// The action must be pending and owned by the authenticated user.
     /// </summary>
     /// <param name="user">Trusted authenticated user context from the principal.</param>
+    /// <param name="threadId">Expected server-owned thread ID for internal thread-bound callers.</param>
     /// <param name="actionId">Opaque action ID from a prior <c>PrepareAddLocationAsync</c> call.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>

@@ -66,7 +66,7 @@ public interface ITravelAssistantActionService
     /// <param name="latitude">Optional geographic latitude from the candidate or model.</param>
     /// <param name="longitude">Optional geographic longitude from the candidate or model.</param>
     /// <param name="comments">Optional user comments. Stored as untrusted text, excluded from model-visible results.</param>
-    /// <param name="rating">Optional numeric rating (0-10). Must pass data-annotation validation.</param>
+    /// <param name="rating">Optional numeric rating (0-5). Must pass data-annotation validation.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>
     /// A <see cref="PrepareAddLocationResult"/> with a success flag, opaque action ID (if successful),

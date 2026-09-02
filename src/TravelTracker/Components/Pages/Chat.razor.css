@@ -1,70 +1,104 @@
-/* Chat message styling */
+.chat-page .chat-messages {
+    max-height: min(60vh, 32rem);
+    min-height: 20rem;
+    overflow-y: auto;
+}
+
+.chat-page .chat-message {
+    max-width: 75%;
+}
+
+.chat-page .chat-message-content {
+    white-space: pre-wrap;
+}
+
 .chat-message-assistant {
-    background-color: #f8f9fa;
-    color: #212529;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .chat-message-user {
     background-color: var(--primary-color);
-    color: white;
+    color: var(--navbar-text);
 }
 
-/* Dark mode overrides */
-[data-theme="dark"] .chat-message-assistant {
-    background-color: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
+.chat-page .tool-status-list {
+    padding-left: var(--spacing-lg);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
 }
 
-[data-theme="dark"] .alert-info {
-    background-color: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-color) !important;
+.chat-page .tool-status-succeeded {
+    color: var(--success-color);
 }
 
-[data-theme="dark"] .text-muted {
-    color: var(--text-secondary) !important;
+.chat-page .tool-status-failed {
+    color: var(--danger-color);
 }
 
-/* Loading indicator styling */
 .loading-indicator {
-    background-color: #f8f9fa;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
-[data-theme="dark"] .loading-indicator {
-    background-color: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
+.chat-page .pending-action-list {
+    display: grid;
+    gap: var(--spacing-md);
 }
 
-/* Card styling for chat container */
-[data-theme="dark"] .card {
-    background-color: var(--bg-secondary) !important;
-    border-color: var(--border-color) !important;
+.chat-page .pending-action-card {
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-sm);
 }
 
-[data-theme="dark"] .card-body {
-    background-color: var(--bg-secondary) !important;
-    color: var(--text-primary) !important;
+.chat-page .pending-action-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
 }
 
-/* Form control styling */
-[data-theme="dark"] .form-control {
-    background-color: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-color) !important;
+.chat-page .pending-action-source,
+.chat-page .pending-action-expiry {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
 }
 
-[data-theme="dark"] .form-control:focus {
-    background-color: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--primary-color) !important;
+.chat-page .pending-action-state {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    color: var(--text-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.875rem;
 }
 
-[data-theme="dark"] .form-control:disabled {
-    background-color: var(--bg-primary) !important;
-    color: var(--text-secondary) !important;
+.chat-page .pending-action-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
 }
 
-/* Form text styling */
-[data-theme="dark"] .form-text {
-    color: var(--text-secondary) !important;
+.chat-page .pending-action-controls .btn:focus-visible,
+.chat-page a:focus-visible {
+    outline: 0.2rem solid var(--info-color);
+    outline-offset: 0.15rem;
+}
+
+.chat-page .pending-action-result {
+    color: var(--text-primary);
+}
+
+@media (max-width: 47.99rem) {
+    .chat-page .chat-message {
+        max-width: 90%;
+    }
+
+    .chat-page .chat-messages {
+        min-height: 16rem;
+    }
+
+    .chat-page .pending-action-controls .btn {
+        flex: 1 1 auto;
+    }
 }

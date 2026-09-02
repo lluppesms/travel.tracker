@@ -2,12 +2,14 @@ using System.Security.Claims;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Logging;
 
 using Moq;
 
 using TravelTracker.Controllers;
 using TravelTracker.Data.Models;
+using TravelTracker.Data.Repositories;
 using TravelTracker.Services;
 using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Models;
@@ -16,8 +18,38 @@ namespace TravelTracker.Tests.Controllers;
 
 public class ChatbotControllerTests
 {
+    [Theory]
+    [InlineData(nameof(ChatbotController.SendMessage), "message")]
+    [InlineData(nameof(ChatbotController.ConfirmAction), "actions/{actionId}/confirm")]
+    [InlineData(nameof(ChatbotController.CancelAction), "actions/{actionId}/cancel")]
+    public void StateChangingEndpoints_RequireAntiforgery(string methodName, string route)
+    {
+        var method = typeof(ChatbotController).GetMethod(methodName);
+
+        Assert.NotNull(method);
+        Assert.NotNull(method.GetCustomAttributes(typeof(ValidateAntiForgeryTokenAttribute), inherit: true).SingleOrDefault());
+        Assert.Equal(
+            route,
+            Assert.IsAssignableFrom<HttpMethodAttribute>(
+                method.GetCustomAttributes(typeof(HttpMethodAttribute), inherit: true).Single()).Template);
+    }
+
+    [Fact]
+    public void PendingActionsEndpoint_UsesAuthorizedReadRoute()
+    {
+        var method = typeof(ChatbotController).GetMethod(nameof(ChatbotController.GetPendingActions));
+
+        Assert.NotNull(method);
+        Assert.Equal(
+            "pending-actions",
+            Assert.IsType<HttpGetAttribute>(
+                method.GetCustomAttributes(typeof(HttpGetAttribute), inherit: true).Single()).Template);
+    }
+
     private readonly Mock<IChatbotService> _mockChatbotService;
     private readonly Mock<ICurrentTravelUserResolver> _mockUserResolver;
+    private readonly Mock<ITravelAssistantActionService> _mockActionService;
+    private readonly Mock<ITravelAssistantActionConfirmationService> _mockConfirmationService;
     private readonly Mock<ILogger<ChatbotController>> _mockLogger;
     private readonly ChatbotController _controller;
     private const int TestUserId = 123;
@@ -29,6 +61,8 @@ public class ChatbotControllerTests
     {
         _mockChatbotService = new Mock<IChatbotService>();
         _mockUserResolver = new Mock<ICurrentTravelUserResolver>();
+        _mockActionService = new Mock<ITravelAssistantActionService>();
+        _mockConfirmationService = new Mock<ITravelAssistantActionConfirmationService>();
         _mockLogger = new Mock<ILogger<ChatbotController>>();
 
         _mockUserResolver
@@ -38,6 +72,8 @@ public class ChatbotControllerTests
         _controller = new ChatbotController(
             _mockChatbotService.Object,
             _mockUserResolver.Object,
+            _mockActionService.Object,
+            _mockConfirmationService.Object,
             new TravelAssistantReadiness(true, []),
             _mockLogger.Object)
         {
@@ -49,6 +85,100 @@ public class ChatbotControllerTests
                 }
             }
         };
+    }
+
+    [Fact]
+    public async Task GetPendingActions_ReturnsOnlyTrustedUsersActions()
+    {
+        var action = new AssistantActionSummary
+        {
+            ActionId = Guid.NewGuid().ToString("N"),
+            Summary = "Add Buffalo House RV Park for 2026-08-31",
+            CreatedAtUtc = DateTime.UtcNow,
+            ExpiresAtUtc = DateTime.UtcNow.AddHours(1),
+            State = AssistantActionStates.Pending
+        };
+        _mockActionService
+            .Setup(service => service.GetPendingActionsAsync(
+                TestUserContext,
+                null,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([action]);
+
+        var result = await _controller.GetPendingActions();
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(action, Assert.Single(Assert.IsAssignableFrom<IReadOnlyList<AssistantActionSummary>>(ok.Value)));
+    }
+
+    [Fact]
+    public async Task ConfirmAction_AcceptsOnlyOpaqueActionIdAndReturnsCreatedLocation()
+    {
+        var actionId = Guid.NewGuid().ToString("N");
+        _mockConfirmationService
+            .Setup(service => service.ConfirmActionAsync(
+                TestUserContext,
+                actionId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ConfirmActionResult
+            {
+                Success = true,
+                CreatedLocationId = 42,
+                ActionState = AssistantActionStates.Confirmed,
+                Summary = "Add Buffalo House RV Park for 2026-08-31"
+            });
+
+        var result = await _controller.ConfirmAction(actionId);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(42, Assert.IsType<ConfirmActionResult>(ok.Value).CreatedLocationId);
+    }
+
+    [Theory]
+    [InlineData("action_not_found", 404)]
+    [InlineData("action_forbidden", 403)]
+    [InlineData("action_not_pending", 409)]
+    [InlineData("action_expired", 410)]
+    [InlineData("persistence_failed", 503)]
+    public async Task ConfirmAction_WhenActionFails_MapsStableStatus(string errorCode, int expectedStatus)
+    {
+        var actionId = Guid.NewGuid().ToString("N");
+        _mockConfirmationService
+            .Setup(service => service.ConfirmActionAsync(
+                TestUserContext,
+                actionId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ConfirmActionResult
+            {
+                Success = false,
+                ErrorCode = errorCode,
+                ErrorMessage = "Safe failure"
+            });
+
+        var result = await _controller.ConfirmAction(actionId);
+
+        var response = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(expectedStatus, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CancelAction_WhenPending_ReturnsCancelled()
+    {
+        var actionId = Guid.NewGuid().ToString("N");
+        _mockConfirmationService
+            .Setup(service => service.CancelActionAsync(
+                TestUserContext,
+                actionId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CancelActionResult
+            {
+                Success = true,
+                ActionState = AssistantActionStates.Cancelled
+            });
+
+        var result = await _controller.CancelAction(actionId);
+
+        Assert.IsType<OkObjectResult>(result.Result);
     }
 
     private static ClaimsPrincipal CreateAuthenticatedPrincipal() =>
@@ -191,6 +321,8 @@ public class ChatbotControllerTests
         var controller = new ChatbotController(
             new DisabledChatbotService(),
             _mockUserResolver.Object,
+            _mockActionService.Object,
+            _mockConfirmationService.Object,
             new TravelAssistantReadiness(false, ["SqlServer:ConnectionString is required."]),
             _mockLogger.Object)
         {
@@ -217,6 +349,8 @@ public class ChatbotControllerTests
         var controller = new ChatbotController(
             new DisabledChatbotService(),
             new UnavailableTravelUserResolver(),
+            _mockActionService.Object,
+            _mockConfirmationService.Object,
             new TravelAssistantReadiness(false, ["SqlServer:ConnectionString is required."]),
             _mockLogger.Object)
         {

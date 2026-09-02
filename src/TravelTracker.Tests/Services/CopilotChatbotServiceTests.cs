@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using TravelTracker.Data.Configuration;
+using TravelTracker.Data.Repositories;
 using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Models;
 using TravelTracker.Services.Services;
@@ -27,14 +28,45 @@ public class CopilotChatbotServiceTests
     }
 
     [Fact]
-    public async Task GetChatResponseAsync_UnknownSuppliedThread_ReturnsStableError()
+    public async Task GetChatResponseAsync_UnknownSuppliedThread_ReplacesThreadAndProcessesMessage()
     {
         var fixture = new ChatbotFixture();
 
         var result = await fixture.Service.GetChatResponseAsync("Hello", 7, "stale-thread");
 
-        Assert.Equal(ChatErrorCodes.ThreadNotFound, result.ErrorCode);
-        Assert.DoesNotContain("StaleSessionException", result.Message, StringComparison.Ordinal);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ChatThreadStatuses.ThreadReplaced, result.ThreadStatus);
+        Assert.NotEqual("stale-thread", result.ThreadId);
+        Assert.Equal("Safe response", result.Message);
+    }
+
+    [Fact]
+    public async Task GetChatResponseAsync_WhenToolPreparesAction_ReturnsNewestPendingAction()
+    {
+        var fixture = new ChatbotFixture();
+        var actionId = Guid.NewGuid().ToString("N");
+        fixture.ActionService
+            .Setup(service => service.GetPendingActionsAsync(
+                It.Is<TravelAssistantUserContext>(user => user.UserId == 7),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                new AssistantActionSummary
+                {
+                    ActionId = actionId,
+                    Summary = "Add Buffalo House RV Park for 2026-08-31",
+                    CreatedAtUtc = DateTime.UtcNow,
+                    ExpiresAtUtc = DateTime.UtcNow.AddHours(1),
+                    State = AssistantActionStates.Pending
+                }
+            ]);
+
+        var result = await fixture.Service.GetChatResponseAsync("Add Buffalo House for yesterday", 7);
+
+        Assert.NotNull(result.PendingAction);
+        Assert.Equal(actionId, result.PendingAction.ActionId);
+        Assert.Equal("Add Buffalo House RV Park for 2026-08-31", result.PendingAction.Summary);
     }
 
     [Fact]
@@ -78,14 +110,22 @@ public class CopilotChatbotServiceTests
                 monitor.Object,
                 toolFactory.Object,
                 TimeProvider.System);
+            ActionService
+                .Setup(service => service.GetPendingActionsAsync(
+                    It.IsAny<TravelAssistantUserContext>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
             Service = new CopilotChatbotService(
                 coordinator,
+                ActionService.Object,
                 monitor.Object,
                 NullLogger<CopilotChatbotService>.Instance,
                 TimeProvider.System);
         }
 
         public RecordingSessionHandle Handle { get; } = new();
+        public Mock<ITravelAssistantActionService> ActionService { get; } = new();
         public CopilotChatbotService Service { get; }
     }
 

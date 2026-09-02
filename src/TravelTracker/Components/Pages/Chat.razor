@@ -1,15 +1,15 @@
 @page "/chat"
-@using System.Net.Http.Json
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authorization
-@using Newtonsoft.Json
+@using Microsoft.AspNetCore.Components.Authorization
 @using TravelTracker.Services
 @using TravelTracker.Services.Interfaces
 @using TravelTracker.Services.Models
-@inject HttpClient Http
-@inject NavigationManager Navigation
+@namespace TravelTracker.Components.Pages
 @inject IChatbotService ChatbotService
 @inject ICurrentTravelUserResolver CurrentUserResolver
+@inject ITravelAssistantActionService ActionService
+@inject ITravelAssistantActionConfirmationService ConfirmationService
 @inject TravelAssistantReadiness Readiness
 @inject ILogger<Chat> Logger
 @inject IJSRuntime JSRuntime
@@ -17,7 +17,7 @@
 
 <PageTitle>Travel Assistant Chat</PageTitle>
 
-<div class="container mt-4">
+<div class="container mt-4 chat-page">
     <div class="row">
         <div class="col-md-12">
             <h2>🤖 Travel Assistant</h2>
@@ -40,7 +40,7 @@
     <div class="row mt-3">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-body" style="height: 500px; overflow-y: auto;" id="chatMessages">
+                <div class="card-body chat-messages" id="chatMessages" aria-live="polite">
                     @if (messages.Count == 0)
                     {
                         <div class="alert alert-info">
@@ -60,13 +60,28 @@
                     @foreach (var msg in messages)
                     {
                         <div class="mb-3 @(msg.IsUser ? "text-end" : "text-start")">
-                            <div class="d-inline-block p-3 rounded @(msg.IsUser ? "chat-message-user" : "chat-message-assistant")"
-                                 style="max-width: 75%;">
+                            <div class="d-inline-block p-3 rounded chat-message @(msg.IsUser ? "chat-message-user" : "chat-message-assistant")">
                                 <div class="small mb-1">
                                     <strong>@(msg.IsUser ? "You" : "Assistant")</strong>
                                     <span class="text-muted ms-2">@msg.Timestamp.ToLocalTime().ToString("h:mm tt")</span>
                                 </div>
-                                <div style="white-space: pre-wrap;">@msg.Content</div>
+                                <div class="chat-message-content">@msg.Content</div>
+                                @if (msg.ToolStatuses.Count > 0)
+                                {
+                                    <ul class="tool-status-list mt-2 mb-0" aria-label="Assistant tool activity">
+                                        @foreach (var status in msg.ToolStatuses)
+                                        {
+                                            <li class="tool-status tool-status-@status.State.ToString().ToLowerInvariant()">
+                                                <span class="tool-status-name">@FormatToolName(status.ToolName)</span>
+                                                <span>@FormatToolState(status.State)</span>
+                                                @if (!string.IsNullOrWhiteSpace(status.Detail))
+                                                {
+                                                    <span class="tool-status-detail"> - @status.Detail</span>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                }
                             </div>
                         </div>
                     }
@@ -86,6 +101,70 @@
             </div>
         </div>
     </div>
+
+    @if (pendingActions.Count > 0)
+    {
+        <section class="row mt-3" aria-labelledby="pending-actions-heading">
+            <div class="col-md-12">
+                <h3 id="pending-actions-heading" class="h5">Actions awaiting your confirmation</h3>
+                <div class="pending-action-list">
+                    @foreach (var action in pendingActions)
+                    {
+                        <article class="card pending-action-card">
+                            <div class="card-body">
+                                <div class="pending-action-heading">
+                                    <div>
+                                        <h4 class="h6 mb-1">Add visited location</h4>
+                                        <p class="pending-action-source mb-0">Prepared by Travel Assistant</p>
+                                    </div>
+                                    <span class="pending-action-state" role="status">@action.StatusLabel</span>
+                                </div>
+                                <p class="pending-action-summary mt-3 mb-2">@action.Action.Summary</p>
+                                <p class="pending-action-expiry mb-3">
+                                    Expires @FormatUtcAsLocal(action.Action.ExpiresAtUtc)
+                                </p>
+
+                                @if (action.IsPending)
+                                {
+                                    <div class="pending-action-controls">
+                                        <button type="button"
+                                                class="btn btn-primary"
+                                                aria-label="Confirm adding this visited location"
+                                                disabled="@action.IsExecuting"
+                                                @onclick="() => ConfirmActionAsync(action)">
+                                            @if (action.IsExecuting)
+                                            {
+                                                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                            }
+                                            Confirm
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                aria-label="Cancel adding this visited location"
+                                                disabled="@action.IsExecuting"
+                                                @onclick="() => CancelActionAsync(action)">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(action.StatusMessage))
+                                {
+                                    <p class="pending-action-result mt-3 mb-0" role="status">
+                                        @action.StatusMessage
+                                        @if (action.CreatedLocationId is > 0)
+                                        {
+                                            <a href="/locations" class="ms-1">View locations</a>
+                                        }
+                                    </p>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        </section>
+    }
 
     <div class="row mt-3">
         <div class="col-md-12">
@@ -123,16 +202,53 @@
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
     private List<ChatMessage> messages = new();
+    private readonly List<PendingActionViewModel> pendingActions = [];
     private string currentMessage = string.Empty;
     private bool isLoading = false;
     private string? currentThreadId = null;
     private DateTimeOffset? latestMessageDate = null;
+    private TravelAssistantUserContext? currentUser;
 
     private class ChatMessage
     {
         public string Content { get; set; } = string.Empty;
         public bool IsUser { get; set; }
         public DateTime Timestamp { get; set; }
+        public IReadOnlyList<ToolStatus> ToolStatuses { get; set; } = [];
+    }
+
+    private sealed class PendingActionViewModel(AssistantActionSummary action)
+    {
+        public AssistantActionSummary Action { get; } = action;
+        public bool IsExecuting { get; set; }
+        public bool IsPending { get; set; } = true;
+        public string StatusLabel { get; set; } = "Awaiting confirmation";
+        public string? StatusMessage { get; set; }
+        public int? CreatedLocationId { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Readiness.IsReady)
+        {
+            return;
+        }
+
+        currentUser = await ResolveCurrentUserAsync();
+        if (currentUser is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var recoveredActions = await ActionService.GetPendingActionsAsync(currentUser);
+            pendingActions.AddRange(recoveredActions.Select(action => new PendingActionViewModel(action)));
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Unable to recover pending travel assistant actions for user {UserId}.", currentUser.UserId);
+        }
     }
 
     private async Task<ClaimsPrincipal?> GetPrincipalAsync()
@@ -140,6 +256,12 @@
         if (AuthenticationStateTask is null) { return null; }
         var authenticationState = await AuthenticationStateTask;
         return authenticationState.User;
+    }
+
+    private async Task<TravelAssistantUserContext?> ResolveCurrentUserAsync()
+    {
+        var principal = await GetPrincipalAsync();
+        return await CurrentUserResolver.ResolveAsync(principal);
     }
 
     private async Task HandleKeyPress(KeyboardEventArgs e)
@@ -189,10 +311,9 @@
 
         try
         {
-            var principal = await GetPrincipalAsync();
-            var userContext = await CurrentUserResolver.ResolveAsync(principal);
+            currentUser ??= await ResolveCurrentUserAsync();
 
-            if (userContext is null)
+            if (currentUser is null)
             {
                 messages.Add(new ChatMessage
                 {
@@ -203,7 +324,11 @@
                 return;
             }
 
-            var result = await ChatbotService.GetChatResponseAsync(userMessage, userContext.UserId, currentThreadId, latestMessageDate);
+            var result = await ChatbotService.GetChatResponseAsync(
+                userMessage,
+                currentUser.UserId,
+                currentThreadId,
+                latestMessageDate);
 
             latestMessageDate = result.LatestMessageDate;
             currentThreadId = result.ThreadId;
@@ -212,11 +337,18 @@
             {
                 Content = result.Message,
                 IsUser = false,
-                Timestamp = result.LatestMessageDate?.UtcDateTime ?? DateTime.UtcNow
+                Timestamp = result.LatestMessageDate?.UtcDateTime ?? DateTime.UtcNow,
+                ToolStatuses = result.ToolStatuses
             });
+
+            if (result.PendingAction is not null)
+            {
+                AddPendingAction(result.PendingAction);
+            }
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            Logger.LogError(exception, "Unable to complete travel assistant chat turn.");
             messages.Add(new ChatMessage
             {
                 Content = "Something went wrong processing your message. Please try again later.",
@@ -232,15 +364,140 @@
         }
     }
 
+    private async Task ConfirmActionAsync(PendingActionViewModel action)
+    {
+        if (!BeginAction(action))
+        {
+            return;
+        }
+
+        try
+        {
+            currentUser ??= await ResolveCurrentUserAsync();
+            if (currentUser is null)
+            {
+                CompleteAction(action, false, "You need to be signed in to confirm this action.");
+                return;
+            }
+
+            var result = await ConfirmationService.ConfirmActionAsync(currentUser, action.Action.ActionId);
+            action.CreatedLocationId = result.CreatedLocationId;
+            CompleteAction(
+                action,
+                result.Success,
+                result.Success
+                    ? result.Summary ?? "The visited location was added."
+                    : result.ErrorMessage ?? "The location could not be added.",
+                allowRetry: result.ErrorCode == "persistence_failed");
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Unable to confirm travel assistant action {ActionId}.", action.Action.ActionId);
+            CompleteAction(action, false, "The location could not be added. Please try again.", allowRetry: true);
+        }
+    }
+
+    private async Task CancelActionAsync(PendingActionViewModel action)
+    {
+        if (!BeginAction(action))
+        {
+            return;
+        }
+
+        try
+        {
+            currentUser ??= await ResolveCurrentUserAsync();
+            if (currentUser is null)
+            {
+                CompleteAction(action, false, "You need to be signed in to cancel this action.");
+                return;
+            }
+
+            var result = await ConfirmationService.CancelActionAsync(currentUser, action.Action.ActionId);
+            CompleteAction(
+                action,
+                result.Success,
+                result.Success
+                    ? result.Summary ?? "The pending action was cancelled."
+                    : result.ErrorMessage ?? "The action could not be cancelled.",
+                allowRetry: result.ErrorCode == "persistence_failed");
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Unable to cancel travel assistant action {ActionId}.", action.Action.ActionId);
+            CompleteAction(action, false, "The action could not be cancelled. Please try again.", allowRetry: true);
+        }
+    }
+
+    private static bool BeginAction(PendingActionViewModel action)
+    {
+        if (!action.IsPending || action.IsExecuting)
+        {
+            return false;
+        }
+
+        action.IsExecuting = true;
+        action.StatusLabel = "Executing";
+        action.StatusMessage = null;
+        return true;
+    }
+
+    private static void CompleteAction(
+        PendingActionViewModel action,
+        bool success,
+        string message,
+        bool allowRetry = false)
+    {
+        action.IsExecuting = false;
+        action.IsPending = allowRetry;
+        action.StatusLabel = success ? "Complete" : "Failed";
+        action.StatusMessage = message;
+    }
+
+    private void AddPendingAction(ChatActionSummary action)
+    {
+        if (pendingActions.Any(item => item.Action.ActionId == action.ActionId))
+        {
+            return;
+        }
+
+        pendingActions.Insert(
+            0,
+            new PendingActionViewModel(
+                new AssistantActionSummary
+                {
+                    ActionId = action.ActionId,
+                    Summary = action.Summary ?? "A visited location is ready to be added.",
+                    CreatedAtUtc = DateTime.UtcNow,
+                    ExpiresAtUtc = action.ExpiresAt.UtcDateTime,
+                    State = "Pending"
+                }));
+    }
+
+    private static string FormatToolName(string toolName) =>
+        toolName.Replace('_', ' ');
+
+    private static string FormatToolState(ToolStatusState state) =>
+        state switch
+        {
+            ToolStatusState.Started => "started",
+            ToolStatusState.Succeeded => "completed",
+            ToolStatusState.Failed => "failed",
+            _ => state.ToString()
+        };
+
+    private static string FormatUtcAsLocal(DateTime utcDateTime) =>
+        DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc).ToLocalTime().ToString("g");
+
     private async Task ScrollToBottom()
     {
         try
         {
             await JSRuntime.InvokeVoidAsync("scrollToBottom", "chatMessages");
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            // Ignore JS interop errors
+            Logger.LogDebug(exception, "Unable to scroll the chat message list.");
         }
     }
 }

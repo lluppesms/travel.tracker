@@ -8,6 +8,7 @@ namespace TravelTracker.Services.Services;
 /// </summary>
 public sealed class CopilotChatbotService(
     ICopilotSessionCoordinator sessionCoordinator,
+    ITravelAssistantActionService actionService,
     IOptionsMonitor<TravelAssistantOptions> assistantOptions,
     ILogger<CopilotChatbotService> logger,
     TimeProvider timeProvider) : IChatbotService
@@ -35,40 +36,28 @@ public sealed class CopilotChatbotService(
         var user = new TravelAssistantUserContext(userId, string.Empty, string.Empty, string.Empty);
         try
         {
-            var session = await sessionCoordinator.AcquireSessionAsync(
-                user,
-                effectiveThreadId,
-                createIfMissing: string.IsNullOrWhiteSpace(threadId),
-                cancellationToken).ConfigureAwait(false);
-
-            if (session.TurnCount >= assistantOptions.CurrentValue.MaxTurnsPerSession)
+            try
             {
-                return ChatTurnResult.Failure(
-                    ChatErrorCodes.RateLimited,
-                    "This conversation has reached its turn limit. Please start a new conversation.",
-                    effectiveThreadId);
+                return await ExecuteTurnAsync(
+                    userMessage,
+                    user,
+                    effectiveThreadId,
+                    createIfMissing: string.IsNullOrWhiteSpace(threadId),
+                    threadReplaced: false,
+                    cancellationToken).ConfigureAwait(false);
             }
-
-            await using var turn = await sessionCoordinator.AcquireTurnAsync(
-                session,
-                user,
-                cancellationToken).ConfigureAwait(false);
-
-            var timeout = TimeSpan.FromSeconds(assistantOptions.CurrentValue.TurnTimeoutSeconds);
-            var response = await session.Session.SendAndWaitAsync(
-                BuildTurnPrompt(userMessage),
-                timeout,
-                turn.CancellationToken).ConfigureAwait(false);
-
-            if (string.IsNullOrWhiteSpace(response))
+            catch (StaleSessionException exception)
             {
-                return ChatTurnResult.Failure(
-                    ChatErrorCodes.ProviderUnavailable,
-                    "The travel assistant did not return a response. Please try again.",
-                    effectiveThreadId);
+                effectiveThreadId = Guid.NewGuid().ToString("N");
+                logger.LogInformation(exception, "Replaced stale or unknown Copilot thread for user {UserId}.", userId);
+                return await ExecuteTurnAsync(
+                    userMessage,
+                    user,
+                    effectiveThreadId,
+                    createIfMissing: true,
+                    threadReplaced: true,
+                    cancellationToken).ConfigureAwait(false);
             }
-
-            return ChatTurnResult.Success(response.Trim(), effectiveThreadId, timeProvider.GetUtcNow());
         }
         catch (CrossUserSessionException exception)
         {
@@ -76,14 +65,6 @@ public sealed class CopilotChatbotService(
             return ChatTurnResult.Failure(
                 ChatErrorCodes.Forbidden,
                 "You are not allowed to access this conversation.",
-                effectiveThreadId);
-        }
-        catch (StaleSessionException exception)
-        {
-            logger.LogInformation(exception, "Rejected stale or unknown Copilot thread for user {UserId}.", userId);
-            return ChatTurnResult.Failure(
-                ChatErrorCodes.ThreadNotFound,
-                "This conversation is no longer available. Please start a new conversation.",
                 effectiveThreadId);
         }
         catch (SessionQuotaExceededException exception)
@@ -123,6 +104,68 @@ public sealed class CopilotChatbotService(
                 effectiveThreadId);
         }
     }
+
+    private async Task<ChatTurnResult> ExecuteTurnAsync(
+        string userMessage,
+        TravelAssistantUserContext user,
+        string threadId,
+        bool createIfMissing,
+        bool threadReplaced,
+        CancellationToken cancellationToken)
+    {
+        var session = await sessionCoordinator.AcquireSessionAsync(
+            user,
+            threadId,
+            createIfMissing,
+            cancellationToken).ConfigureAwait(false);
+
+        if (session.TurnCount >= assistantOptions.CurrentValue.MaxTurnsPerSession)
+        {
+            return ChatTurnResult.Failure(
+                ChatErrorCodes.RateLimited,
+                "This conversation has reached its turn limit. Please start a new conversation.",
+                threadId);
+        }
+
+        await using var turn = await sessionCoordinator.AcquireTurnAsync(
+            session,
+            user,
+            cancellationToken).ConfigureAwait(false);
+
+        var timeout = TimeSpan.FromSeconds(assistantOptions.CurrentValue.TurnTimeoutSeconds);
+        var response = await session.Session.SendAndWaitAsync(
+            BuildTurnPrompt(userMessage),
+            timeout,
+            turn.CancellationToken).ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            return ChatTurnResult.Failure(
+                ChatErrorCodes.ProviderUnavailable,
+                "The travel assistant did not return a response. Please try again.",
+                threadId);
+        }
+
+        var pendingActions = await actionService
+            .GetPendingActionsAsync(user, threadId, cancellationToken)
+            .ConfigureAwait(false);
+        var pendingAction = pendingActions.Count == 0 ? null : ToChatActionSummary(pendingActions[0]);
+        var now = timeProvider.GetUtcNow();
+
+        return threadReplaced
+            ? ChatTurnResult.ThreadReplaced(response.Trim(), threadId, now, pendingAction: pendingAction)
+            : ChatTurnResult.Success(response.Trim(), threadId, now, pendingAction: pendingAction);
+    }
+
+    private static ChatActionSummary ToChatActionSummary(AssistantActionSummary action) =>
+        new()
+        {
+            ActionId = action.ActionId,
+            ActionType = TravelAssistantActionService.ActionType,
+            Title = "Add visited location",
+            Summary = action.Summary,
+            ExpiresAt = new DateTimeOffset(DateTime.SpecifyKind(action.ExpiresAtUtc, DateTimeKind.Utc))
+        };
 
     private string BuildTurnPrompt(string userMessage)
     {

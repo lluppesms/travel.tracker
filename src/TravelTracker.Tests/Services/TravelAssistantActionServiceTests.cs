@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -15,6 +16,119 @@ namespace TravelTracker.Tests.Services;
 
 public class TravelAssistantActionServiceTests
 {
+    [Fact]
+    public async Task BuffaloHouse_PrepareRecoverAndConfirmTwice_CreatesExactlyOneLocation()
+    {
+        var user = new TravelAssistantUserContext(7, "external", "User", "user@example.com");
+        var candidate = Candidate();
+        var dataProtection = new EphemeralDataProtectionProvider();
+        AssistantAction? stored = null;
+
+        var lookup = new Mock<ILocationLookupService>();
+        lookup.Setup(service => service.ResolveCandidateAsync("candidate", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(candidate);
+
+        var locations = new Mock<ILocationService>();
+        locations.Setup(service => service.FindDuplicateAsync(
+                user.UserId,
+                candidate.Name,
+                new DateOnly(2026, 8, 31),
+                candidate.City,
+                candidate.State,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Location?)null);
+        locations.Setup(service => service.CreateLocationAsync(
+                It.IsAny<Location>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Location location, CancellationToken _) =>
+            {
+                location.Id = 42;
+                return location;
+            });
+
+        var types = new Mock<ILocationTypeService>();
+        types.Setup(service => service.ResolveLocationTypeAsync("RV Park", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new LocationTypeResolutionResult
+            {
+                Status = LocationTypeResolutionStatus.Found,
+                LocationType = new LocationType { Id = 3, Name = "RV Park" },
+                Matches = ["RV Park"]
+            });
+
+        var dates = new Mock<IRelativeDateResolver>();
+        dates.Setup(service => service.Resolve("Yesterday", new DateOnly(2026, 8, 31)))
+            .Returns(RelativeDateResolution.Resolved(new DateOnly(2026, 8, 31)));
+
+        var repository = new Mock<IAssistantActionRepository>();
+        repository.Setup(service => service.GetByIdempotencyKeyAsync(
+                user.UserId,
+                "thread-1",
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => stored);
+        repository.Setup(service => service.AddAsync(It.IsAny<AssistantAction>(), It.IsAny<CancellationToken>()))
+            .Callback<AssistantAction, CancellationToken>((action, _) => stored = action)
+            .Returns(Task.CompletedTask);
+        repository.Setup(service => service.GetPendingAsync(
+                user.UserId,
+                It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() =>
+                stored?.State == AssistantActionStates.Pending
+                    ? [stored]
+                    : []);
+        repository.Setup(service => service.GetForUpdateAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => stored);
+        repository.Setup(service => service.BeginSerializableTransactionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<IDbContextTransaction>());
+        repository.Setup(service => service.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var options = Options.Create(new TravelAssistantOptions());
+        var actionService = new TravelAssistantActionService(
+            lookup.Object,
+            locations.Object,
+            types.Object,
+            dates.Object,
+            repository.Object,
+            dataProtection,
+            TimeProvider.System,
+            options,
+            NullLogger<TravelAssistantActionService>.Instance);
+        var confirmationService = new TravelAssistantActionConfirmationService(
+            repository.Object,
+            locations.Object,
+            dataProtection,
+            TimeProvider.System,
+            options,
+            NullLogger<TravelAssistantActionConfirmationService>.Instance);
+
+        var prepared = await actionService.PrepareAddLocationAsync(
+            user,
+            "thread-1",
+            "candidate",
+            candidate.Name,
+            "RV Park",
+            "Yesterday",
+            "2026-08-31");
+        var pending = await actionService.GetPendingActionsAsync(user);
+        var firstConfirmation = await confirmationService.ConfirmActionAsync(user, prepared.ActionId!);
+        var secondConfirmation = await confirmationService.ConfirmActionAsync(user, prepared.ActionId!);
+
+        Assert.True(prepared.Success);
+        Assert.Equal("RV Park", prepared.ResolvedLocationType);
+        Assert.Equal("2026-08-31", prepared.CanonicalIsoDate);
+        Assert.Equal(prepared.ActionId, Assert.Single(pending).ActionId);
+        Assert.Equal(42, firstConfirmation.CreatedLocationId);
+        Assert.Equal(42, secondConfirmation.CreatedLocationId);
+        Assert.True(firstConfirmation.CreatedLocationId > 0);
+        locations.Verify(
+            service => service.CreateLocationAsync(It.IsAny<Location>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     [Fact]
     public async Task GetLocationTypesAsync_ReturnsOrderedBoundedModelSafeResults()
     {

@@ -189,13 +189,13 @@ Completion criteria: inventory is exactly four tools; reads are bounded; stored 
 
 | Task | Description | Completed | Date |
 |---|---|---|---|
-| TASK-024 | Update `Chat.razor` and code-behind/scoped CSS to use `AuthenticationStateProvider`, render messages/tool statuses, and show pending location/source details with accessible confirmation controls. | | |
-| TASK-025 | Add component confirm/cancel handlers using the provider-neutral service, disable repeats, and show executing/success/failure with created location link. | | |
-| TASK-026 | Add authorized message, confirm, cancel, and pending-action endpoints. Accept action ID only for writes, derive principal server-side, enforce antiforgery, and map `401/403/404/409/410/429/503`. | | |
-| TASK-027 | Recover pending actions after refresh/reconnect and return stale-thread replacement status. Remove all-data gathering/cache from the Copilot provider only. | | |
-| TASK-028 | Run deterministic Buffalo House end-to-end coverage: candidate selection/clarification, `RV Park`, 2026-08-31, pending action, confirmation, and exactly one nonzero location ID. | | |
+| TASK-024 | Update `Chat.razor` and code-behind/scoped CSS to use `AuthenticationStateProvider`, render messages/tool statuses, and show pending location/source details with accessible confirmation controls. | ✅ | 2026-09-01 |
+| TASK-025 | Add component confirm/cancel handlers using the provider-neutral service, disable repeats, and show executing/success/failure with created location link. | ✅ | 2026-09-01 |
+| TASK-026 | Add authorized message, confirm, cancel, and pending-action endpoints. Accept action ID only for writes, derive principal server-side, enforce antiforgery, and map `401/403/404/409/410/429/503`. | ✅ | 2026-09-01 |
+| TASK-027 | Recover pending actions after refresh/reconnect and return stale-thread replacement status. Remove all-data gathering/cache from the Copilot provider only. | ✅ | 2026-09-01 |
+| TASK-028 | Run deterministic Buffalo House end-to-end coverage: candidate selection/clarification, `RV Park`, 2026-08-31, pending action, confirmation, and exactly one nonzero location ID. | ✅ | 2026-09-01 |
 
-Completion criteria: the example produces clarification or a correct pending action; confirmation inserts exactly one; cancel inserts none; refresh recovers; retries do not duplicate; accessibility and authorization pass.
+Completion criteria: the example produces clarification or a correct pending action; confirmation inserts exactly one; cancel inserts none; refresh recovers; retries do not duplicate; accessibility and authorization pass. Completed with action-ID-only server-authorized writes, antiforgery-protected endpoints, refresh recovery, stale-thread replacement, accessible terminal-state controls, and 185 passing tests. Runtime endpoint probes remain an environment validation because the routes require configured authentication, SQL, and the selected assistant provider.
 
 ### Implementation Phase 6 - Deploy, Observe, and Canary
 

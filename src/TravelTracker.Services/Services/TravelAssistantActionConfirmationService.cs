@@ -39,14 +39,28 @@ public sealed class TravelAssistantActionConfirmationService : ITravelAssistantA
         _logger = logger;
     }
 
-    public async Task<ConfirmActionResult> ConfirmActionAsync(
+    public Task<ConfirmActionResult> ConfirmActionAsync(
+        TravelAssistantUserContext user,
+        string actionId,
+        CancellationToken cancellationToken = default) =>
+        ConfirmActionCoreAsync(user, null, actionId, cancellationToken);
+
+    public Task<ConfirmActionResult> ConfirmActionAsync(
         TravelAssistantUserContext user,
         string threadId,
         string actionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        ConfirmActionCoreAsync(user, threadId, actionId, cancellationToken);
+
+    private async Task<ConfirmActionResult> ConfirmActionCoreAsync(
+        TravelAssistantUserContext user,
+        string? expectedThreadId,
+        string actionId,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(user);
-        if (!TryParseActionId(actionId, out var id) || string.IsNullOrWhiteSpace(threadId))
+        if (!TryParseActionId(actionId, out var id)
+            || (expectedThreadId is not null && string.IsNullOrWhiteSpace(expectedThreadId)))
         {
             return ConfirmFailure("action_not_found", "The action was not found.");
         }
@@ -58,7 +72,7 @@ public sealed class TravelAssistantActionConfirmationService : ITravelAssistantA
         try
         {
             var action = await _actionRepository.GetForUpdateAsync(id, cancellationToken).ConfigureAwait(false);
-            var accessFailure = ValidateAccess(action, user, threadId);
+            var accessFailure = ValidateAccess(action, user, expectedThreadId);
             if (accessFailure is not null)
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
@@ -223,14 +237,28 @@ public sealed class TravelAssistantActionConfirmationService : ITravelAssistantA
         }
     }
 
-    public async Task<CancelActionResult> CancelActionAsync(
+    public Task<CancelActionResult> CancelActionAsync(
+        TravelAssistantUserContext user,
+        string actionId,
+        CancellationToken cancellationToken = default) =>
+        CancelActionCoreAsync(user, null, actionId, cancellationToken);
+
+    public Task<CancelActionResult> CancelActionAsync(
         TravelAssistantUserContext user,
         string threadId,
         string actionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        CancelActionCoreAsync(user, threadId, actionId, cancellationToken);
+
+    private async Task<CancelActionResult> CancelActionCoreAsync(
+        TravelAssistantUserContext user,
+        string? expectedThreadId,
+        string actionId,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(user);
-        if (!TryParseActionId(actionId, out var id) || string.IsNullOrWhiteSpace(threadId))
+        if (!TryParseActionId(actionId, out var id)
+            || (expectedThreadId is not null && string.IsNullOrWhiteSpace(expectedThreadId)))
         {
             return CancelFailure("action_not_found", "The action was not found.");
         }
@@ -253,7 +281,8 @@ public sealed class TravelAssistantActionConfirmationService : ITravelAssistantA
                 return CancelFailure("action_forbidden", "The action belongs to another user.");
             }
 
-            if (!string.Equals(action.ThreadId, threadId, StringComparison.Ordinal))
+            if (expectedThreadId is not null
+                && !string.Equals(action.ThreadId, expectedThreadId, StringComparison.Ordinal))
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                 return CancelFailure("action_thread_mismatch", "The action belongs to another thread.");
@@ -337,7 +366,7 @@ public sealed class TravelAssistantActionConfirmationService : ITravelAssistantA
     private ConfirmActionResult? ValidateAccess(
         AssistantAction? action,
         TravelAssistantUserContext user,
-        string threadId)
+        string? expectedThreadId)
     {
         if (action is null)
         {
@@ -349,7 +378,8 @@ public sealed class TravelAssistantActionConfirmationService : ITravelAssistantA
             return ConfirmFailure("action_forbidden", "The action belongs to another user.");
         }
 
-        return !string.Equals(action.ThreadId, threadId, StringComparison.Ordinal)
+        return expectedThreadId is not null
+            && !string.Equals(action.ThreadId, expectedThreadId, StringComparison.Ordinal)
             ? ConfirmFailure("action_thread_mismatch", "The action belongs to another thread.")
             : null;
     }

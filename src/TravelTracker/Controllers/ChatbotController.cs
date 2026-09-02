@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 using TravelTracker.Services;
+using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Models;
 
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
@@ -15,19 +16,95 @@ public class ChatbotController : ControllerBase
 {
     private readonly IChatbotService _chatbotService;
     private readonly ICurrentTravelUserResolver _currentUserResolver;
+    private readonly ITravelAssistantActionService _actionService;
+    private readonly ITravelAssistantActionConfirmationService _confirmationService;
     private readonly TravelAssistantReadiness _readiness;
     private readonly ILogger<ChatbotController> _logger;
 
     public ChatbotController(
         IChatbotService chatbotService,
         ICurrentTravelUserResolver currentUserResolver,
+        ITravelAssistantActionService actionService,
+        ITravelAssistantActionConfirmationService confirmationService,
         TravelAssistantReadiness readiness,
         ILogger<ChatbotController> logger)
     {
         _chatbotService = chatbotService;
         _currentUserResolver = currentUserResolver;
+        _actionService = actionService;
+        _confirmationService = confirmationService;
         _readiness = readiness;
         _logger = logger;
+    }
+
+    /// <summary>Gets unexpired pending actions owned by the authenticated user.</summary>
+    [HttpGet("pending-actions")]
+    [ProducesResponseType(typeof(IReadOnlyList<AssistantActionSummary>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<IReadOnlyList<AssistantActionSummary>>> GetPendingActions(
+        CancellationToken cancellationToken = default)
+    {
+        var userContext = await ResolveActionUserAsync(cancellationToken).ConfigureAwait(false);
+        if (userContext.Result is not null)
+        {
+            return userContext.Result;
+        }
+
+        var actions = await _actionService
+            .GetPendingActionsAsync(userContext.Value!, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(actions);
+    }
+
+    /// <summary>Confirms one pending action by opaque action ID.</summary>
+    [HttpPost("actions/{actionId}/confirm")]
+    [ValidateAntiForgeryToken]
+    [ProducesResponseType(typeof(ConfirmActionResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ConfirmActionResult), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ConfirmActionResult), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ConfirmActionResult), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ConfirmActionResult), StatusCodes.Status410Gone)]
+    [ProducesResponseType(typeof(ConfirmActionResult), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ConfirmActionResult>> ConfirmAction(
+        string actionId,
+        CancellationToken cancellationToken = default)
+    {
+        var userContext = await ResolveActionUserAsync(cancellationToken).ConfigureAwait(false);
+        if (userContext.Result is not null)
+        {
+            return userContext.Result;
+        }
+
+        var result = await _confirmationService
+            .ConfirmActionAsync(userContext.Value!, actionId, cancellationToken)
+            .ConfigureAwait(false);
+        return result.Success ? Ok(result) : StatusCode(ToActionStatusCode(result.ErrorCode), result);
+    }
+
+    /// <summary>Cancels one pending action by opaque action ID.</summary>
+    [HttpPost("actions/{actionId}/cancel")]
+    [ValidateAntiForgeryToken]
+    [ProducesResponseType(typeof(CancelActionResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CancelActionResult), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(CancelActionResult), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(CancelActionResult), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(CancelActionResult), StatusCodes.Status410Gone)]
+    [ProducesResponseType(typeof(CancelActionResult), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<CancelActionResult>> CancelAction(
+        string actionId,
+        CancellationToken cancellationToken = default)
+    {
+        var userContext = await ResolveActionUserAsync(cancellationToken).ConfigureAwait(false);
+        if (userContext.Result is not null)
+        {
+            return userContext.Result;
+        }
+
+        var result = await _confirmationService
+            .CancelActionAsync(userContext.Value!, actionId, cancellationToken)
+            .ConfigureAwait(false);
+        return result.Success ? Ok(result) : StatusCode(ToActionStatusCode(result.ErrorCode), result);
     }
 
     /// <summary>
@@ -40,6 +117,7 @@ public class ChatbotController : ControllerBase
     /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost("message")]
+    [ValidateAntiForgeryToken]
     [ProducesResponseType(typeof(ChatResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ChatResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ChatResponse), StatusCodes.Status401Unauthorized)]
@@ -108,6 +186,36 @@ public class ChatbotController : ControllerBase
         var result = ChatTurnResult.Failure(errorCode, userSafeMessage, threadId ?? string.Empty);
         return StatusCode(result.HttpStatusCode, ToChatResponse(result));
     }
+
+    private async Task<(TravelAssistantUserContext? Value, ObjectResult? Result)> ResolveActionUserAsync(
+        CancellationToken cancellationToken)
+    {
+        if (!_readiness.IsReady)
+        {
+            return (null, ErrorResult(
+                ChatErrorCodes.ProviderUnavailable,
+                "The travel assistant is not configured.",
+                null));
+        }
+
+        var userContext = await _currentUserResolver.ResolveAsync(User, cancellationToken).ConfigureAwait(false);
+        return userContext is null
+            ? (null, ErrorResult(
+                ChatErrorCodes.Unauthorized,
+                "Authentication is required to use the travel assistant.",
+                null))
+            : (userContext, null);
+    }
+
+    private static int ToActionStatusCode(string? errorCode) =>
+        errorCode switch
+        {
+            "action_forbidden" or "action_thread_mismatch" => StatusCodes.Status403Forbidden,
+            "action_not_found" => StatusCodes.Status404NotFound,
+            "action_expired" => StatusCodes.Status410Gone,
+            "persistence_failed" => StatusCodes.Status503ServiceUnavailable,
+            _ => StatusCodes.Status409Conflict
+        };
 
     private static ChatResponse ToChatResponse(ChatTurnResult result) => new()
     {
