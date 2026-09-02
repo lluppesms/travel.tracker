@@ -140,7 +140,7 @@ Read current project files for exact package versions.
 
 The checked-in values are local defaults or placeholders. Store real credentials in User Secrets, environment variables, GitHub/Azure DevOps secret stores, or Azure Key Vault. `DefaultAzureCredential` is used for Azure identity, with `VisualStudioTenantId` supported as a local tenant override.
 
-Infrastructure parameters under `infra/Bicep/` cover App Service, Azure SQL, Key Vault, storage, monitoring, SignalR, managed identity, Azure Maps, Entra ID, and AI settings. The current composition deploys App Service for `deploymentType` values `webapp` and `all`; comments mentioning container or function deployment are not backed by active modules in this repository.
+Infrastructure parameters under `infra/Bicep/` cover App Service, Azure SQL, Key Vault, storage, monitoring, SignalR, managed identity, Azure Maps, Entra ID, and AI settings. The current composition deploys App Service for `deploymentType` values `webapp` and `all`; comments mentioning container or function deployment are not backed by active modules in this repository. Phase 6 adds one-worker App Service configuration, `Confirm`-only Travel Assistant settings, and an optional cross-subscription Foundry resource-group role-assignment module for a user-assigned identity.
 
 ## 7. Testing
 
@@ -243,7 +243,7 @@ For source, infrastructure, workflow, test, or Copilot-customization changes:
 **Phase 3: Session Coordination & Non-Streaming Chat (Completed)**
 
 - `GitHub.Copilot.SDK` is pinned directly to `1.0.11` in the web project. The services project retains a compile-only direct reference; excluding its runtime and build assets prevents duplicate CLI files during publish while the web project remains the single runtime-asset source.
-- `CopilotRuntimeAccessor` is the singleton SDK owner. It configures `CopilotClientMode.Empty`, a writable home directory, disabled content capture, and a Foundry OpenAI provider using `/openai/v1/`, the Responses API, the configured deployment, and a `DefaultAzureCredential` bearer-token callback.
+- `CopilotRuntimeAccessor` is the singleton SDK owner. It configures `CopilotClientMode.Empty`, a writable home directory, disabled content capture, and a Foundry OpenAI provider using `/openai/v1/`, the Responses API, the configured deployment, and a `DefaultAzureCredential` bearer-token callback. Phase 6 infrastructure keeps the first release in `Confirm` mode and configures one App Service worker because SDK runtime state is instance-local.
 - `CopilotRuntimeHostedService` performs abandoned-session cleanup before starting and pinging the real SDK runtime. It starts only when `CopilotSDK` is selected and assistant prerequisites are ready, and it uses graceful then forced shutdown.
 - `CopilotSessionCoordinator` owns a global thread namespace, deterministic non-identifying SDK session IDs, immutable user ownership, per-user and instance quotas, idle eviction, and atomic activity/turn tracking. It rejects unknown, stale, and cross-user thread requests; the provider-neutral chat service converts only an authenticated user's stale/unknown thread into a newly generated thread and reports `thread_replaced`.
 - Per-session `SemaphoreSlim` leases serialize turns. Queue waiting and the configured execution timeout are separate, and explicit deletion waits for an active turn before disposing the session and requesting SDK deletion.

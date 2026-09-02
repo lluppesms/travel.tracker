@@ -16,6 +16,8 @@ param workspaceId string = ''
 param appServicePlanName string
 param appServicePlanResourceGroupName string = resourceGroup().name
 param webAppKind string = 'linux'
+@description('Number of App Service workers. Copilot SDK session state is instance-local in the first release.')
+param numberOfWorkers int = 1
 
 @description('Custom application settings to merge with the base settings.')
 param customAppSettings object = {}
@@ -82,6 +84,7 @@ resource webSiteResource 'Microsoft.Web/sites@2024-11-01' = {
       ftpsState: 'FtpsOnly'
       alwaysOn: true
       remoteDebuggingEnabled: false
+      numberOfWorkers: numberOfWorkers
       minimumElasticInstanceCount: 1
       appSettings: [
         { 

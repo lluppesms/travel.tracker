@@ -36,9 +36,16 @@ param existingLogAnalyticsWorkspaceResourceGroupName = '#{EXISTING_LOG_ANALYTICS
 
 param adminUserId = '#{KEYVAULT_OWNER_USERID}#'
 
-param pipelineServicePrincipalObjectId = '#{PIPELINE_SERVICE_PRINCIPAL_OBJECT_ID}#'
-
 param aiServiceProvider = '#{AI_SERVICE_PROVIDER}#'
+param travelAssistantWriteMode = 'Confirm'
+param travelAssistantModelDeploymentName = '#{TRAVEL_ASSISTANT_MODEL_DEPLOYMENT_NAME}#'
+param travelAssistantFoundryEndpoint = '#{TRAVEL_ASSISTANT_FOUNDRY_ENDPOINT}#'
+param travelAssistantTokenScope = '#{TRAVEL_ASSISTANT_TOKEN_SCOPE}#'
+param travelAssistantCopilotHome = '#{TRAVEL_ASSISTANT_COPILOT_HOME}#'
+param travelAssistantTimeZoneId = '#{TRAVEL_ASSISTANT_TIME_ZONE_ID}#'
+param travelAssistantDataProtectionKeysPath = '#{TRAVEL_ASSISTANT_DATA_PROTECTION_KEYS_PATH}#'
+param foundryResourceGroupName = '#{FOUNDRY_RESOURCE_GROUP_NAME}#'
+param foundrySubscriptionId = '#{FOUNDRY_SUBSCRIPTION_ID}#'
 param azureOpenAIChatEndpoint = '#{OPENAI_CHAT_ENDPOINT}#'
 param azureOpenAIChatDeploymentName = '#{OPENAI_CHAT_DEPLOYMENTNAME}#'
 param azureOpenAIChatApiKey = '#{OPENAI_CHAT_APIKEY}#'
