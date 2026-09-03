@@ -1,5 +1,7 @@
 extern alias AzureIdentity;
 
+using TravelTracker.Helpers;
+using TravelTracker.Services;
 using TravelTracker.Authentication;
 using TravelTracker.Data;
 using TravelTracker.Extensions;
@@ -102,29 +104,37 @@ var azureAdConfigured = !string.IsNullOrWhiteSpace(builder.Configuration[TravelA
                         !string.IsNullOrWhiteSpace(builder.Configuration[TravelAssistantOptionsValidator.AzureAdClientIdKey]);
 if (azureAdConfigured)
 {
-    Console.WriteLine("Azure AD configured - enabling authentication");
+    // Personal Laptop
+    // Use PKCE (no client_secret required) — requires "Allow public client flows" = Yes
+    // in Azure Portal: App Registration > Authentication > Advanced Settings
     builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-        .AddMicrosoftIdentityWebApp(options =>
-        {
-            builder.Configuration.Bind("AzureAd", options);
-            options.ResponseType = OpenIdConnectResponseType.Code;
-            options.UsePkce = true;
-            options.SaveTokens = true;
+        .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
-            if (!options.Scope.Contains("offline_access", StringComparer.OrdinalIgnoreCase))
-            {
-                options.Scope.Add("offline_access");
-            }
-
-            if (!options.Scope.Contains("User.Read", StringComparer.OrdinalIgnoreCase))
-            {
-                options.Scope.Add("User.Read");
-            }
-        });
+    // Testing Laptop
+    // Console.WriteLine("Azure AD configured - enabling authentication");
+    // builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+    //     .AddMicrosoftIdentityWebApp(options =>
+    //     {
+    //         builder.Configuration.Bind("AzureAd", options);
+    //         options.ResponseType = OpenIdConnectResponseType.Code;
+    //         options.UsePkce = true;
+    //         options.SaveTokens = true;
+    // 
+    //        if (!options.Scope.Contains("offline_access", StringComparer.OrdinalIgnoreCase))
+    //        {
+    //             options.Scope.Add("offline_access");
+    //         }
+    // 
+    //         if (!options.Scope.Contains("User.Read", StringComparer.OrdinalIgnoreCase))
+    //         {
+    //             options.Scope.Add("User.Read");
+    //         }
+    //     });
 
     builder.Services.AddAuthorization(options =>
     {
-        options.FallbackPolicy = options.DefaultPolicy;
+        // options.FallbackPolicy = options.DefaultPolicy;
+        options.FallbackPolicy = null; // Don't force auth globally — individual pages use [Authorize]
     });
 }
 else
@@ -338,6 +348,23 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
+
+// Login/logout endpoints (redirect-based, compatible with Blazor Server)
+app.MapGet("/account/login", (string? returnUrl) =>
+{
+    var props = new Microsoft.AspNetCore.Authentication.AuthenticationProperties
+    {
+        RedirectUri = string.IsNullOrEmpty(returnUrl) ? "/" : returnUrl
+    };
+    return Results.Challenge(props, [OpenIdConnectDefaults.AuthenticationScheme]);
+});
+
+app.MapPost("/account/logout", async (HttpContext ctx) =>
+{
+    await Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.SignOutAsync(ctx, CookieAuthenticationDefaults.AuthenticationScheme);
+    await Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.SignOutAsync(ctx, OpenIdConnectDefaults.AuthenticationScheme);
+    return Results.LocalRedirect("/");
+}).RequireAuthorization();
 
 app.MapStaticAssets();
 app.MapRazorPages();

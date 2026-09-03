@@ -12,6 +12,7 @@ public interface ILocationService
     Task<Location> CreateLocationAsync(Location location, CancellationToken cancellationToken = default);
     Task<Location> UpdateLocationAsync(Location location);
     Task DeleteLocationAsync(int id, int userId);
+    Task DeleteAllLocationsAsync(int userId);
     Task<Dictionary<string, int>> GetLocationsByStateCountAsync(int userId);
     Task<IReadOnlyList<AssistantLocationSearchResult>> SearchForAssistantAsync(
         int userId,

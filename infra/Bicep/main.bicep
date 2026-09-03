@@ -4,7 +4,7 @@
 // To deploy this Bicep manually:
 // 	 az login
 //   az account set --subscription <subscriptionId>
-//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_traveltracker_test --template-file 'main.bicep' --parameters appName=xxx-traveltracker-test environmentCode=demo keyVaultOwnerUserId=xxxxxxxx-xxxx-xxxx
+//   az deployment group create -n "manual-$(Get-Date -Format 'yyyyMMdd-HHmmss')" --resource-group rg_traveltracker_test --template-file 'main.bicep' --parameters appName=xxx-traveltracker-test environmentCode=test keyVaultOwnerUserId=xxxxxxxx-xxxx-xxxx
 // --------------------------------------------------------------------------------
 param appName string = ''
 param environmentCode string = 'azd'
@@ -14,7 +14,7 @@ param instanceNumber string = '1'
 @description('Deployment type for the web application')
 param deploymentType string = 'webapp'  // ['webapp', 'containerapp', 'functionapp', 'all']
 
-@description('Deploy only website infrastructure (skip SQL and Function resources).')
+@description('Deploy only website infrastructure (skip SQL resources).')
 param websiteOnly bool = false
 
 param servicePlanName string = ''

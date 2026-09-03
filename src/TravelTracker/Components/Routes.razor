@@ -1,13 +1,15 @@
-﻿@rendermode InteractiveServer
-<Router AppAssembly="typeof(Program).Assembly">
+﻿<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
             <NotAuthorized>
-                <LayoutView Layout="typeof(Layout.MainLayout)">
-                    <p role="alert">
-                        Please <a href="MicrosoftIdentity/Account/SignIn">sign in</a> to access this page.
-                    </p>
-                </LayoutView>
+                @if (!context.User.Identity?.IsAuthenticated ?? true)
+                {
+                    <RedirectToLogin />
+                }
+                else
+                {
+                    <p class="text-danger">You are not authorized to view this page.</p>
+                }
             </NotAuthorized>
             <Authorizing>
                 <p class="text-muted">Checking your permissions...</p>

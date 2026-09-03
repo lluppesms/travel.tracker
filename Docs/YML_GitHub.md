@@ -359,4 +359,52 @@ jobs:
 
 ---
 
+## Project Variables Reference
+
+The Bicep parameter file (`infra/Bicep/main.bicepparam`) uses `#{TOKEN}#` placeholders that are replaced at deploy time by the `replacetokens-action` using GitHub **Variables** (`vars.*`) and **Secrets** (`secrets.*`). The table below lists every token, whether it should be stored as a variable or secret, and its purpose.
+
+### GitHub Actions Variables (`vars.*`)
+
+| Variable Name | Description |
+|---|---|
+| `APP_NAME` | Application name prefix used to generate all resource names |
+| `ENVCODE` | Environment code (e.g. `dev`, `qa`, `prod`) |
+| `RESOURCE_GROUP_LOCATION` | Azure region for the deployment (e.g. `eastus`) |
+| `INSTANCE_NUMBER` | Deployment instance number, used in resource naming (e.g. `1`) |
+| `DEPLOYMENT_TYPE` | Resource deployment type: `webapp`, `containerapp`, `functionapp`, or `all` |
+| `ADD_ROLE_ASSIGNMENTS` | `true` or `false` — whether to add RBAC role assignments |
+| `CREATE_USER_ASSIGNED_IDENTITY` | `true` or `false` — create a shared user-assigned managed identity |
+| `ADMIN_USER_LIST` | Comma-separated list of admin user email addresses |
+| `LOGIN_INSTANCEENDPOINT` | Azure AD login endpoint (e.g. `https://login.microsoftonline.com/`) |
+| `LOGIN_DOMAIN` | Azure AD domain (e.g. `contoso.onmicrosoft.com`) |
+| `LOGIN_TENANTID` | Azure AD tenant ID (GUID) |
+| `LOGIN_CLIENTID` | Azure AD application (client) ID (GUID) |
+| `EXISTING_SERVICEPLAN_NAME` | Name of an existing App Service Plan to reuse (leave empty to create new) |
+| `EXISTING_SERVICEPLAN_RESOURCE_GROUP_NAME` | Resource group of the existing App Service Plan (if in a different RG) |
+| `SQLADMIN_LOGIN_USERID` | AD admin login name for SQL Server |
+| `SQLADMIN_LOGIN_USERSID` | Object ID (SID) of the AD SQL admin user |
+| `SQLADMIN_LOGIN_TENANTID` | Tenant ID for the SQL AD admin user |
+| `SQL_DATABASE_NAME` | Name of the SQL database to create or use |
+| `EXISTING_SQLSERVER_NAME` | Name of an existing SQL Server to reuse (leave empty to create new) |
+| `EXISTING_SQLDATABASE_NAME` | Name of an existing SQL database to reuse (leave empty to create new) |
+| `EXISTING_SQLSERVER_RESOURCE_GROUP_NAME` | Resource group of the existing SQL Server (if in a different RG) |
+| `EXISTING_LOG_ANALYTICS_WORKSPACE` | Name of an existing Log Analytics Workspace to reuse (leave empty to create new) |
+| `KEYVAULT_OWNER_USERID` | Object ID of the user to grant Key Vault Owner access |
+| `AZUREMAPS_CLIENTID` | Azure Maps account client ID |
+| `AZUREAIFOUNDRY_ENDPOINT` | Azure AI Foundry endpoint URL |
+| `AZUREAIFOUNDRY_DEPLOYMENTNAME` | AI model deployment name |
+| `AZUREAIFOUNDRY_PROJECTENDPOINT` | Azure AI Foundry project endpoint URL |
+| `AZUREAIFOUNDRY_AGENTNAME` | Azure AI Foundry agent name |
+| `AZUREAIFOUNDRY_AGENTVERSION` | Azure AI Foundry agent version |
+
+### GitHub Actions Secrets (`secrets.*`)
+
+| Secret Name | Description |
+|---|---|
+| `WEB_API_KEY` | API key used to secure the web application API endpoints |
+| `AZUREMAPS_SUBSCRIPTIONKEY` | Azure Maps subscription key |
+| `AZUREAIFOUNDRY_APIKEY` | Azure AI Foundry API key |
+
+---
+
 *This document was created to guide GitHub Actions workflow development for projects similar to Math.Storm. Follow these practices to maintain consistency and quality across CI/CD implementations.*

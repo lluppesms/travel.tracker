@@ -1,4 +1,5 @@
 @page "/upload"
+@attribute [Authorize]
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
 @using System.Text.Json
@@ -6,6 +7,7 @@
 @inject IDataImportService DataImportService
 @inject IDataExportService DataExportService
 @inject IAuthenticationService AuthenticationService
+@inject ILocationService LocationService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Data Management - Travel Tracker</PageTitle>
@@ -118,6 +120,13 @@
                     }
 
                     <div class="mt-3">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="deleteExistingCheck"
+                                   @bind="deleteExistingData" disabled="@isUploading" />
+                            <label class="form-check-label text-danger fw-semibold" for="deleteExistingCheck">
+                                Delete all existing data before importing?
+                            </label>
+                        </div>
                         <button class="btn btn-primary" @onclick="ProcessUpload" disabled="@(!canUpload || isUploading)">
                             @if (isUploading)
                             {
@@ -140,6 +149,10 @@
                             <ul class="mb-0">
                                 <li>Total locations processed: @uploadSummary.TotalProcessed</li>
                                 <li>Successfully imported: @uploadSummary.SuccessCount</li>
+                                @if (uploadSummary.SkippedCount > 0)
+                                {
+                                    <li class="text-warning">Skipped (duplicates): @uploadSummary.SkippedCount</li>
+                                }
                                 <li>Failed: @uploadSummary.FailureCount</li>
                             </ul>
                         </div>
@@ -294,6 +307,30 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
     }
 </div>
 
+@if (showDeleteConfirmModal)
+{
+    <div class="modal fade show" style="display:block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">&#9888; Warning: Delete All Data</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelDeleteConfirmation"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>This will permanently delete ALL of your existing travel location data.</strong></p>
+                    <p>This action cannot be undone. The data will be wiped and then replaced with the contents of the file you selected.</p>
+                    <p>Are you sure you want to continue?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDeleteConfirmation">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDeleteAndUpload">Yes, Delete and Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     private IBrowserFile? selectedFile;
     private string? selectedFileName;
@@ -309,6 +346,8 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
     private int currentUserId;
     private string selectedFormat = "csv";
     private string activeTab = "import";
+    private bool deleteExistingData = false;
+    private bool showDeleteConfirmModal = false;
     private const long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     protected override void OnInitialized()
@@ -416,6 +455,31 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
             return;
         }
 
+        if (deleteExistingData)
+        {
+            showDeleteConfirmModal = true;
+            return;
+        }
+
+        await ExecuteImport();
+    }
+
+    private void CancelDeleteConfirmation()
+    {
+        showDeleteConfirmModal = false;
+    }
+
+    private async Task ConfirmDeleteAndUpload()
+    {
+        showDeleteConfirmModal = false;
+        await LocationService.DeleteAllLocationsAsync(currentUserId);
+        await ExecuteImport();
+    }
+
+    private async Task ExecuteImport()
+    {
+        if (selectedFile == null) return;
+
         try
         {
             isUploading = true;
@@ -441,12 +505,17 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
             {
                 TotalProcessed = result.TotalRecords,
                 SuccessCount = result.ImportedRecords,
-                FailureCount = result.FailedRecords
+                FailureCount = result.FailedRecords,
+                SkippedCount = result.SkippedRecords
             };
 
             if (result.Success)
             {
                 successMessage = $"Upload complete! Imported {result.ImportedRecords} out of {result.TotalRecords} locations.";
+                if (result.SkippedRecords > 0)
+                {
+                    successMessage += $" Skipped {result.SkippedRecords} duplicate(s) (same location and date already exist).";
+                }
             }
             else
             {
@@ -535,5 +604,6 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
         public int TotalProcessed { get; set; }
         public int SuccessCount { get; set; }
         public int FailureCount { get; set; }
+        public int SkippedCount { get; set; }
     }
 }

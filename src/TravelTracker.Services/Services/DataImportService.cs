@@ -39,12 +39,23 @@ public class DataImportService : IDataImportService
 
             result.TotalRecords = uploadData.Locations.Count;
 
+            var existingLocations = await _locationService.GetAllLocationsAsync(userId);
+            var existingKeys = new HashSet<(string, DateTime)>(
+                existingLocations.Select(l => (l.Name.ToLowerInvariant(), l.StartDate.Date)));
+
             foreach (var locData in uploadData.Locations)
             {
                 try
                 {
                     var location = await MapJsonToLocationAsync(locData, userId);
+                    var key = (location.Name.ToLowerInvariant(), location.StartDate.Date);
+                    if (existingKeys.Contains(key))
+                    {
+                        result.SkippedRecords++;
+                        continue;
+                    }
                     await _locationService.CreateLocationAsync(location);
+                    existingKeys.Add(key);
                     result.ImportedRecords++;
                 }
                 catch (Exception ex)
@@ -54,7 +65,7 @@ public class DataImportService : IDataImportService
                 }
             }
 
-            result.Success = result.ImportedRecords > 0;
+            result.Success = result.ImportedRecords > 0 || result.SkippedRecords > 0;
         }
         catch (Exception ex)
         {
@@ -88,6 +99,10 @@ public class DataImportService : IDataImportService
                 return result;
             }
 
+            var existingLocations = await _locationService.GetAllLocationsAsync(userId);
+            var existingKeys = new HashSet<(string, DateTime)>(
+                existingLocations.Select(l => (l.Name.ToLowerInvariant(), l.StartDate.Date)));
+
             int lineNumber = 1;
             string? line;
             while ((line = await reader.ReadLineAsync()) != null)
@@ -101,7 +116,15 @@ public class DataImportService : IDataImportService
                     var location = await ParseCsvLineAsync(line, userId, lineNumber);
                     if (location != null)
                     {
+                        var key = (location.Name.ToLowerInvariant(), location.StartDate.Date);
+                        if (existingKeys.Contains(key))
+                        {
+                            result.SkippedRecords++;
+                            result.TotalRecords++;
+                            continue;
+                        }
                         await _locationService.CreateLocationAsync(location);
+                        existingKeys.Add(key);
                         result.ImportedRecords++;
                     }
                     result.TotalRecords++;
@@ -113,7 +136,7 @@ public class DataImportService : IDataImportService
                 }
             }
 
-            result.Success = result.ImportedRecords > 0;
+            result.Success = result.ImportedRecords > 0 || result.SkippedRecords > 0;
         }
         catch (Exception ex)
         {

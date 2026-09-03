@@ -9,6 +9,7 @@ public interface ILocationRepository
     Task<Location> CreateAsync(Location location, CancellationToken cancellationToken = default);
     Task<Location?> UpdateAsync(Location location);
     Task DeleteAsync(int id, int userId);
+    Task DeleteAllByUserIdAsync(int userId);
     Task<IReadOnlyList<Location>> SearchForAssistantAsync(
         int userId,
         string query,

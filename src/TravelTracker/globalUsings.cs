@@ -1,6 +1,8 @@
 ﻿global using Azure.Identity;
-global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Authentication.Cookies;
 global using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+global using Microsoft.AspNetCore.Components;
+global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Components;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Identity.Web;

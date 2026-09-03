@@ -24,17 +24,17 @@ select 'LocationTypes' as Table_Name, Count(*) as Row_Count from [Travel].[Locat
 --select * from [Travel].[locations]
 
 -- show every place I've visited
-Select u.UserName, l.Name, l.LocationType, l.City, l.State, l.ZipCode, l.StartDate
-from [Travel].[Locations] l inner join [Travel].[users] u on l.UserId = u.id 
---Where l.LocationType = 'National Park'
-order by u.UserName, l.StartDate
+SELECT u.UserName, l.Name, l.LocationType, l.City, l.State, Cast(l.StartDate as varchar(10)) as Visited
+FROM [Travel].[Locations] l inner join [Travel].[users] u on l.UserId = u.id 
+--WHERE l.LocationType = 'National Park'
+ORDER BY u.UserName, l.StartDate
 
--- show all destinations 
-Select dt.Name as DestType, d.* From [Travel].[Destinations] d 
-INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id
+---- show all destinations 
+--Select dt.Name as DestType, d.* From [Travel].[Destinations] d 
+--INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id
 
--- show all destinations with that I have visited
-Select dt.Name as DestType, d.*, l.StartDate as DateVisited
-From [Travel].[Destinations] d 
-INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id
-LEFT OUTER JOIN [Travel].[Locations] l on l.Name = d.Name 
+---- show all destinations with that I have visited
+--Select dt.Name as DestType, d.*, l.StartDate as DateVisited
+--From [Travel].[Destinations] d 
+--INNER JOIN [Travel].[DestinationTypes] dt ON d.DestinationTypeId = dt.Id
+--LEFT OUTER JOIN [Travel].[Locations] l on l.Name = d.Name 

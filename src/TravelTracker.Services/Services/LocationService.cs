@@ -60,6 +60,11 @@ public class LocationService(
         await _locationRepository.DeleteAsync(id, userId);
     }
 
+    public async Task DeleteAllLocationsAsync(int userId)
+    {
+        await _locationRepository.DeleteAllByUserIdAsync(userId);
+    }
+
     public async Task<Dictionary<string, int>> GetLocationsByStateCountAsync(int userId)
     {
         var locations = await _locationRepository.GetAllByUserIdAsync(userId);

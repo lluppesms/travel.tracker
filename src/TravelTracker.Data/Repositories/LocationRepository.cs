@@ -188,6 +188,19 @@ public class LocationRepository(TravelTrackerDbContext context) : ILocationRepos
         }
     }
 
+    public async Task DeleteAllByUserIdAsync(int userId)
+    {
+        var locations = await _context.Locations
+            .Where(l => l.UserId == userId)
+            .ToListAsync();
+
+        if (locations.Count > 0)
+        {
+            _context.Locations.RemoveRange(locations);
+            await _context.SaveChangesAsync();
+        }
+    }
+
     private void DeserializeTags(Location location)
     {
         if (!string.IsNullOrEmpty(location.TagsJson))
