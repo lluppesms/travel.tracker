@@ -241,7 +241,7 @@ module appRoleAssignments './modules/iam/roleassignments.bicep' = if (addRoleAss
   }
 }
 // also add rights to the web app storage account (App Service only)
-module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployWebAppEffective) {
+module appRoleAssignments2 './modules/iam/roleassignments.bicep' = if (addRoleAssignments && deployWebAppEffective && createUserAssignedIdentity) {
   name: 'appRoleAssignments-webapp-storage${deploymentSuffix}'
   params: {
     identityPrincipalId: webSiteModule!.outputs.systemPrincipalId
