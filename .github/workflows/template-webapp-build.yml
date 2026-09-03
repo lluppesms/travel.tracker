@@ -185,7 +185,11 @@ jobs:
       continue-on-error: true
 
     - name: Publish
-      run: dotnet publish "${{ inputs.rootDirectory }}/${{ inputs.projectName }}.csproj" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+      run: dotnet publish "${{ inputs.rootDirectory }}/${{ inputs.projectName }}.csproj" --configuration ${{ env.CONFIGURATION }} --no-restore --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+
+    - name: Verify Copilot Linux runtime
+      shell: bash
+      run: test -x "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/runtimes/linux-x64/native/copilot"
 
     - name: Save Publish Artifacts
       uses: actions/upload-artifact@v7

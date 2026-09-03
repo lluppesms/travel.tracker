@@ -171,6 +171,8 @@ The current entry workflows are:
 
 Reusable `template-*.yml` workflows implement configuration loading, Bicep, web build/deploy, DACPAC, SQL, scanning, SBOM, and smoke testing. Read an entry workflow and every called template together before changing contracts, permissions, secrets, or outputs.
 
+The web build template publishes with a build-enabled `dotnet publish --no-restore` so the GitHub Copilot SDK's platform-specific native runtime is copied into the artifact. It verifies the executable Linux runtime path before uploading the artifact; do not change this to `--no-build` without preserving that runtime copy behavior.
+
 ## 9. Azure DevOps Pipelines
 
 `.azdo/pipelines/` contains App Service infrastructure/build/deploy, PR, scan, smoke-test, and automated-test entry pipelines. Shared implementation lives under `pipes/`; environment and source settings live under `vars/`.
