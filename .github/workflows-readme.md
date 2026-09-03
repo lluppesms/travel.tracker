@@ -83,8 +83,8 @@ Grant user rights to your application managed identity so it can read and write 
 
 ```sql
 CREATE USER [yourAppManagedIdentityName] FROM EXTERNAL PROVIDER;
-GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [yourAppManagedIdentityName];
-GRANT EXECUTE ON SCHEMA::[Dad] TO [yourAppManagedIdentityName];
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Travel] TO [yourAppManagedIdentityName];
+GRANT EXECUTE ON SCHEMA::[Travel] TO [yourAppManagedIdentityName];
 ```
 
 Once these rights are in place, before the application can run successfully, then you can deploy the SQL database schema and data using the [DACPAC deployment workflow](./workflows/4-build-deploy-dacpac.yml) and the [SQL script workflow](./workflows/5-run-sql-script.yml).  In the SQL Script workflow, choose the [InsertDefaultData.sql](../src/sql.database/Patch/InsertDefaultData.sql) script to populate the database with some starter data.

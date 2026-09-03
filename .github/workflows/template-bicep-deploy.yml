@@ -240,19 +240,19 @@ jobs:
 
           **Schema:**
           ```sql
-          CREATE SCHEMA [Dad];
+          CREATE SCHEMA [Travel];
           GO
           ```
 
           **Application:**
           ```sql
           CREATE USER [yourAppManagedIdentityName] FROM EXTERNAL PROVIDER;
-          GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [yourAppManagedIdentityName];
-          GRANT EXECUTE ON SCHEMA::[Dad] TO [yourAppManagedIdentityName];
+          GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Travel] TO [yourAppManagedIdentityName];
+          GRANT EXECUTE ON SCHEMA::[Travel] TO [yourAppManagedIdentityName];
 
           CREATE USER [yourAppId] FROM EXTERNAL PROVIDER;
-          GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Dad] TO [yourAppId];
-          GRANT EXECUTE ON SCHEMA::[Dad] TO [yourAppId];
+          GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::[Travel] TO [yourAppId];
+          GRANT EXECUTE ON SCHEMA::[Travel] TO [yourAppId];
           ```
       run: echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
       continue-on-error: true
