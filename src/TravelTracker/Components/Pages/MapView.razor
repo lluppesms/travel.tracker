@@ -1,5 +1,6 @@
 @page "/map"
 @attribute [Authorize]
+@using Microsoft.JSInterop
 @using TravelTracker.Data.Models
 @using TravelTracker.Services.Interfaces
 @implements IAsyncDisposable
@@ -17,6 +18,14 @@
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <strong>Error:</strong> @errorMessage
             <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(mapDataWarning))
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>Map data may be unavailable.</strong> @mapDataWarning
+            <button type="button" class="btn-close" @onclick="() => mapDataWarning = string.Empty" aria-label="Dismiss map data warning"></button>
         </div>
     }
 
@@ -223,8 +232,10 @@
     private bool isMapInitialized = false;
     private bool afterRenderCalled = false;
     private string errorMessage = string.Empty;
+    private string mapDataWarning = string.Empty;
     private int currentUserId;
     private string? azureMapsKey;
+    private DotNetObjectReference<MapView>? mapIssueReporter;
 
     // New checkbox filters
     private bool filterNationalParks = false;
@@ -280,7 +291,8 @@
         try
         {
             Logger.LogInformation("Initializing Azure Map...");
-            var result = await JSRuntime.InvokeAsync<bool>("initializeAzureMap", azureMapsKey, 39.8283, -98.5795, 4);
+            mapIssueReporter ??= DotNetObjectReference.Create(this);
+            var result = await JSRuntime.InvokeAsync<bool>("initializeAzureMap", "azureMap", azureMapsKey, 39.8283, -98.5795, 4, mapIssueReporter);
             if (result)
             {
                 isMapInitialized = true;
@@ -297,6 +309,23 @@
             errorMessage = $"Failed to initialize map: {ex.Message}";
             Logger.LogError(ex, "Map initialization error");
         }
+    }
+
+    [JSInvokable]
+    public Task ReportMapDataIssue(string reason, int tileRequestCount, string errorDetails)
+    {
+        return InvokeAsync(() =>
+        {
+            Logger.LogWarning(
+                "Azure Maps basemap issue detected. Reason={Reason} ObservedTileRequestCount={TileRequestCount} ErrorDetails={ErrorDetails}",
+                reason,
+                tileRequestCount,
+                errorDetails);
+            mapDataWarning = errorDetails.Contains("Failed to fetch", StringComparison.OrdinalIgnoreCase)
+                ? "Location pins may still be displayed, but geographical features could not be retrieved. Check your key or RBAC roles, and check your Maps CORS definitions."
+                : "Location pins may still be displayed, but geographical features could not be retrieved. Check your network connection and try refreshing the page.";
+            StateHasChanged();
+        });
     }
 
     private async Task UpdateMapMarkers()
@@ -338,7 +367,10 @@
     public async ValueTask DisposeAsync()
     {
         if (!isMapInitialized)
+        {
+            mapIssueReporter?.Dispose();
             return;
+        }
 
         try
         {
@@ -356,6 +388,10 @@
         catch (Exception ex)
         {
             Logger.LogWarning(ex, "Error during map disposal (ignored)");
+        }
+        finally
+        {
+            mapIssueReporter?.Dispose();
         }
     }
 

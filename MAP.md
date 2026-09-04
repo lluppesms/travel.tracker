@@ -52,6 +52,8 @@ The normal request path is:
 5. Controllers expose locations, location types, destinations, chatbot, and configuration endpoints over the same service layer.
 6. `ApiKeyMiddleware` applies API-key handling to HTTP API traffic.
 
+The Map page initializes the Azure Maps Web SDK through `wwwroot/js/azureMaps.js`. In addition to SDK readiness, it monitors Azure Maps error events and checks that basemap tile requests occur shortly after initialization. A detected issue writes detailed context to the browser console, logs a structured server warning through `MapView`, and presents a dismissible user warning while preserving location pins. A browser `Failed to fetch` error also directs the user to verify the Maps key or RBAC roles and Azure Maps CORS definitions.
+
 Microsoft Entra ID authentication is enabled only when both `AzureAd:TenantId` and `AzureAd:ClientId` are configured. Otherwise, the app starts without an authenticated fallback policy. Swagger is served at `/api/swagger`.
 
 The SQL-backed repositories and application services are registered only when `SqlServer:ConnectionString` is non-empty. There is no implemented JSON repository fallback in the current web startup path.

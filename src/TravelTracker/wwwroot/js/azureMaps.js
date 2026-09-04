@@ -54,10 +54,10 @@ function getPresidentialSiteMarkerText(name) {
 }
 
 // Initialize the map with custom container ID
-window.initializeAzureMap = function (containerIdOrKey, subscriptionKeyOrLat, centerLatOrLon, centerLonOrZoom, zoomOrUndef) {
+window.initializeAzureMap = function (containerIdOrKey, subscriptionKeyOrLat, centerLatOrLon, centerLonOrZoom, zoomOrUndef, mapIssueReporterOrUndef) {
     return new Promise((resolve, reject) => {
         try {
-            let containerId, subscriptionKey, centerLat, centerLon, zoom;
+            let containerId, subscriptionKey, centerLat, centerLon, zoom, mapIssueReporter;
             
             // Check if first parameter is a container ID (new signature) or subscription key (old signature)
             if (typeof containerIdOrKey === 'string' && document.getElementById(containerIdOrKey)) {
@@ -67,6 +67,7 @@ window.initializeAzureMap = function (containerIdOrKey, subscriptionKeyOrLat, ce
                 centerLat = centerLatOrLon;
                 centerLon = centerLonOrZoom;
                 zoom = zoomOrUndef || 4;
+                mapIssueReporter = mapIssueReporterOrUndef;
             } else {
                 // Old signature: (subscriptionKey, centerLat, centerLon, zoom) - default to azureMap
                 containerId = 'azureMap';
@@ -87,6 +88,41 @@ window.initializeAzureMap = function (containerIdOrKey, subscriptionKeyOrLat, ce
                 }
             });
 
+            let mapErrorCount = 0;
+            let issueReported = false;
+
+            const getMapErrorDetails = function (event) {
+                const errorMessage = event?.error?.message ?? event?.message ?? event?.error?.toString?.() ?? 'No error message supplied.';
+                return String(errorMessage)
+                    .replace(/(subscription-key|subscriptionKey|api[-_]?key|sig)=([^&\s]+)/gi, '$1=[redacted]')
+                    .slice(0, 1000);
+            };
+
+            const reportMapDataIssue = function (reason, tileRequestCount, event) {
+                if (issueReported) {
+                    return;
+                }
+
+                issueReported = true;
+                console.warn('Azure Maps basemap may be unavailable.', {
+                    containerId,
+                    reason,
+                    tileRequestCount,
+                    event,
+                    timestamp: new Date().toISOString()
+                });
+
+                if (mapIssueReporter) {
+                    mapIssueReporter.invokeMethodAsync('ReportMapDataIssue', reason, tileRequestCount, getMapErrorDetails(event))
+                        .catch(error => console.error('Unable to report Azure Maps basemap issue to .NET:', error));
+                }
+            };
+
+            map.events.add('error', function (event) {
+                mapErrorCount++;
+                reportMapDataIssue('Azure Maps reported an error while loading map data.', 0, event);
+            });
+
             // Wait for the map resources to be ready
             map.events.add('ready', function () {
                 // Create a popup
@@ -102,6 +138,16 @@ window.initializeAzureMap = function (containerIdOrKey, subscriptionKeyOrLat, ce
 
                 console.log(`Azure Maps initialized successfully for ${containerId}`);
                 resolve(true);
+
+                window.setTimeout(function () {
+                    const tileRequestCount = performance.getEntriesByType('resource')
+                        .filter(entry => entry.name.includes('atlas.microsoft.com/map/tile'))
+                        .length;
+
+                    if (mapErrorCount === 0 && tileRequestCount === 0) {
+                        reportMapDataIssue('No Azure Maps basemap tile requests were observed after map initialization.', tileRequestCount);
+                    }
+                }, 10000);
             });
         } catch (error) {
             console.error('Error initializing Azure Maps:', error);

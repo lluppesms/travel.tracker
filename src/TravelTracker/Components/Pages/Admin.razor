@@ -26,11 +26,85 @@
                 </div>
 
                 <h4 class="mt-4 mb-3">System Information</h4>
-                <ul>
-                    <li>Data Source: @dataSource</li>
-                    <li>API Key: @apiKeyInfo</li>
-                    <li>AI Chat: @aiChatInfo</li>
-                    <li>Azure Maps: @azureMapsInfo</li>
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin-bottom: 12px;">
+                        <span style="font-weight: bold;">Database Server:</span>
+                        <span class="reveal-item" style="cursor: pointer; user-select: none;" @onclick="() => ToggleReveal(nameof(revealDatabaseServer))">
+                            @if (revealDatabaseServer)
+                            {
+                                <span>@databaseServer</span>
+                            }
+                            else
+                            {
+                                <span style="color: #6c757d; font-style: italic; text-decoration: underline; text-decoration-style: dotted;">Click to reveal</span>
+                            }
+                        </span>
+                    </li>
+                    <li style="margin-bottom: 12px;">
+                        <span style="font-weight: bold;">Database Name:</span>
+                        <span class="reveal-item" style="cursor: pointer; user-select: none;" @onclick="() => ToggleReveal(nameof(revealDatabaseName))">
+                            @if (revealDatabaseName)
+                            {
+                                <span>@databaseName</span>
+                            }
+                            else
+                            {
+                                <span style="color: #6c757d; font-style: italic; text-decoration: underline; text-decoration-style: dotted;">Click to reveal</span>
+                            }
+                        </span>
+                    </li>
+                    <li style="margin-bottom: 12px;">
+                        <span style="font-weight: bold;">API Key:</span>
+                        <span class="reveal-item" style="cursor: pointer; user-select: none;" @onclick="() => ToggleReveal(nameof(revealApiKey))">
+                            @if (revealApiKey)
+                            {
+                                <span>@apiKeyInfo</span>
+                            }
+                            else
+                            {
+                                <span style="color: #6c757d; font-style: italic; text-decoration: underline; text-decoration-style: dotted;">Click to reveal</span>
+                            }
+                        </span>
+                    </li>
+                    <li style="margin-bottom: 12px;">
+                        <span style="font-weight: bold;">AI Foundry:</span>
+                        <span class="reveal-item" style="cursor: pointer; user-select: none;" @onclick="() => ToggleReveal(nameof(revealAiFoundry))">
+                            @if (revealAiFoundry)
+                            {
+                                <span>@aiFoundryEndpoint</span>
+                            }
+                            else
+                            {
+                                <span style="color: #6c757d; font-style: italic; text-decoration: underline; text-decoration-style: dotted;">Click to reveal</span>
+                            }
+                        </span>
+                    </li>
+                    <li style="margin-bottom: 12px;">
+                        <span style="font-weight: bold;">Model Name:</span>
+                        <span class="reveal-item" style="cursor: pointer; user-select: none;" @onclick="() => ToggleReveal(nameof(revealModelName))">
+                            @if (revealModelName)
+                            {
+                                <span>@aiChatModel</span>
+                            }
+                            else
+                            {
+                                <span style="color: #6c757d; font-style: italic; text-decoration: underline; text-decoration-style: dotted;">Click to reveal</span>
+                            }
+                        </span>
+                    </li>
+                    <li style="margin-bottom: 12px;">
+                        <span style="font-weight: bold;">Azure Maps:</span>
+                        <span class="reveal-item" style="cursor: pointer; user-select: none;" @onclick="() => ToggleReveal(nameof(revealAzureMaps))">
+                            @if (revealAzureMaps)
+                            {
+                                <span>@azureMapsInfo</span>
+                            }
+                            else
+                            {
+                                <span style="color: #6c757d; font-style: italic; text-decoration: underline; text-decoration-style: dotted;">Click to reveal</span>
+                            }
+                        </span>
+                    </li>
                 </ul>
             </AuthorizeView>
         </div>
@@ -39,10 +113,45 @@
 
 @code {
     private string userName = string.Empty;
-    private string dataSource = string.Empty;
+    private string databaseServer = string.Empty;
+    private string databaseName = string.Empty;
     private string apiKeyInfo = string.Empty;
-    private string aiChatInfo = string.Empty;
+    private string aiFoundryEndpoint = string.Empty;
+    private string aiChatModel = string.Empty;
     private string azureMapsInfo = string.Empty;
+    
+    // Reveal state tracking
+    private bool revealDatabaseServer = false;
+    private bool revealDatabaseName = false;
+    private bool revealApiKey = false;
+    private bool revealAiFoundry = false;
+    private bool revealModelName = false;
+    private bool revealAzureMaps = false;
+
+    private void ToggleReveal(string fieldName)
+    {
+        switch (fieldName)
+        {
+            case nameof(revealDatabaseServer):
+                revealDatabaseServer = !revealDatabaseServer;
+                break;
+            case nameof(revealDatabaseName):
+                revealDatabaseName = !revealDatabaseName;
+                break;
+            case nameof(revealApiKey):
+                revealApiKey = !revealApiKey;
+                break;
+            case nameof(revealAiFoundry):
+                revealAiFoundry = !revealAiFoundry;
+                break;
+            case nameof(revealModelName):
+                revealModelName = !revealModelName;
+                break;
+            case nameof(revealAzureMaps):
+                revealAzureMaps = !revealAzureMaps;
+                break;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -62,24 +171,28 @@
                     if (!string.IsNullOrEmpty(sqlDefaultConnection))
                     {
                         var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(sqlDefaultConnection);
-                        dataSource = $"SQL Server: {builder.DataSource}, Database: {builder.InitialCatalog}";
+                        databaseServer = builder.DataSource;
+                        databaseName = builder.InitialCatalog;
                     }
                     else
                     {
-                        dataSource = "JSON File";
+                        databaseServer = "JSON File";
+                        databaseName = "N/A";
                     }
 
                     // Get AI Chat configuration
                     var aiChatEndpoint = Configuration["AzureAIFoundry:Endpoint"];
-                    var aiChatModel = Configuration["AzureAIFoundry:DeploymentName"];
-                    if (!string.IsNullOrEmpty(aiChatEndpoint) && !string.IsNullOrEmpty(aiChatModel))
+                    var aiChatModelValue = Configuration["AzureAIFoundry:DeploymentName"];
+                    if (!string.IsNullOrEmpty(aiChatEndpoint) && !string.IsNullOrEmpty(aiChatModelValue))
                     {
                         var endpointUri = new Uri(aiChatEndpoint);
-                        aiChatInfo = $"{endpointUri.Host} / {aiChatModel}";
+                        aiFoundryEndpoint = endpointUri.Host;
+                        aiChatModel = aiChatModelValue;
                     }
                     else
                     {
-                        aiChatInfo = "Not configured";
+                        aiFoundryEndpoint = "Not configured";
+                        aiChatModel = "Not configured";
                     }
 
                     // azureMapsInfo

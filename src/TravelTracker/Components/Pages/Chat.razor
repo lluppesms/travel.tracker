@@ -53,7 +53,27 @@
                                 <li>Information about national parks</li>
                                 <li>Available location types</li>
                             </ul>
-                            <p class="mb-0"><strong>Try asking:</strong> "What locations have I visited in California?" or "How many states have I visited?"</p>
+                            <p class="mb-3"><strong>Try asking:</strong></p>
+                            <div class="d-grid gap-2">
+                                <button type="button" 
+                                        class="btn btn-outline-primary text-start" 
+                                        @onclick='() => SelectSampleQuestion("What locations have I visited in California?")'
+                                        disabled="@(!Readiness.IsReady)">
+                                    What locations have I visited in California?
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-outline-primary text-start" 
+                                        @onclick='() => SelectSampleQuestion("How many states have I visited?")'
+                                        disabled="@(!Readiness.IsReady)">
+                                    How many states have I visited?
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-outline-primary text-start" 
+                                        @onclick='() => SelectSampleQuestion("Tell me the top 5 states that I have been to and the first and the last time I was there")'
+                                        disabled="@(!Readiness.IsReady)">
+                                    Tell me the top 5 states that I've been to and the data of the first and the last time I was there and format it nicely.
+                                </button>
+                            </div>
                         </div>
                     }
 
@@ -277,6 +297,13 @@
         {
             await SendMessage();
         }
+    }
+
+    private async Task SelectSampleQuestion(string question)
+    {
+        currentMessage = question;
+        StateHasChanged();
+        await SendMessage();
     }
 
     private async Task SendMessage()
