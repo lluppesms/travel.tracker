@@ -1,143 +1,72 @@
 # Travel Tracker
 
-A personal travel tracking and visualization web application built with Blazor and Azure.
+Travel Tracker is a personal travel journal for the places that stick with you: the national park overlook, the tiny town diner, the road trip stop that became a favorite. Record where you have been, add the details worth remembering, and see your travels take shape across the United States.
 
-## Overview
+## What You Can Do
 
-Travel Tracker is a responsive web application that enables users to track, visualize, and manage their travels within the United States. The application provides interactive map visualizations, location management, and travel statistics to help users document and reflect on their travel experiences.
+- Capture visits with dates, ratings, notes, tags, trip names, and location types.
+- Import travel history from JSON or CSV instead of re-entering every stop by hand.
+- Explore your travels on Azure Maps with date, state, destination, and location-type views.
+- Find patterns in a statistics dashboard for locations, states, parks, and travel days.
+- Ask the travel assistant questions about your own history in natural language.
+- Connect compatible AI clients through a dedicated Model Context Protocol (MCP) server.
 
-### Key Features
+## How It Is Built
 
-- 📍 **Location Management** - Track visits with ratings, comments, and details
-- 🗺️ **Interactive Maps** - Visualize travels using Azure Maps
-- 📊 **Multiple Views** - Date range, state overview, and national parks modes
-- 📤 **JSON Upload** - Import location data in bulk
-- 🤖 **AI Chatbot** - Ask questions about your travels in natural language
-- 🔌 **MCP Server** - Model Context Protocol support for AI agent integration
-- 🔐 **Secure Authentication** - Azure AD (Entra ID) integration
-- 📱 **Responsive Design** - Works on desktop and mobile devices
+Travel Tracker keeps its responsibilities deliberately separated so the web experience, APIs, assistant, and AI clients all work from the same business rules.
 
-## Project Status
-
-**Phase 3: Development** 🔄 In Progress (October 2025)
-
-Foundation development is complete. The application structure, data layer, service layer, and basic UI pages are implemented. Authentication and feature implementation are in progress.
-
-## Documentation
-
-📖 **[View Planning Documents →](./reports/)**
-
-- **[Application Plan](./reports/Travel-Tracker-Application-Plan.md)** - Complete specification and development guide
-- **[Status Report](./reports/Report-Status.md)** - Project status and progress tracking
-- **[Reports README](./reports/README.md)** - Navigation guide for all planning documents
-- **[API Documentation](./Docs/API-Documentation.md)** - REST API and MCP endpoints reference
-- **[MCP Setup Guide](./Docs/MCP-SETUP.md)** - Model Context Protocol server configuration and usage
-
-## Technology Stack
-
-- **Frontend:** Blazor (Server + WebAssembly)
-- **Backend:** C# / ASP.NET Core (.NET 10)
-- **Database:** SQL Server (with Entity Framework Core)
-- **Authentication:** Azure AD (Entra ID)
-- **AI/LLM:** Azure AI Foundry
-- **MCP:** Model Context Protocol server for AI agent integration
-- **Maps:** Azure Maps
-- **Hosting:** Azure App Service
-- **IaC:** Bicep
-- **CI/CD:** GitHub Actions
-
-## Development Phases
-
-1. ✅ **Phase 1: Planning** - Complete
-2. ⏸️ **Phase 2: Assessment** - N/A (new project)
-3. 🔄 **Phase 3: Development** - In Progress (~20% complete)
-   - ✅ Foundation & Project Structure
-   - ✅ Data Models & Repositories
-   - ✅ Service Layer
-   - ✅ Basic UI Pages
-   - 🔲 Authentication
-   - 🔲 Feature Implementation
-4. 🔲 **Phase 4: Infrastructure** - Not started
-5. 🔲 **Phase 5: Deployment** - Not started
-6. 🔲 **Phase 6: CI/CD Setup** - Not started
-
-## Getting Started
-
-### Prerequisites
-- .NET 10 SDK
-- SQL Server (LocalDB, Express, or full SQL Server)
-- Azure subscription (for Azure AD, Azure Maps, and Azure AI Foundry)
-- Visual Studio 2022 or VS Code
-
-### Database Setup
-
-1. Install SQL Server or SQL Server Express
-2. Update the connection string in `appsettings.json`:
-   ```json
-   "SqlServer": {
-    "ConnectionString": "Server=localhost;Database=TravelTrackerDB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;Application Name=TravelTracker"
-   }
-   ```
-   The app stores all of its tables and stored procedures in the `Travel` schema.
-3. Create or deploy the database objects:
-   ```bash
-   cd src/sql.database
-   dotnet build sql.database.sln
-   ```
-   or publish `src/sql.database/bin/Debug/sql.database.dacpac` to your SQL database.
-
-4. Use a dedicated SQL login/user for this app and grant permissions only on the `Travel` schema. The connection string should use that dedicated identity; the connection string itself does not restrict schema access.
-
-### Running Locally
-
-1. Clone the repository
-2. Set up the database (see Database Setup above)
-3. Configure Azure services (Azure AD, Azure Maps, Azure AI Foundry)
-4. Update `appsettings.json` with your Azure AD, Azure Maps, and Azure AI Foundry credentials
-   - See [Chatbot Setup Guide](./Docs/CHATBOT_SETUP.md) for detailed AI configuration
-5. Run the application:
-   ```bash
-   cd src/TravelTracker
-   dotnet run
-   ```
-
-### Running Tests
-
-```bash
-dotnet test
+```mermaid
+flowchart TD
+    Browser[Browser] --> Web[Blazor web app]
+    Web --> Services[Application services]
+    API[REST API] --> Services
+    MCP[MCP HTTP or stdio host] --> Tools[Shared MCP tools]
+    Tools --> Services
+    Services --> Data[EF Core repositories]
+    Data --> SQL[(SQL Server: Travel schema)]
+    Web --> Maps[Azure Maps]
+    Services --> Assistant[Travel assistant providers]
 ```
 
-## Current Implementation
+The main application lives in `src/TravelTracker/`. It is an ASP.NET Core .NET 10 Blazor Web App with interactive server components and REST controllers. `TravelTracker.Data` owns the EF Core model and SQL repositories; `TravelTracker.Services` holds the application rules; and `TravelTracker.MCP` provides shared tools plus HTTP and stdio hosts. Database objects are managed as a SQL project in `src/sql.database/`, while Bicep in `infra/` defines the Azure deployment.
 
-### Completed
-- ✅ Solution structure with 4 projects
-- ✅ Data models (User, Location, NationalPark)
-- ✅ Repository pattern with Entity Framework Core and SQL Server
-- ✅ Service layer for business logic
-- ✅ Dependency injection configuration
-- ✅ Basic UI pages and navigation
-- ✅ Unit tests (73 passing)
-- ✅ Database migrations
-- ✅ REST API with Swagger documentation
-- ✅ Model Context Protocol (MCP) server for AI agent integration
+Microsoft Entra ID, Azure Maps, and the AI assistant are optional integrations. The application can start without Entra configuration, while SQL Server is required for the application services that manage travel data.
 
-### In Progress
-- 🔄 Azure AD authentication
-- 🔄 Location management features
-- 🔄 Azure Maps integration
+## Get Running
 
-## Next Steps
+**You will need:** the .NET 10 SDK and a SQL Server instance. Azure configuration is needed only for the integrations you plan to use.
 
-- Complete authentication implementation
-- Connect UI to backend services
-- Implement location CRUD operations
-- Add Azure Maps visualization
-- Create infrastructure Bicep templates
+1. Build the database project and publish its DACPAC to your SQL Server instance:
+
+   ```powershell
+   dotnet build .\src\sql.database\sql.database.sln
+   ```
+
+2. Configure `SqlServer:ConnectionString` in `src/TravelTracker/appsettings.json` or a secure configuration provider. Travel Tracker uses the `Travel` schema.
+
+3. Run the web app:
+
+   ```powershell
+   dotnet run --project .\src\TravelTracker\TravelTracker.csproj
+   ```
+
+4. Run the focused test suite when making changes:
+
+   ```powershell
+   dotnet test .\src\TravelTracker.Tests\TravelTracker.Tests.csproj
+   ```
+
+For optional AI configuration, see [Docs/CHATBOT_SETUP.md](./Docs/CHATBOT_SETUP.md).
+
+## Explore Further
+
+- [API reference](./Docs/API-Documentation.md)
+- [MCP setup](./Docs/MCP-SETUP.md)
+- [Infrastructure overview](./Docs/Infra_As_Code.md)
+- [Development status](./reports/Report-Status.md)
+- [Original application plan](./reports/Travel-Tracker-Application-Plan.md)
+- [Project map](./MAP.md) for contributors and maintainers
 
 ## License
 
-This project is licensed under the terms specified in the [LICENSE](./LICENSE) file.
-
----
-
-For detailed information about the application design, architecture, and development roadmap, see the [planning documents](./reports/).
+Travel Tracker is licensed under the terms in [LICENSE](./LICENSE).
