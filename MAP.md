@@ -146,7 +146,7 @@ Infrastructure parameters under `infra/Bicep/` cover App Service, Azure SQL, Key
 
 ## 7. Testing
 
-The .NET test project is `src/TravelTracker.Tests/TravelTracker.Tests.csproj`. It uses xUnit, Moq, coverlet, and Microsoft.NET.Test.Sdk, and contains controller, data, and service tests.
+The .NET test project is `src/TravelTracker.Tests/TravelTracker.Tests.csproj`. It uses xUnit, Moq, coverlet, and Microsoft.NET.Test.Sdk, and contains controller, data, and service tests. Coverage-focused tests include destination and health controllers, destination service matching, configuration fallback, authentication, build-info loading, disabled assistant behavior, principal accessors, Copilot health checks, and JSON/CSV data import. On 2026-09-04, 240 tests passed with 60.03% line coverage and 49.49% branch coverage using `coverage.runsettings`; the next improvement targets are the remaining zero-coverage controllers/services and repository branches.
 
 Useful commands:
 
