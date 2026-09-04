@@ -156,7 +156,7 @@ dotnet build .\src\TravelTracker\TravelTracker.csproj
 
 Some workflows still reference a `playwright/` directory, but that directory and root Playwright configuration are not present as of this review. Treat browser-test workflow steps as drift until the tests are restored or the workflows are revised.
 
-As of 2026-09-04, the focused web build command succeeds with warnings, but the focused test command cannot run because `src/TravelTracker.Tests/TravelTracker.Tests.csproj` has malformed XML (`MSB4025`, mismatched `PackageReference` tags). Repair that project file before relying on local or CI test results.
+As of 2026-09-04, the focused web build command succeeds with warnings, and the focused test command succeeds after the test project package references were normalized.
 
 ## 8. GitHub Actions
 
@@ -230,7 +230,7 @@ For source, infrastructure, workflow, test, or Copilot-customization changes:
 - `azure.yaml` still contains a copied project name and points its web service at nonexistent `src/web/Website/`; use `src/TravelTracker/` when correcting azd configuration.
 - The workspace build, publish, and watch tasks also point at a nonexistent web project rather than `src/TravelTracker/TravelTracker.csproj`.
 - `src/TravelTracker/TravelTracker.csproj` contains duplicate package references, and `Program.cs` contains duplicate using directives; the focused web build succeeds but reports 21 warnings as of 2026-09-04.
-- `src/TravelTracker.Tests/TravelTracker.Tests.csproj` is malformed XML, so its focused `dotnet test` command currently fails before test discovery (`MSB4025`, mismatched `PackageReference` tags).
+- `src/TravelTracker.Tests/TravelTracker.Tests.csproj` has valid XML and its focused `dotnet test` command passes after duplicate and nested package references were removed.
 - No `playwright/`, `package.json`, root Playwright configuration, `Dockerfile`, `PRODUCT.md`, `DESIGN.md`, or `CONTRIBUTING.md` exists in the current tree, despite references in some copied documentation and automation.
 - `infra/Bicep/main.bicep` accepts deployment-type labels beyond App Service, but active deployment composition currently creates the web app only for `webapp` and `all`.
 - Entra ID is optional at startup, while SQL configuration is effectively required for the registered application services.
