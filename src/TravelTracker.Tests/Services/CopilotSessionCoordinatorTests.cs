@@ -17,8 +17,8 @@ public class CopilotSessionCoordinatorTests
         var fixture = new CoordinatorFixture();
         var user = CreateUser(1);
 
-        var first = await fixture.Coordinator.AcquireSessionAsync(user, "thread-1");
-        var second = await fixture.Coordinator.AcquireSessionAsync(user, "thread-1");
+        var first = await fixture.Coordinator.AcquireSessionAsync(user, "thread-1", cancellationToken: TestContext.Current.CancellationToken);
+        var second = await fixture.Coordinator.AcquireSessionAsync(user, "thread-1", cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Same(first, second);
         fixture.Runtime.Verify(
@@ -30,10 +30,10 @@ public class CopilotSessionCoordinatorTests
     public async Task AcquireSessionAsync_ExistingThreadForDifferentUser_RejectsAccess()
     {
         var fixture = new CoordinatorFixture();
-        await fixture.Coordinator.AcquireSessionAsync(CreateUser(1), "shared-thread");
+        await fixture.Coordinator.AcquireSessionAsync(CreateUser(1), "shared-thread", cancellationToken: TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<CrossUserSessionException>(
-            () => fixture.Coordinator.AcquireSessionAsync(CreateUser(2), "shared-thread"));
+            () => fixture.Coordinator.AcquireSessionAsync(CreateUser(2), "shared-thread", cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -54,12 +54,12 @@ public class CopilotSessionCoordinatorTests
     {
         var fixture = new CoordinatorFixture();
         var user = CreateUser(1);
-        await fixture.Coordinator.AcquireSessionAsync(user, "one");
-        await fixture.Coordinator.AcquireSessionAsync(user, "two");
-        await fixture.Coordinator.AcquireSessionAsync(user, "three");
+        await fixture.Coordinator.AcquireSessionAsync(user, "one", cancellationToken: TestContext.Current.CancellationToken);
+        await fixture.Coordinator.AcquireSessionAsync(user, "two", cancellationToken: TestContext.Current.CancellationToken);
+        await fixture.Coordinator.AcquireSessionAsync(user, "three", cancellationToken: TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<SessionQuotaExceededException>(
-            () => fixture.Coordinator.AcquireSessionAsync(user, "four"));
+            () => fixture.Coordinator.AcquireSessionAsync(user, "four", cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -67,11 +67,11 @@ public class CopilotSessionCoordinatorTests
     {
         var fixture = new CoordinatorFixture();
         var user = CreateUser(1);
-        var session = await fixture.Coordinator.AcquireSessionAsync(user, "thread");
-        await using var first = await fixture.Coordinator.AcquireTurnAsync(session, user);
+        var session = await fixture.Coordinator.AcquireSessionAsync(user, "thread", cancellationToken: TestContext.Current.CancellationToken);
+        await using var first = await fixture.Coordinator.AcquireTurnAsync(session, user, TestContext.Current.CancellationToken);
 
-        var secondTask = fixture.Coordinator.AcquireTurnAsync(session, user);
-        await Task.Delay(50);
+        var secondTask = fixture.Coordinator.AcquireTurnAsync(session, user, TestContext.Current.CancellationToken);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.False(secondTask.IsCompleted);
 
         await first.DisposeAsync();
@@ -83,11 +83,11 @@ public class CopilotSessionCoordinatorTests
     {
         var fixture = new CoordinatorFixture();
         var user = CreateUser(1);
-        var session = await fixture.Coordinator.AcquireSessionAsync(user, "thread");
+        var session = await fixture.Coordinator.AcquireSessionAsync(user, "thread", cancellationToken: TestContext.Current.CancellationToken);
         fixture.Time.Advance(TimeSpan.FromMinutes(15));
 
         await Assert.ThrowsAsync<StaleSessionException>(
-            () => fixture.Coordinator.AcquireSessionAsync(user, "thread"));
+            () => fixture.Coordinator.AcquireSessionAsync(user, "thread", cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.True(fixture.Handle.IsDisposed);
         fixture.Runtime.Verify(
@@ -105,7 +105,7 @@ public class CopilotSessionCoordinatorTests
             .Callback<SessionConfig, CancellationToken>((config, _) => captured = config)
             .ReturnsAsync(fixture.Handle);
 
-        await fixture.Coordinator.AcquireSessionAsync(CreateUser(1), "thread");
+        await fixture.Coordinator.AcquireSessionAsync(CreateUser(1), "thread", cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(captured);
         Assert.False(captured.Streaming);
@@ -126,11 +126,11 @@ public class CopilotSessionCoordinatorTests
         var fixture = new CoordinatorFixture();
         var sessionRoot = Directory.CreateDirectory(Path.Combine(fixture.Options.CopilotHome, "session-state"));
         var abandoned = sessionRoot.CreateSubdirectory("abandoned-session");
-        await File.WriteAllTextAsync(Path.Combine(abandoned.FullName, "state.json"), "{}");
+        await File.WriteAllTextAsync(Path.Combine(abandoned.FullName, "state.json"), "{}", TestContext.Current.CancellationToken);
         var runtimeFile = Path.Combine(fixture.Options.CopilotHome, "runtime-owned.txt");
-        await File.WriteAllTextAsync(runtimeFile, "keep");
+        await File.WriteAllTextAsync(runtimeFile, "keep", TestContext.Current.CancellationToken);
 
-        await fixture.Coordinator.CleanupAbandonedSessionsAsync();
+        await fixture.Coordinator.CleanupAbandonedSessionsAsync(TestContext.Current.CancellationToken);
 
         Assert.False(Directory.Exists(abandoned.FullName));
         Assert.True(File.Exists(runtimeFile));
