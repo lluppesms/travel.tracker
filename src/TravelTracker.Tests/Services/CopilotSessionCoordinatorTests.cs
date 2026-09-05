@@ -45,7 +45,8 @@ public class CopilotSessionCoordinatorTests
             () => fixture.Coordinator.AcquireSessionAsync(
                 CreateUser(1),
                 "unknown",
-                createIfMissing: false));
+                createIfMissing: false,
+                cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]

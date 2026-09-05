@@ -5,8 +5,6 @@ using TravelTracker.Services;
 using TravelTracker.Authentication;
 using TravelTracker.Data;
 using TravelTracker.Extensions;
-using TravelTracker.Helpers;
-using TravelTracker.Services;
 using TravelTracker.Services.Configuration;
 using TravelTracker.Services.Interfaces;
 using TravelTracker.Services.Services;

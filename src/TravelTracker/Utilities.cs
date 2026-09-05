@@ -66,7 +66,7 @@ public class Utilities
     public static string GetEnvironmentVariable(string name)
     {
         //return name + ": " + Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
-        return Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+        return Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process) ?? string.Empty;
     }
 
     /// <summary>

@@ -4,7 +4,7 @@
 >
 > **Purpose:** Give Copilot a fast, evidence-based map of this repository so routine work starts at the owning project instead of scanning the whole tree.
 >
-> **Last reviewed:** 2026-09-04
+> **Last reviewed:** 2026-09-05
 
 ## 1. Project Identity
 
@@ -146,7 +146,7 @@ Infrastructure parameters under `infra/Bicep/` cover App Service, Azure SQL, Key
 
 ## 7. Testing
 
-The .NET test project is `src/TravelTracker.Tests/TravelTracker.Tests.csproj`. It uses xUnit, Moq, coverlet, and Microsoft.NET.Test.Sdk, and contains controller, data, and service tests. Coverage-focused tests include destination and health controllers, destination service matching, configuration fallback, authentication, build-info loading, disabled assistant behavior, principal accessors, Copilot health checks, and JSON/CSV data import. On 2026-09-04, 240 tests passed with 60.03% line coverage and 49.49% branch coverage using `coverage.runsettings`; the next improvement targets are the remaining zero-coverage controllers/services and repository branches.
+The .NET test project is `src/TravelTracker.Tests/TravelTracker.Tests.csproj`. It uses xUnit, Moq, coverlet, and Microsoft.NET.Test.Sdk, and contains controller, data, and service tests. Coverage-focused tests include destination and health controllers, destination service matching, configuration fallback, authentication, build-info loading, disabled assistant behavior, principal accessors, Copilot health checks, and JSON/CSV data import. On 2026-09-04, 240 tests passed with 60.03% line coverage and 49.49% branch coverage using `coverage.runsettings`; the next improvement targets are the remaining zero-coverage controllers/services and repository branches. On 2026-09-05, nullable flow warnings were removed from `ConfigController`, `Utilities`, `ClaimsTransformation`, and `Admin.razor`, along with duplicate using warnings in `Program.cs` and `globalUsings.cs`; the web project now builds with 0 warnings and 0 errors.
 
 Useful commands:
 

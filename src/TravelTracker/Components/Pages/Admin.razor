@@ -160,9 +160,9 @@
         if (firstRender)
         {
             // await JsInterop.InvokeVoidAsync("syncHeaderTitle");
-            var userIdentity = Context.HttpContext.User;
-            userName = userIdentity != null ? userIdentity.Identity.Name : string.Empty;
-            var isInAdminRole = userIdentity != null && userIdentity.IsInRole("Admin");
+            var userIdentity = Context.HttpContext?.User;
+            userName = userIdentity?.Identity?.Name ?? string.Empty;
+            var isInAdminRole = userIdentity?.IsInRole("Admin") == true;
             if (isInAdminRole)
             {
                 try

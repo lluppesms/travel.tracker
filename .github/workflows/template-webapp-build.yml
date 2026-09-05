@@ -134,7 +134,7 @@ jobs:
 
     - name: Generate coverage summary
       if: inputs.testApplication == true
-      uses: danielpalme/ReportGenerator-GitHub-Action@5.3.10
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.5.11
       with:
         reports: 'TestResults/**/coverage.cobertura.xml'
         targetdir: 'coverage-report'

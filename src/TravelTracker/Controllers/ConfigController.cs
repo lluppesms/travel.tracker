@@ -17,7 +17,7 @@ public class ConfigController(ILocationService locationService, IAuthenticationS
     private readonly IAuthenticationService _authenticationService = authenticationService;
     private readonly ILogger<LocationsController> _logger = logger;
     private readonly IConfiguration _config = config;
-    private readonly IHttpContextAccessor context;
+    private readonly IHttpContextAccessor? context = null;
 
     /// <summary>
     /// Echoes configuration settings into the log for an admin to verify...
@@ -43,7 +43,7 @@ public class ConfigController(ILocationService locationService, IAuthenticationS
         try
         {
             var sqlDefaultConnection = _config["AppSettings:DefaultConnection"];
-            Console.WriteLine($"AppSettings.DefaultConnection={Utilities.SanitizeConnection(sqlDefaultConnection)}");
+            Console.WriteLine($"AppSettings.DefaultConnection={Utilities.SanitizeConnection(sqlDefaultConnection ?? string.Empty)}");
             var environmentName = _config["AppSettings:EnvironmentName"];
             Console.WriteLine($"AppSettings.EnvironmentName={environmentName}");
         }
@@ -58,7 +58,9 @@ public class ConfigController(ILocationService locationService, IAuthenticationS
             var openaiEndpoint = _config["AppSettings:AzureOpenAI:Chat:Endpoint"];
             var openaiDeploymentName = _config["AppSettings:AzureOpenAI:Chat:DeploymentName"];
             var openaiApiKey = _config["AppSettings:AzureOpenAI:Chat:ApiKey"];
-            var openaiApiKeyMask = !string.IsNullOrEmpty(openaiApiKey) ? $"{openaiApiKey[..3]}... (~{openaiApiKey.Length} bytes)" : "(0 bytes)";
+            var openaiApiKeyMask = string.IsNullOrEmpty(openaiApiKey)
+                ? "(0 bytes)"
+                : $"{(openaiApiKey.Length > 3 ? openaiApiKey[..3] : openaiApiKey)}... (~{openaiApiKey.Length} bytes)";
             var openaiMaxTokens = int.TryParse(_config["AppSettings:AzureOpenAI:Chat:MaxTokens"], out var parsedMaxTokens) ? parsedMaxTokens : 300;
             var openaiTemperature = float.TryParse(_config["AppSettings:AzureOpenAI:Chat:Temperature"], out var parsedTemperature) ? parsedTemperature : 0.7f;
             var openaiTopP = float.TryParse(_config["AppSettings:AzureOpenAI:Chat:TopP"], out var topP) ? topP : 0.95f;
@@ -72,7 +74,9 @@ public class ConfigController(ILocationService locationService, IAuthenticationS
             var openaiImageEndpoint = _config["AppSettings:AzureOpenAI:Image:Endpoint"];
             var openaiImageDeploymentName = _config["AppSettings:AzureOpenAI:Image:DeploymentName"];
             var openaiImageApiKey = _config["AppSettings:AzureOpenAI:Image:ApiKey"];
-            var openaiImageApiKeyMask = !string.IsNullOrEmpty(openaiImageApiKey) ? $"{openaiImageApiKey[..3]}... (~{openaiImageApiKey.Length} bytes)" : "(0 bytes)";
+            var openaiImageApiKeyMask = string.IsNullOrEmpty(openaiImageApiKey)
+                ? "(0 bytes)"
+                : $"{(openaiImageApiKey.Length > 3 ? openaiImageApiKey[..3] : openaiImageApiKey)}... (~{openaiImageApiKey.Length} bytes)";
             Console.WriteLine($"AppSettings:AzureOpenAI:Image:Endpoint={openaiImageEndpoint}");
             Console.WriteLine($"AppSettings:AzureOpenAI:Image:DeploymentName={openaiImageDeploymentName}");
             Console.WriteLine($"AppSettings:AzureOpenAI:Image:ApiKey={openaiImageApiKeyMask}");
@@ -85,17 +89,21 @@ public class ConfigController(ILocationService locationService, IAuthenticationS
 
         try
         {
-            var buildInfoFile = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "buildinfo.json");
+            var assemblyDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? AppContext.BaseDirectory;
+            var buildInfoFile = Path.Combine(assemblyDirectory, "buildinfo.json");
             if (System.IO.File.Exists(buildInfoFile))
             {
                 using var r = new StreamReader(buildInfoFile);
                 var buildInfoData = r.ReadToEnd();
                 var buildInfoObject = JsonConvert.DeserializeObject<BuildInfo>(buildInfoData);
-                Console.WriteLine($"build.BranchName={buildInfoObject.BranchName}");
-                Console.WriteLine($"build.BuildDate={buildInfoObject.BuildDate}");
-                Console.WriteLine($"build.BuildId={buildInfoObject.BuildId}");
-                Console.WriteLine($"build.BuildNumber={buildInfoObject.BuildNumber}");
-                Console.WriteLine($"build.BuildCommitHashNumber={buildInfoObject.CommitHash}");
+                if (buildInfoObject is not null)
+                {
+                    Console.WriteLine($"build.BranchName={buildInfoObject.BranchName}");
+                    Console.WriteLine($"build.BuildDate={buildInfoObject.BuildDate}");
+                    Console.WriteLine($"build.BuildId={buildInfoObject.BuildId}");
+                    Console.WriteLine($"build.BuildNumber={buildInfoObject.BuildNumber}");
+                    Console.WriteLine($"build.BuildCommitHashNumber={buildInfoObject.CommitHash}");
+                }
             }
             else
             {
@@ -117,7 +125,7 @@ public class ConfigController(ILocationService locationService, IAuthenticationS
     /// <returns>User Name</returns>
     protected string GetUserName()
     {
-        var currentName = context != null && context.HttpContext != null && context.HttpContext.User != null && context.HttpContext.User.Identity != null && context.HttpContext.User.Identity.Name != null ? context.HttpContext.User.Identity.Name : "UNKNOWN";
+        var currentName = context?.HttpContext?.User?.Identity?.Name ?? "UNKNOWN";
         if (currentName == "UNKNOWN")
         {
             currentName = "BOGUS"; //  "lyle@luppes.com";
@@ -141,13 +149,7 @@ public class ConfigController(ILocationService locationService, IAuthenticationS
     /// <returns>UserId</returns>
     protected string GetUserId()
     {
-        var currentUser = context.HttpContext.User;
-        if (currentUser != null)
-        {
-            var userId = currentUser.FindFirst(ClaimTypes.NameIdentifier).Value;
-            return userId;
-        }
-        return string.Empty;
+        return context?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
     }
 
     /// <summary>
@@ -156,17 +158,17 @@ public class ConfigController(ILocationService locationService, IAuthenticationS
     /// <returns>Is Admin</returns>
     protected bool IsAdmin()
     {
-        var currentUser = context?.HttpContext?.User;
-        if (currentUser == null || currentUser.Identity == null || currentUser.Identity.Name == null ||
-            currentUser.Identity.Name.ToUpper() == "UNKNOWN" || currentUser.Identity.Name.ToUpper() == "UNDEFINED")
+        var userName = context?.HttpContext?.User?.Identity?.Name;
+        if (string.IsNullOrEmpty(userName) ||
+            userName.Equals("UNKNOWN", StringComparison.OrdinalIgnoreCase) ||
+            userName.Equals("UNDEFINED", StringComparison.OrdinalIgnoreCase))
         {
             return false;
             // return true;
         }
         else
         {
-            var isUserAnAdmin = currentUser != null && currentUser.Identity != null && currentUser.Identity.Name.Contains("luppes");
-            return isUserAnAdmin;
+            return userName.Contains("luppes", StringComparison.Ordinal);
         }
         //if (currentUser != null)
         //{

@@ -23,8 +23,10 @@ public class MyClaimsTransformation : IClaimsTransformation
     /// </summary>
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
+        ArgumentNullException.ThrowIfNull(principal);
+
         var claimsIdentity = new ClaimsIdentity();
-        if (principal != null && principal.Identity != null)
+        if (principal.Identity != null)
         {
             claimsIdentity = new ClaimsIdentity(principal.Identity);
             // <hack> Yes... this is a hack, but it works for this simple example. This should be replaced by actual Active Directory roles. </hack>
@@ -32,7 +34,7 @@ public class MyClaimsTransformation : IClaimsTransformation
             // var adminUserList = Configuration["AppSettings:AdminUserList"];
             var isAdmin =
                 !string.IsNullOrEmpty(adminUserList) &&
-                adminUserList.Contains(claimsIdentity.Name, StringComparison.InvariantCultureIgnoreCase);
+                adminUserList.Contains(claimsIdentity.Name ?? string.Empty, StringComparison.InvariantCultureIgnoreCase);
 
             if (isAdmin && !principal.IsInRole("Admin"))
             {
