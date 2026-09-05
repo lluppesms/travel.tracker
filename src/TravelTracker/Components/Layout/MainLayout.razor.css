@@ -41,7 +41,7 @@ main {
 }
 
 .build-info {
-    text-align: right;
+    text-align: left;
     font-size: 0.75rem;
     line-height: 1.2;
 }
@@ -49,6 +49,8 @@ main {
     /*color: #f8f9fa;*/
     font-weight: 300;
     cursor: default;
+    margin-left: 10px;
+    color: var(--bg-secondary);
 }
 
 .build-date {
