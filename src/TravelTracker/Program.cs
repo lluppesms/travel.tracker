@@ -154,7 +154,7 @@ builder.Services.AddSingleton<DefaultAzureCredential>(provider =>
         creds = new DefaultAzureCredential(new DefaultAzureCredentialOptions
         {
             ExcludeEnvironmentCredential = false,
-            ExcludeManagedIdentityCredential = false,
+            ExcludeManagedIdentityCredential = true,
             TenantId = visualStudioTenantId
         });
     }

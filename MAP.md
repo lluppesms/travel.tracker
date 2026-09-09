@@ -4,7 +4,7 @@
 >
 > **Purpose:** Give Copilot a fast, evidence-based map of this repository so routine work starts at the owning project instead of scanning the whole tree.
 >
-> **Last reviewed:** 2026-09-05
+> **Last reviewed:** 2026-09-09
 
 ## 1. Project Identity
 
@@ -54,11 +54,17 @@ The normal request path is:
 
 The Map page initializes the Azure Maps Web SDK through `wwwroot/js/azureMaps.js`. In addition to SDK readiness, it monitors Azure Maps error events and checks that basemap tile requests occur shortly after initialization. A detected issue writes detailed context to the browser console, logs a structured server warning through `MapView`, and presents a dismissible user warning while preserving location pins. A browser `Failed to fetch` error also directs the user to verify the Maps key or RBAC roles and Azure Maps CORS definitions.
 
+The Bucket List page groups National Parks, State High Points, and Presidential Libraries by resolving destination type IDs from the destination type name dictionary at runtime instead of relying on fixed numeric IDs. For visited destinations, the displayed visit date comes from the earliest matching current-user location `StartDate`.
+
+The Locations page QuickGrid defaults to sorting the Date column (`StartDate`) in descending order so the most recent location appears first on initial load.
+
+The Upload page renders an explicit in-progress status and progress bar before import work begins, disables import/export navigation and upload controls during the operation, and includes optional delete-before-import work in the same busy state.
+
 Microsoft Entra ID authentication is enabled only when both `AzureAd:TenantId` and `AzureAd:ClientId` are configured. Otherwise, the app starts without an authenticated fallback policy. Swagger is served at `/api/swagger`.
 
 The SQL-backed repositories and application services are registered only when `SqlServer:ConnectionString` is non-empty. There is no implemented JSON repository fallback in the current web startup path.
 
-The travel assistant surface is gated separately from the rest of the app. `Program.cs` enables `ValidateScopes` and `ValidateOnBuild` outside Production, and uses `ChatProviderServiceCollectionExtensions` (`src/TravelTracker/Extensions/`) to check assistant prerequisites (`AzureAd:TenantId`, `AzureAd:ClientId`, and the SQL connection string resolved by `AssistantConnectionStrings.Resolve`, which accepts `SqlServer:ConnectionString` or `ConnectionStrings:DefaultConnection`). When they are satisfied, `AddTravelAssistantOptions` validates the `TravelAssistant` configuration section at startup and `AddTravelAssistantChatProvider` selects the chat provider from `TravelAssistant:Provider` (`AgentFramework` today; `CopilotSDK` fails fast until it ships). When they are missing, a key-only warning is written, `DisabledChatbotService` is registered so the assistant reports `provider_unavailable` instead of a dependency injection error, and unrelated pages continue to run. `ICurrentPrincipalAccessor` and `ICurrentTravelUserResolver` are always registered as scoped services, using `UnavailableTravelUserResolver` when SQL is absent because `IUserService` does not exist on that path. Assistant entry points check `TravelAssistantReadiness` before identity, so a disabled assistant returns `provider_unavailable` rather than a misleading authentication failure. When Entra ID is not configured, `UnconfiguredAuthenticationHandler` (`src/TravelTracker/Authentication/`) is the default scheme and returns a plain `401` instead of an unhandled challenge exception.
+The travel assistant surface is gated separately from the rest of the app.
 
 ### Data and services
 

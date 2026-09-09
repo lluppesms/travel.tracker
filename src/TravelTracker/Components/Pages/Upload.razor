@@ -35,14 +35,16 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link @(activeTab == "import" ? "active" : "")"
                     type="button"
-                    @onclick="SelectImportTab">
+                    @onclick="SelectImportTab"
+                    disabled="@isUploading">
                 <span class="bi bi-upload"></span> Import Data
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link @(activeTab == "export" ? "active" : "")"
                     type="button"
-                    @onclick="SelectExportTab">
+                    @onclick="SelectExportTab"
+                    disabled="@isUploading">
                 <span class="bi bi-download"></span> Export Data
             </button>
         </li>
@@ -107,6 +109,10 @@
 
                     @if (isUploading)
                     {
+                        <div class="alert alert-info d-flex align-items-center" role="status" aria-live="polite">
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                            <span>Uploading data. Please wait...</span>
+                        </div>
                         <div class="progress mb-3">
                             <div class="progress-bar progress-bar-striped progress-bar-animated"
                                  role="progressbar"
@@ -472,11 +478,10 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
     private async Task ConfirmDeleteAndUpload()
     {
         showDeleteConfirmModal = false;
-        await LocationService.DeleteAllLocationsAsync(currentUserId);
-        await ExecuteImport();
+        await ExecuteImport(deleteExistingData: true);
     }
 
-    private async Task ExecuteImport()
+    private async Task ExecuteImport(bool deleteExistingData = false)
     {
         if (selectedFile == null) return;
 
@@ -485,6 +490,12 @@ Grand Canyon NP,2024-07-01,2024-07-03,Stunning views,"Grand Canyon, AZ 86023",36
             isUploading = true;
             errorMessage = string.Empty;
             uploadProgress = 0;
+            await InvokeAsync(StateHasChanged);
+
+            if (deleteExistingData)
+            {
+                await LocationService.DeleteAllLocationsAsync(currentUserId);
+            }
 
             using var stream = selectedFile.OpenReadStream(MAX_FILE_SIZE);
 

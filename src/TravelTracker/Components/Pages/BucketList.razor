@@ -4,6 +4,7 @@
 @using TravelTracker.Services.Interfaces
 @implements IAsyncDisposable
 @inject IDestinationService DestinationService
+@inject ILocationService LocationService
 @inject IAuthenticationService AuthenticationService
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
@@ -176,6 +177,10 @@
 </style>
 
 @code {
+    private const string NationalParkDestinationTypeName = "National Park";
+    private const string StateHighPointDestinationTypeName = "State High Point";
+    private const string PresidentialLibraryDestinationTypeName = "Presidential Library";
+
     private List<Destination> allDestinations = new();
     private List<Destination> totalNationalParks = new();
     private List<Destination> totalPresidentialLibraries = new();
@@ -184,6 +189,7 @@
     private List<Destination> visitedPresidentialLibraries = new();
     private List<Destination> visitedHighPoints = new();
     private List<Destination> visitedDestinations = new();
+    private List<Location> userLocations = new();
     private List<Destination> currentDestinations = new();
     private Dictionary<int, string> destinationTypeNames = new();
     private bool isLoading = false;
@@ -324,16 +330,21 @@
             var types = await DestinationService.GetAllDestinationTypesAsync();
             destinationTypeNames = types.ToDictionary(t => t.Id, t => t.Name);
 
-            // Group by type
-            totalNationalParks = allDestinations.Where(d => d.DestinationTypeId == 1).ToList();
-            totalPresidentialLibraries = allDestinations.Where(d => d.DestinationTypeId == 3).ToList();
-            totalHighPoints = allDestinations.Where(d => d.DestinationTypeId == 2).ToList();
+            var nationalParkTypeId = GetDestinationTypeIdByName(NationalParkDestinationTypeName);
+            var stateHighPointTypeId = GetDestinationTypeIdByName(StateHighPointDestinationTypeName);
+            var presidentialLibraryTypeId = GetDestinationTypeIdByName(PresidentialLibraryDestinationTypeName);
 
-            // Load visited destinations
+            // Group by type
+            totalNationalParks = FilterDestinationsByType(allDestinations, nationalParkTypeId);
+            totalPresidentialLibraries = FilterDestinationsByType(allDestinations, presidentialLibraryTypeId);
+            totalHighPoints = FilterDestinationsByType(allDestinations, stateHighPointTypeId);
+
+            // Load visited destinations and their source locations
+            userLocations = (await LocationService.GetAllLocationsAsync(currentUserId)).ToList();
             visitedDestinations = (await DestinationService.GetVisitedDestinationsAsync(currentUserId)).ToList();
-            visitedNationalParks = visitedDestinations.Where(d => d.DestinationTypeId == 1).ToList();
-            visitedPresidentialLibraries = visitedDestinations.Where(d => d.DestinationTypeId == 3).ToList();
-            visitedHighPoints = visitedDestinations.Where(d => d.DestinationTypeId == 2).ToList();
+            visitedNationalParks = FilterDestinationsByType(visitedDestinations, nationalParkTypeId);
+            visitedPresidentialLibraries = FilterDestinationsByType(visitedDestinations, presidentialLibraryTypeId);
+            visitedHighPoints = FilterDestinationsByType(visitedDestinations, stateHighPointTypeId);
 
             Logger.LogInformation("Loaded destinations. Total={Total}, Visited={Visited}", allDestinations.Count, visitedDestinations.Count);
             
@@ -393,10 +404,38 @@
         return destinationTypeNames.TryGetValue(destinationTypeId, out var name) ? name : "Unknown";
     }
 
+    private int? GetDestinationTypeIdByName(string destinationTypeName)
+    {
+        foreach (var destinationType in destinationTypeNames)
+        {
+            if (string.Equals(destinationType.Value, destinationTypeName, StringComparison.OrdinalIgnoreCase))
+            {
+                return destinationType.Key;
+            }
+        }
+
+        Logger.LogWarning("Destination type '{DestinationTypeName}' was not found.", destinationTypeName);
+        return null;
+    }
+
+    private static List<Destination> FilterDestinationsByType(IEnumerable<Destination> destinations, int? destinationTypeId)
+    {
+        return destinationTypeId.HasValue
+            ? destinations.Where(d => d.DestinationTypeId == destinationTypeId.Value).ToList()
+            : new List<Destination>();
+    }
+
     private string GetVisitDate(Destination dest)
     {
-        // This is a simplified version - in reality you'd need to match with actual location visits
-        // For now, just return a placeholder
-        return "Jan 5, 2020";
+        var destinationTypeName = GetDestinationTypeName(dest.DestinationTypeId);
+        var visit = userLocations
+            .Where(location =>
+                string.Equals(location.LocationType, destinationTypeName, StringComparison.OrdinalIgnoreCase) &&
+                (location.Name.Contains(dest.Name, StringComparison.OrdinalIgnoreCase) ||
+                 dest.Name.Contains(location.Name, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(location => location.StartDate)
+            .FirstOrDefault();
+
+        return visit is null ? "Unknown" : visit.StartDate.ToString("MMM d, yyyy");
     }
 }
