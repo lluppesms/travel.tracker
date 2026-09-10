@@ -11,6 +11,7 @@ public class DataImportServiceTests
 {
     private readonly Mock<ILocationService> _locationService = new();
     private readonly Mock<ILocationTypeRepository> _locationTypes = new();
+    private readonly Mock<IDestinationService> _destinationService = new();
     private readonly DataImportService _service;
 
     public DataImportServiceTests()
@@ -19,7 +20,9 @@ public class DataImportServiceTests
             .ReturnsAsync(new LocationType { Id = 1, Name = "National Park" });
         _locationTypes.Setup(repository => repository.GetByNameAsync("Other"))
             .ReturnsAsync(new LocationType { Id = 2, Name = "Other" });
-        _service = new DataImportService(_locationService.Object, _locationTypes.Object);
+        _destinationService.Setup(service => service.GetDestinationsByTypeNameAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+        _service = new DataImportService(_locationService.Object, _locationTypes.Object, _destinationService.Object);
     }
 
     [Fact]
@@ -119,6 +122,22 @@ public class DataImportServiceTests
         Assert.False(result.Success);
         Assert.Equal(1, result.FailedRecords);
         Assert.Contains("Line 2", result.Errors.Single());
+    }
+
+    [Fact]
+    public async Task ImportJson_WithUnknownNationalPark_RecordsFailureWithGuidance()
+    {
+        _locationService.Setup(service => service.GetAllLocationsAsync(7)).ReturnsAsync([]);
+        _destinationService.Setup(service => service.GetDestinationsByTypeNameAsync("National Park"))
+            .ReturnsAsync([new Destination { Name = "Yellowstone National Park", State = "WY" }]);
+        var json = "{\"locations\":[{\"name\":\"Not A Real Park\",\"locationType\":\"National Park\",\"state\":\"CA\",\"startDate\":\"2024-02-01\"}]}";
+
+        var result = await _service.ImportFromJsonAsync(StreamOf(json), 7);
+
+        Assert.Equal(1, result.FailedRecords);
+        Assert.Contains("does not match a known National Park", result.Errors.Single());
+        Assert.Contains("Yellowstone National Park", result.Errors.Single());
+        _locationService.Verify(service => service.CreateLocationAsync(It.IsAny<Location>()), Times.Never);
     }
 
     private const string Header = "Location,Arrival,Departure,Comments,Address,Latitude,Longitude,Type,TripName";

@@ -56,7 +56,7 @@ The Map page initializes the Azure Maps Web SDK through `wwwroot/js/azureMaps.js
 
 The Bucket List page groups National Parks, State High Points, and Presidential Libraries by resolving destination type IDs from the destination type name dictionary at runtime instead of relying on fixed numeric IDs. For visited destinations, the displayed visit date comes from the earliest matching current-user location `StartDate`.
 
-The Locations page QuickGrid defaults to sorting the Date column (`StartDate`) in descending order so the most recent location appears first on initial load.
+The Locations page QuickGrid defaults to sorting the Date column (`StartDate`) in descending order so the most recent location appears first on initial load. Its edit modal exposes the same location-detail fields as the add modal, including address, city, state, zip code, latitude, longitude, trip name, and lookup controls for destination-picker location types.
 
 The Upload page renders an explicit in-progress status and progress bar before import work begins, disables import/export navigation and upload controls during the operation, and includes optional delete-before-import work in the same busy state.
 

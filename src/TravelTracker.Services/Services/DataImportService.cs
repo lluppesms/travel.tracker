@@ -4,15 +4,24 @@ namespace TravelTracker.Services.Services;
 
 public class DataImportService : IDataImportService
 {
+    private static readonly HashSet<string> DestinationBackedLocationTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "National Park",
+        "Presidential Library"
+    };
+
     private readonly ILocationService _locationService;
     private readonly ILocationTypeRepository _locationTypeRepository;
+    private readonly IDestinationService _destinationService;
 
     public DataImportService(
         ILocationService locationService,
-        ILocationTypeRepository locationTypeRepository)
+        ILocationTypeRepository locationTypeRepository,
+        IDestinationService destinationService)
     {
         _locationService = locationService;
         _locationTypeRepository = locationTypeRepository;
+        _destinationService = destinationService;
     }
 
     public async Task<ImportResult> ImportFromJsonAsync(Stream jsonStream, int userId)
@@ -42,12 +51,14 @@ public class DataImportService : IDataImportService
             var existingLocations = await _locationService.GetAllLocationsAsync(userId);
             var existingKeys = new HashSet<(string, DateTime)>(
                 existingLocations.Select(l => (l.Name.ToLowerInvariant(), l.StartDate.Date)));
+            var destinationCache = new Dictionary<string, List<Destination>>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var locData in uploadData.Locations)
             {
                 try
                 {
                     var location = await MapJsonToLocationAsync(locData, userId);
+                    await ValidateDestinationReferenceAsync(location.LocationType, location.Name, destinationCache);
                     var key = (location.Name.ToLowerInvariant(), location.StartDate.Date);
                     if (existingKeys.Contains(key))
                     {
@@ -102,6 +113,7 @@ public class DataImportService : IDataImportService
             var existingLocations = await _locationService.GetAllLocationsAsync(userId);
             var existingKeys = new HashSet<(string, DateTime)>(
                 existingLocations.Select(l => (l.Name.ToLowerInvariant(), l.StartDate.Date)));
+            var destinationCache = new Dictionary<string, List<Destination>>(StringComparer.OrdinalIgnoreCase);
 
             int lineNumber = 1;
             string? line;
@@ -113,7 +125,7 @@ public class DataImportService : IDataImportService
 
                 try
                 {
-                    var location = await ParseCsvLineAsync(line, userId, lineNumber);
+                    var location = await ParseCsvLineAsync(line, userId, lineNumber, destinationCache);
                     if (location != null)
                     {
                         var key = (location.Name.ToLowerInvariant(), location.StartDate.Date);
@@ -172,11 +184,19 @@ public class DataImportService : IDataImportService
             result.RecordCount = uploadData.Locations.Count;
             result.ValidationMessages.Add($"Found {result.RecordCount} locations in JSON file.");
 
+            var destinationCache = new Dictionary<string, List<Destination>>(StringComparer.OrdinalIgnoreCase);
             int validLocations = 0;
             foreach (var loc in uploadData.Locations)
             {
                 if (!string.IsNullOrWhiteSpace(loc.Name) && !string.IsNullOrWhiteSpace(loc.State))
                 {
+                    var mismatch = await GetDestinationMismatchMessageAsync(loc.LocationType, loc.Name, destinationCache);
+                    if (mismatch != null)
+                    {
+                        result.IsValid = false;
+                        result.Errors.Add(mismatch);
+                        continue;
+                    }
                     validLocations++;
                 }
             }
@@ -231,6 +251,7 @@ public class DataImportService : IDataImportService
 
             result.ValidationMessages.Add("CSV header is valid.");
 
+            var destinationCache = new Dictionary<string, List<Destination>>(StringComparer.OrdinalIgnoreCase);
             int lineCount = 0;
             int validLines = 0;
             string? line;
@@ -245,7 +266,16 @@ public class DataImportService : IDataImportService
                     var fields = ParseCsvFields(line);
                     if (fields.Length >= 8 && !string.IsNullOrWhiteSpace(fields[1]))
                     {
-                        validLines++;
+                        var mismatch = await GetDestinationMismatchMessageAsync(fields[7].Trim(), fields[0].Trim(), destinationCache);
+                        if (mismatch != null)
+                        {
+                            result.IsValid = false;
+                            result.Errors.Add($"Row {lineCount}: {mismatch}");
+                        }
+                        else
+                        {
+                            validLines++;
+                        }
                     }
                 }
                 catch
@@ -304,7 +334,7 @@ public class DataImportService : IDataImportService
         };
     }
 
-    private async Task<Location?> ParseCsvLineAsync(string line, int userId, int lineNumber)
+    private async Task<Location?> ParseCsvLineAsync(string line, int userId, int lineNumber, Dictionary<string, List<Destination>> destinationCache)
     {
         var fields = ParseCsvFields(line);
 
@@ -362,6 +392,7 @@ public class DataImportService : IDataImportService
         // Validate location type
         var locationType = string.IsNullOrWhiteSpace(rowType) ? "Other" : rowType;
         locationType = await ValidateAndNormalizeLocationTypeAsync(locationType, locationName);
+        await ValidateDestinationReferenceAsync(locationType, locationName, destinationCache);
 
         return new Location
         {
@@ -492,6 +523,55 @@ public class DataImportService : IDataImportService
         }
 
         return normalizedType;
+    }
+
+    /// <summary>
+    /// Ensures a National Park or Presidential Library location name matches a known destination.
+    /// Location types not backed by the Destinations table are ignored.
+    /// </summary>
+    private async Task ValidateDestinationReferenceAsync(string locationType, string locationName, Dictionary<string, List<Destination>> destinationCache)
+    {
+        var mismatch = await GetDestinationMismatchMessageAsync(locationType, locationName, destinationCache);
+        if (mismatch != null)
+        {
+            throw new ArgumentException(mismatch);
+        }
+    }
+
+    /// <summary>
+    /// Returns an explanatory message if the given location name doesn't match any known destination
+    /// for a tracked location type (National Park, Presidential Library), or null if it matches or the
+    /// type isn't tracked.
+    /// </summary>
+    private async Task<string?> GetDestinationMismatchMessageAsync(string? locationType, string locationName, Dictionary<string, List<Destination>> destinationCache)
+    {
+        if (string.IsNullOrWhiteSpace(locationType) || !DestinationBackedLocationTypes.Contains(locationType))
+        {
+            return null;
+        }
+
+        if (!destinationCache.TryGetValue(locationType, out var destinations))
+        {
+            destinations = (await _destinationService.GetDestinationsByTypeNameAsync(locationType)).ToList();
+            destinationCache[locationType] = destinations;
+        }
+
+        if (destinations.Count == 0)
+        {
+            return null;
+        }
+
+        bool isMatch = destinations.Any(d =>
+            locationName.Contains(d.Name, StringComparison.OrdinalIgnoreCase) ||
+            d.Name.Contains(locationName, StringComparison.OrdinalIgnoreCase));
+
+        if (isMatch)
+        {
+            return null;
+        }
+
+        var validNames = string.Join(", ", destinations.Select(d => d.Name).OrderBy(n => n));
+        return $"'{locationName}' does not match a known {locationType} in our database. Please update the location name to match one of the following: {validNames}";
     }
 
     private class LocationUploadData

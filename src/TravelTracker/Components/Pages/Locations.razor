@@ -169,17 +169,88 @@
                                 </div>
                             </div>
 
-                            @if (selectedDestinationId > 0)
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Name *</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.Name" readonly="@(selectedDestinationId > 0)" disabled="@(isLookingUp || isSaving)" />
+                                    <ValidationMessage For="@(() => currentLocation.Name)" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">City</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.City" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">State *</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.State" placeholder="CA" maxlength="2" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                                <div class="col-md-2 mb-3 d-flex align-items-end">
+                                    <button type="button" style="padding: 2px; margin: 2px;"
+                                            class="btn btn-outline-secondary w-100"
+                                            @onclick="LookupLocationAsync"
+                                            disabled="@(isLookingUp || isSaving)"
+                                            title="Lookup via AI Foundry agent">
+                                        @if (isLookingUp)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bi bi-geo-alt me-1" aria-hidden="true"></span>
+                                        }
+                                        <span>AI</span>
+                                    </button>
+                                    <button type="button" style="padding: 2px; margin: 2px;"
+                                            class="btn btn-outline-secondary w-100"
+                                            @onclick="LookupLocationViaAPIAsync"
+                                            disabled="@(isLookingUp || isSaving)"
+                                            title="Lookup via public API">
+                                        @if (isLookingUp)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bi bi-search me-1" aria-hidden="true"></span>
+                                        }
+                                        <span>API</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-9 mb-3">
+                                    <label class="form-label">Address</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.Address" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Zip Code</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.ZipCode" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Latitude</label>
+                                    <InputNumber class="form-control" @bind-Value="currentLocation.Latitude" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Longitude</label>
+                                    <InputNumber class="form-control" @bind-Value="currentLocation.Longitude" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Trip Name</label>
+                                    <InputText class="form-control" @bind-Value="currentLocation.TripName" disabled="@(isLookingUp || isSaving)" />
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(lookupMessage))
                             {
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Name</label>
-                                        <InputText class="form-control" @bind-Value="currentLocation.Name" readonly />
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Trip Name</label>
-                                        <InputText class="form-control" @bind-Value="currentLocation.TripName" disabled="@(isLookingUp || isSaving)" />
-                                    </div>
+                                <div class="alert @(lookupSuccess ? "alert-success" : "alert-warning") alert-dismissible py-2 mb-3" role="alert">
+                                    @lookupMessage
+                                    <button type="button" class="btn-close" @onclick="() => lookupMessage = string.Empty"></button>
                                 </div>
                             }
                         }
